@@ -21,7 +21,6 @@ import InfoIcon from '@mui/icons-material/Info';
 import ContactsIcon from '@mui/icons-material/Contacts';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useRouter } from '../router';
-import PwaInstallPrompt from './PwaInstallPrompt';
 
 type NavItem = {
   path: string;
@@ -187,8 +186,7 @@ export const Layout = ({ children }: { children?: ReactNode }) => {
         </Container>
       </Box>
       
-      {/* PWA Install Prompt */}
-      <PwaInstallPrompt />
+      
     </Box>
   );
 };
