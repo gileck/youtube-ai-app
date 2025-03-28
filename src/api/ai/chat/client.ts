@@ -1,4 +1,5 @@
 import { ChatRequest, ChatResponse } from "./types";
+import apiClient from "../../../clientUtils/apiClient";
 
 /**
  * Client-side function to call the chat API
@@ -7,16 +8,10 @@ import { ChatRequest, ChatResponse } from "./types";
  */
 export const chatWithAI = async (request: ChatRequest): Promise<ChatResponse> => {
   try {
-    const response = await fetch('/api/ai/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    });
-
-    const data = await response.json();
-    return data as ChatResponse;
+    return await apiClient.post<ChatResponse, ChatRequest>(
+      '/api/ai/chat',
+      request
+    );
   } catch (error) {
     console.error('Error calling chat API:', error);
     return {

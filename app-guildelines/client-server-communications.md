@@ -88,21 +88,20 @@ For each API endpoint, follow this structure:
    - **IMPORTANT: This is the ONLY place in the codebase that should directly call the API endpoint**
    - **MUST use the exact same types for input parameters and return values as server.ts**
    - **NEVER import any server-side code or server.ts functions here**
+   - **ALWAYS use the apiClient utility from clientUtils instead of direct fetch calls**
    - Example:
      ```typescript
      import { ChatRequest, ChatResponse } from "./types";
+     import apiClient from "../../../clientUtils/apiClient";
 
      // Must use ChatRequest as input type and ChatResponse as return type
      // to ensure perfect type consistency with server.ts
      export const callEndpoint = async (request: ChatRequest): Promise<ChatResponse> => {
        try {
-         const response = await fetch('/api/<domain>/<endpoint>', {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify(request),
-         });
-
-         return await response.json() as ChatResponse;
+         return apiClient.post<ChatResponse, ChatRequest>(
+           '/api/<domain>/<endpoint>',
+           request
+         );
        } catch (error) {
          return {
            result: "",
@@ -215,6 +214,7 @@ const handleSubmit = async () => {
 5. **Client-Side API Access**:
    - **NEVER call API endpoints directly from client components or pages**
    - **ALWAYS use the client.ts functions to call API endpoints**
+   - **ALWAYS use the apiClient utility from clientUtils for all fetch operations**
    - This ensures consistent error handling, type safety, and maintainability
    - Example of what NOT to do:
      ```typescript
@@ -237,5 +237,34 @@ const handleSubmit = async () => {
      const handleSubmit = async () => {
        const response = await callEndpoint(data);
        // ...
+     };
+     ```
+
+6. **Using the apiClient Utility**:
+   - **ALWAYS use the apiClient utility in client.ts files for making API requests**
+   - Never use direct fetch calls in client.ts files
+   - The apiClient utility provides:
+     - Type-safe API requests with generic types
+     - Consistent error handling
+     - Automatic handling of common fetch boilerplate
+   - Example:
+     ```typescript
+     // In client.ts files:
+     import apiClient from "../../../clientUtils/apiClient";
+     import { RequestType, ResponseType } from "./types";
+     
+     export const callApi = async (request: RequestType): Promise<ResponseType> => {
+       try {
+         return await apiClient.post<ResponseType, RequestType>(
+           '/api/domain/endpoint',
+           request
+         );
+       } catch (error) {
+         // Handle error and return a properly typed response
+         return {
+           // Default values
+           error: `Error: ${error instanceof Error ? error.message : String(error)}`
+         } as ResponseType;
+       }
      };
      ```
