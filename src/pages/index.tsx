@@ -3,8 +3,11 @@ import { Home } from '../routes/Home';
 import { About } from '../routes/About';
 import { Contact } from '../routes/Contact';
 import { NotFound } from '../routes/NotFound';
-import { RouterProvider, createRoutes } from '../router';
+import { createRoutes } from '../router';
 import Layout from '../components/Layout';
+import dynamic from 'next/dynamic';
+
+const RouterProvider = dynamic(() => import('../router/index').then(module => module.RouterProvider), { ssr: false });
 
 // Define routes
 const routes = createRoutes({
