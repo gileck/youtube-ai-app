@@ -6,9 +6,8 @@ import {
   useTheme
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
-import InfoIcon from '@mui/icons-material/Info';
-import ContactsIcon from '@mui/icons-material/Contacts';
 import ChatIcon from '@mui/icons-material/Chat';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { TopNavBar } from './layout/TopNavBar';
 import { BottomNavBar } from './layout/BottomNavBar';
 import { DrawerMenu } from './layout/DrawerMenu';
@@ -17,9 +16,8 @@ import { NavItem, NavigatorStandalone } from './layout/types';
 
 const navItems: NavItem[] = [
   { path: '/', label: 'Home', icon: <HomeIcon /> },
-  { path: '/about', label: 'About', icon: <InfoIcon /> },
-  { path: '/contact', label: 'Contact', icon: <ContactsIcon /> },
   { path: '/ai-chat', label: 'AI Chat', icon: <ChatIcon /> },
+  { path: '/settings', label: 'Settings', icon: <SettingsIcon /> },
 ];
 
 export const Layout = ({ children }: { children?: ReactNode }) => {

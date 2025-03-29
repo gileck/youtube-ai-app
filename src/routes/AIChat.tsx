@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Box, 
   TextField, 
   Typography, 
   Paper, 
@@ -16,6 +15,8 @@ import {
 import SendIcon from '@mui/icons-material/Send';
 import { getAllModels } from '../ai/models';
 import { AIModelDefinition } from '../ai/models';
+import { chatWithAI } from '@/api/chat/client';
+import { useSettings } from '../context/SettingsContext';
 
 // Message type definition
 interface Message {
@@ -24,23 +25,21 @@ interface Message {
   sender: 'user' | 'ai';
   cost?: number;
   timestamp: Date;
+  isFromCache?: boolean;
 }
 
 export function AIChat() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string>('');
   const [models, setModels] = useState<AIModelDefinition[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { settings, updateSettings } = useSettings();
 
   // Load models on component mount
   useEffect(() => {
     const availableModels = getAllModels();
     setModels(availableModels);
-    if (availableModels.length > 0) {
-      setSelectedModel(availableModels[0].id);
-    }
   }, []);
 
   // Auto scroll to bottom of messages
@@ -49,7 +48,7 @@ export function AIChat() {
   }, [messages]);
 
   const handleModelChange = (event: SelectChangeEvent) => {
-    setSelectedModel(event.target.value);
+    updateSettings({ aiModel: event.target.value });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,14 +58,15 @@ export function AIChat() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!input.trim() || !selectedModel) return;
+    if (!input.trim() || !settings.aiModel) return;
     
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       text: input,
       sender: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
+      isFromCache: false
     };
     
     setMessages(prev => [...prev, userMessage]);
@@ -75,30 +75,20 @@ export function AIChat() {
     
     try {
       // Call the API
-      const response = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          modelId: selectedModel,
-          text: input
-        }),
+      const { data, isFromCache } = await chatWithAI({
+        modelId: settings.aiModel,
+        text: input
       });
-      
-      const data = await response.json();
-      
-      if (data.error) {
-        throw new Error(data.error);
-      }
-      
+      const { cost, result } = data
+
       // Add AI message
       const aiMessage: Message = {
         id: Date.now().toString(),
-        text: data.result,
+        text: result,
         sender: 'ai',
-        cost: data.cost.totalCost,
-        timestamp: new Date()
+        cost: cost.totalCost,
+        timestamp: new Date(),
+        isFromCache
       };
       
       setMessages(prev => [...prev, aiMessage]);
@@ -110,7 +100,8 @@ export function AIChat() {
         id: Date.now().toString(),
         text: `Error: ${error instanceof Error ? error.message : 'Failed to get response'}`,
         sender: 'ai',
-        timestamp: new Date()
+        timestamp: new Date(),
+        isFromCache: false
       };
       
       setMessages(prev => [...prev, errorMessage]);
@@ -121,10 +112,7 @@ export function AIChat() {
 
   // Format cost to display in a readable format
   const formatCost = (cost: number): string => {
-    if (cost < 0.01) {
-      return `$${cost.toFixed(6)}`;
-    }
-    return `$${cost.toFixed(4)}`;
+    return `$${cost.toFixed(2)}`;
   };
 
   return (
@@ -138,7 +126,7 @@ export function AIChat() {
         <Select
           labelId="model-select-label"
           id="model-select"
-          value={selectedModel}
+          value={settings.aiModel}
           label="AI Model"
           onChange={handleModelChange}
         >
@@ -162,79 +150,67 @@ export function AIChat() {
         }}
       >
         {messages.length === 0 ? (
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            height: '100%',
-            color: 'text.secondary'
-          }}>
-            <Typography variant="body1">
-              Start a conversation with the AI
-            </Typography>
-          </Box>
+          <Typography 
+            variant="body1" 
+            sx={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              height: '100%',
+              color: 'text.secondary'
+            }}
+          >
+            Start a conversation with the AI
+          </Typography>
         ) : (
-          <Box sx={{ flexGrow: 1 }}>
+          <>
             {messages.map((message) => (
-              <Box 
-                key={message.id} 
-                sx={{ 
+              <Paper
+                key={message.id}
+                elevation={1}
+                sx={{
+                  p: 2,
                   mb: 2,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: message.sender === 'user' ? 'flex-end' : 'flex-start',
+                  maxWidth: '80%',
+                  alignSelf: message.sender === 'user' ? 'flex-end' : 'flex-start',
+                  backgroundColor: message.sender === 'user' ? 'primary.light' : 'background.paper',
+                  borderRadius: 2,
                 }}
               >
-                <Paper
-                  elevation={1}
-                  sx={{
-                    p: 2,
-                    maxWidth: '80%',
-                    backgroundColor: message.sender === 'user' ? 'primary.light' : 'background.paper',
-                    borderRadius: 2,
-                  }}
-                >
-                  <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                    {message.text}
+                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {message.text}
+                </Typography>
+                
+                {message.cost !== undefined && (
+                  <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary' }}>
+                    {message.isFromCache ? '(from cache)' : `Cost: ${formatCost(message.cost)}`}
                   </Typography>
-                  
-                  {message.cost !== undefined && (
-                    <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary' }}>
-                      Cost: {formatCost(message.cost)}
-                    </Typography>
-                  )}
-                </Paper>
-              </Box>
+                )}
+              </Paper>
             ))}
             <div ref={messagesEndRef} />
-          </Box>
+          </>
         )}
       </Paper>
       
-      <Paper component="form" onSubmit={handleSubmit} elevation={3} sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Box sx={{ flexGrow: 1, mr: 1 }}>
-            <TextField
-              fullWidth
-              placeholder="Type your message..."
-              value={input}
-              onChange={handleInputChange}
-              disabled={isLoading}
-              variant="outlined"
-              size="medium"
-              autoFocus
-            />
-          </Box>
-          <IconButton 
-            type="submit" 
-            color="primary" 
-            disabled={isLoading || !input.trim()}
-            size="large"
-          >
-            {isLoading ? <CircularProgress size={24} /> : <SendIcon />}
-          </IconButton>
-        </Box>
-      </Paper>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '8px' }}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Type your message..."
+          value={input}
+          onChange={handleInputChange}
+          disabled={isLoading}
+        />
+        <IconButton 
+          color="primary" 
+          type="submit" 
+          disabled={isLoading || !input.trim()}
+          sx={{ p: '10px' }}
+        >
+          {isLoading ? <CircularProgress size={24} /> : <SendIcon />}
+        </IconButton>
+      </form>
     </Container>
   );
 }

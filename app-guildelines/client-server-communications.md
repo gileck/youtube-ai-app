@@ -1,30 +1,31 @@
 # Client-Server Communication Guidelines
 
-## Directory Structure
+## Simplified API Architecture
 
-For each API endpoint, follow this structure:
+This project uses a simplified client-server communication pattern with a single API endpoint that handles all server-side operations:
 
 ```
 /src
   /api
+    /apis.ts           - Registry of all API handlers (imports directly from server.ts files)
+    /processApiCall.ts - Central processing logic with caching
+    /types.ts          - Shared API types
     /<domain>
-      /<endpoint>
-        /types.ts    - Shared types between client and server
-        /server.ts   - Server-side implementation (ALL business logic goes here)
-        /client.ts   - Client-side function to call the API
-        /index.ts    - Exports everything for easier imports
+      /types.ts        - Shared types for this domain
+      /server.ts       - Server-side implementation (ALL business logic + exports name)
+      /client.ts       - Client-side function to call the API
+      /index.ts        - Exports name and types ONLY (not process or client functions)
   /pages
     /api
-      /<domain>
-        /<endpoint>.ts - Next.js API route handler (minimal routing logic only)
+      /process.ts      - Single Next.js API route handler for all requests
 ```
 
 ## Creating a New API Endpoint
 
-1. **Define Shared Types** (`/src/api/<domain>/<endpoint>/types.ts`):
+1. **Define Shared Types** (`/src/api/<domain>/types.ts`):
    - Define request and response types
-   - Keep types simple and focused on the specific endpoint
-   - **IMPORTANT: These types MUST be used consistently across client.ts, server.ts, and the API route**
+   - Keep types simple and focused on the specific domain
+   - **IMPORTANT: These types MUST be used consistently across client.ts and server.ts**
    - Example:
      ```typescript
      export type ChatRequest = {
@@ -41,19 +42,20 @@ For each API endpoint, follow this structure:
      };
      ```
 
-2. **Implement Server Logic** (`/src/api/<domain>/<endpoint>/server.ts`):
-   - Create a pure function that processes the request and returns a response
-   - **IMPORTANT: ALL business logic MUST be implemented here, not in the API route handler**
+2. **Implement Server Logic** (`/src/api/<domain>/server.ts`):
+   - Create a `process` function that handles the request and returns a response
+   - **IMPORTANT: ALL business logic MUST be implemented here**
    - Handle all business logic, validation, error cases, and external API calls here
-   - Keep the function independent of Next.js API specifics
    - **MUST use the shared types for both input parameters and return values**
    - **NEVER import any client-side code or client.ts functions here**
+   - **MUST export the API name from index.ts**
    - Example:
      ```typescript
      import { ChatRequest, ChatResponse } from "./types";
+     export { name } from './index';
 
      // Must use ChatRequest as input type and ChatResponse as return type
-     export const processRequest = async (request: ChatRequest): Promise<ChatResponse> => {
+     export const process = async (request: ChatRequest): Promise<ChatResponse> => {
        try {
          // Input validation
          if (!request.modelId || !request.text) {
@@ -82,189 +84,127 @@ For each API endpoint, follow this structure:
      };
      ```
 
-3. **Create Client Function** (`/src/api/<domain>/<endpoint>/client.ts`):
-   - Implement a function that calls the API endpoint
-   - Handle fetch errors and provide appropriate fallbacks
-   - **IMPORTANT: This is the ONLY place in the codebase that should directly call the API endpoint**
+3. **Create Client Function** (`/src/api/<domain>/client.ts`):
+   - Implement a function that calls the API using the apiClient.call method
+   - **IMPORTANT: This is the ONLY place that should call apiClient.call with this API name**
    - **MUST use the exact same types for input parameters and return values as server.ts**
    - **NEVER import any server-side code or server.ts functions here**
-   - **ALWAYS use the apiClient utility from clientUtils instead of direct fetch calls**
+   - **ALWAYS wrap the response type with CacheResult<T> to handle caching metadata**
+   - **MUST import the API name from index.ts**
    - Example:
      ```typescript
      import { ChatRequest, ChatResponse } from "./types";
-     import apiClient from "../../../clientUtils/apiClient";
+     import apiClient from "../../clientUtils/apiClient";
+     import { name } from "./index";
+     import type { CacheResult } from "@/serverUtils/cache/types";
 
-     // Must use ChatRequest as input type and ChatResponse as return type
-     // to ensure perfect type consistency with server.ts
-     export const callEndpoint = async (request: ChatRequest): Promise<ChatResponse> => {
-       try {
-         return apiClient.post<ChatResponse, ChatRequest>(
-           '/api/<domain>/<endpoint>',
-           request
-         );
-       } catch (error) {
-         return {
-           result: "",
-           cost: { totalCost: 0 },
-           error: `Failed to call API: ${error instanceof Error ? error.message : String(error)}`
-         };
-       }
+     // The return type must include CacheResult wrapper since caching is applied automatically
+     export const chatWithAI = async (request: ChatRequest): Promise<CacheResult<ChatResponse>> => {
+       return apiClient.call<CacheResult<ChatResponse>, ChatRequest>(
+         name,
+         request
+       );
      };
      ```
 
-4. **Create Index File** (`/src/api/<domain>/<endpoint>/index.ts`):
-   - Export all types and functions for easier imports
-   - **IMPORTANT: Create separate exports for client and server to prevent accidental cross-imports**
+4. **Create Index File** (`/src/api/<domain>/index.ts`):
+   - Export ONLY the API name and types (not process or client functions)
+   - **IMPORTANT: Do NOT export process or client functions to prevent bundling server code with client code**
    - Example:
      ```typescript
      // Export types for both client and server
      export * from './types';
      
-     // Client-side exports
-     export { callEndpoint } from './client';
-     
-     // Server-side exports
-     export { processRequest } from './server';
+     // Export the API name - must be unique across all APIs
+     export const name = "chat";
      ```
 
-5. **Implement Next.js API Route** (`/src/pages/api/<domain>/<endpoint>.ts`):
-   - Import the process function from the server implementation
-   - **IMPORTANT: The API route handler should ONLY:**
-     - Validate the HTTP method
-     - Pass the request body to the process function
-     - Return the response
-   - NO business logic, validation, or data processing should be here
-   - **MUST use the same shared types for request body and response**
-   - **NEVER import any client-side code or client.ts functions here**
+5. **Register the API in apis.ts** (`/src/api/apis.ts`):
+   - Import the server module directly and add it to the apiHandlers object
+   - **IMPORTANT: Import directly from server.ts, NOT from index.ts**
+   - **IMPORTANT: The key in the apiHandlers object MUST match the name exported from the server.ts**
    - Example:
      ```typescript
-     import type { NextApiRequest, NextApiResponse } from "next";
-     import { processRequest, ChatResponse, ChatRequest } from "../../../api/<domain>/<endpoint>";
+     import { ApiHandlers } from "./types";
+     import * as chat from "./chat/server";
+     import * as newDomain from "./newDomain/server";
 
-     export default async function handler(
-       req: NextApiRequest,
-       res: NextApiResponse<ChatResponse>
-     ) {
-       // Only validate HTTP method
-       if (req.method !== "POST") {
-         return res.status(200).json({
-           result: "",
-           cost: { totalCost: 0 },
-           error: "Method not allowed. Please use POST."
-         });
-       }
-
-       // All processing happens in the imported function
-       // The req.body should match the ChatRequest type
-       const response = await processRequest(req.body as ChatRequest);
-       
-       // Simply return the response - which is of type ChatResponse
-       return res.status(200).json(response);
-     }
+     export const apiHandlers: ApiHandlers = {
+       [chat.name]: { process: chat.process as (params: unknown) => Promise<unknown> },
+       [newDomain.name]: { process: newDomain.process as (params: unknown) => Promise<unknown> }
+     };
      ```
 
 ## Using the API from Client Components
 
 ```typescript
-import { callEndpoint } from "../api/<domain>/<endpoint>";
+import { chatWithAI } from "../api/chat/client";
 
 // In your component:
 const handleSubmit = async () => {
-  const response = await callEndpoint({ 
-    // request parameters 
+  const response = await chatWithAI({ 
+    modelId: "gpt-4",
+    text: "Hello, AI!"
   });
   
-  if (response.error) {
+  if (response.data.error) {
     // Handle error
   } else {
     // Handle success
+    // Access cache information if needed: response.fromCache, response.timestamp
   }
 };
 ```
 
 ## Important Guidelines
 
-1. **Error Handling**:
+1. **Single API Endpoint**:
+   - **NEVER add new Next.js API routes to the /src/pages/api folder**
+   - All API requests go through the single /api/process endpoint
+   - The central processApiCall.ts handles routing to the correct API handler
+
+2. **API Registration**:
+   - **ALWAYS register new APIs in apis.ts by importing directly from server.ts**
+   - The API name must be consistent across:
+     - The name export in index.ts
+     - The name import in server.ts
+     - The key in the apiHandlers object in apis.ts
+     - The name parameter in apiClient.call() in client.ts
+
+3. **Client Access**:
+   - **NEVER call apiClient directly from components or pages**
+   - **ALWAYS use the domain-specific client functions** (e.g., chatWithAI)
+   - **ALWAYS import client functions directly from client.ts, not from index.ts**
+   - This ensures proper typing and consistent error handling
+
+4. **Caching**:
+   - Caching is automatically applied at the processApiCall.ts level
+   - **ALWAYS wrap response types with CacheResult<T> in client functions**
+   - The CacheResult type includes:
+     ```typescript
+     type CacheResult<T> = {
+       data: T;           // The actual API response
+       fromCache: boolean; // Whether the result came from cache
+       timestamp: number;  // When the result was generated/cached
+     };
+     ```
+
+5. **Error Handling**:
    - Never return non-200 status codes from API routes
    - Always return status code 200 with proper error fields in the response
-   - Handle all errors gracefully on both server and client
+   - Handle all errors gracefully in the process function
 
-2. **Type Safety**:
+6. **Type Safety**:
    - **CRITICAL: Ensure perfect type consistency across the entire API flow**
-   - The client.ts function MUST use the exact same parameter and return types as server.ts
-   - The API route handler MUST use the same types for request body and response
+   - The client.ts function MUST use the exact same parameter types as server.ts
+   - The return type in client.ts should be CacheResult<ResponseType>
    - Never use `any` as a type
    - Never duplicate types - always import from the shared types.ts file
-   - Ensure all response types from API routes are used in client-side code
 
-3. **Separation of Concerns**:
-   - **ALL business logic MUST be in the server.ts file, NOT in the Next.js API route handler**
-   - The API route handler should only handle HTTP method validation and passing the request to the server function
-   - Implement business logic in pure functions
-   - Never access external APIs from client-side code
-   - **NEVER import client.ts functions in server-side code (server.ts or API routes)**
-   - **NEVER import server.ts functions in client-side code (React components, pages, etc.)**
-   - Only import the shared types across both client and server
-
-4. **Code Organization**:
-   - Use named exports, not default exports
-   - Keep functions small and focused on a single responsibility
-   - Separate data fetching, processing, and response handling
-
-5. **Client-Side API Access**:
-   - **NEVER call API endpoints directly from client components or pages**
-   - **ALWAYS use the client.ts functions to call API endpoints**
-   - **ALWAYS use the apiClient utility from clientUtils for all fetch operations**
-   - This ensures consistent error handling, type safety, and maintainability
-   - Example of what NOT to do:
-     ```typescript
-     // DON'T DO THIS in your React components
-     const handleSubmit = async () => {
-       const response = await fetch('/api/domain/endpoint', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify(data),
-       });
-       const result = await response.json();
-       // ...
-     };
-     ```
-   - Example of the correct approach:
-     ```typescript
-     // DO THIS instead
-     import { callEndpoint } from "../api/domain/endpoint";
-     
-     const handleSubmit = async () => {
-       const response = await callEndpoint(data);
-       // ...
-     };
-     ```
-
-6. **Using the apiClient Utility**:
-   - **ALWAYS use the apiClient utility in client.ts files for making API requests**
-   - Never use direct fetch calls in client.ts files
-   - The apiClient utility provides:
-     - Type-safe API requests with generic types
-     - Consistent error handling
-     - Automatic handling of common fetch boilerplate
-   - Example:
-     ```typescript
-     // In client.ts files:
-     import apiClient from "../../../clientUtils/apiClient";
-     import { RequestType, ResponseType } from "./types";
-     
-     export const callApi = async (request: RequestType): Promise<ResponseType> => {
-       try {
-         return await apiClient.post<ResponseType, RequestType>(
-           '/api/domain/endpoint',
-           request
-         );
-       } catch (error) {
-         // Handle error and return a properly typed response
-         return {
-           // Default values
-           error: `Error: ${error instanceof Error ? error.message : String(error)}`
-         } as ResponseType;
-       }
-     };
-     ```
+7. **Separation of Concerns**:
+   - **NEVER import server.ts in client-side code**
+   - **NEVER import client.ts in server-side code**
+   - **NEVER export process function from index.ts**
+   - **NEVER export client functions from index.ts**
+   - This prevents bundling server-side code with client-side code
+   - Keep business logic in server.ts and API calls in client.ts
