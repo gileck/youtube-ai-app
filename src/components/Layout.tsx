@@ -8,6 +8,7 @@ import {
 import HomeIcon from '@mui/icons-material/Home';
 import ChatIcon from '@mui/icons-material/Chat';
 import SettingsIcon from '@mui/icons-material/Settings';
+import FolderIcon from '@mui/icons-material/Folder';
 import { TopNavBar } from './layout/TopNavBar';
 import { BottomNavBar } from './layout/BottomNavBar';
 import { DrawerMenu } from './layout/DrawerMenu';
@@ -17,6 +18,7 @@ import { NavItem, NavigatorStandalone } from './layout/types';
 const navItems: NavItem[] = [
   { path: '/', label: 'Home', icon: <HomeIcon /> },
   { path: '/ai-chat', label: 'AI Chat', icon: <ChatIcon /> },
+  { path: '/file-manager', label: 'Files', icon: <FolderIcon /> },
   { path: '/settings', label: 'Settings', icon: <SettingsIcon /> },
 ];
 

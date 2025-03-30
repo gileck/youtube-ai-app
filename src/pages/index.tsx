@@ -3,6 +3,7 @@ import { Home } from '../routes/Home';
 import { NotFound } from '../routes/NotFound';
 import { AIChat } from '../routes/AIChat';
 import { Settings } from '../routes/Settings';
+import { FileManager } from '../routes/FileManager';
 import { createRoutes } from '../router';
 import Layout from '../components/Layout';
 import dynamic from 'next/dynamic';
@@ -15,6 +16,7 @@ const routes = createRoutes({
   '/': Home,
   '/ai-chat': AIChat,
   '/settings': Settings,
+  '/file-manager': FileManager,
   '/not-found': NotFound,
 });
 
