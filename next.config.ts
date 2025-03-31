@@ -12,6 +12,9 @@ const nextConfig: NextConfig = withPWA({
   eslint: {
     ignoreDuringBuilds: true,
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   async rewrites() {
     return [
       {

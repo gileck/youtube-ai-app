@@ -7,7 +7,7 @@ export { name } from './index'
  */
 export const process = async (): Promise<ClearCacheResponse> => {
   try {
-    const success = clearAllCache();
+    const success = await clearAllCache();
     
     return {
       success,
