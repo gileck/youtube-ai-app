@@ -1,5 +1,4 @@
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
-import { createRoutes } from '../client/router';
 import Layout from '../client/components/Layout';
 import dynamic from 'next/dynamic';
 import { SettingsProvider } from '../client/context/SettingsContext';
