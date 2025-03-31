@@ -1,18 +1,21 @@
-import { 
-  generateCacheKey, 
-  readCache, 
-  writeCache, 
-  deleteCache, 
-  clearAllCache as clearAll, 
-  getCacheStatus as getStatus 
-} from './fsCache';
+import * as fsCache from './fsCache';
+import * as s3Cache from './s3Cache';
 import { CacheOptions, CacheParams, CacheResult, CacheStatus } from './types';
+import { getCacheConfig } from './cacheConfig';
+
+/**
+ * Gets the appropriate cache implementation based on configuration
+ */
+const getCacheImplementation = () => {
+  const { provider } = getCacheConfig();
+  return provider === 's3' ? s3Cache : fsCache;
+};
 
 /**
  * Default cache options
  */
 const DEFAULT_OPTIONS: CacheOptions = {
-  ttl: 60 * 60 * 1000, // 1 hour in milliseconds
+  ttl: getCacheConfig().ttl, // Use TTL from config
   bypassCache: false,
 };
 
@@ -29,7 +32,8 @@ export const withCache = async <T>(
   options?: CacheOptions
 ): Promise<CacheResult<T>> => {
   const opts = { ...DEFAULT_OPTIONS, ...options };
-  const cacheKey = generateCacheKey(params);
+  const cache = getCacheImplementation();
+  const cacheKey = cache.generateCacheKey(params);
 
   // If disable cache is set, skip cache lookup
   if (opts.disableCache) {
@@ -43,7 +47,7 @@ export const withCache = async <T>(
     
     // Only cache successful results (no error property)
     if (!hasErrorProperty(result)) {
-      const metadata = writeCache(cacheKey, result, opts.ttl || DEFAULT_OPTIONS.ttl!);
+      const metadata = await cache.writeCache(cacheKey, result, opts.ttl || DEFAULT_OPTIONS.ttl!);
       return { data: result, isFromCache: false, metadata };
     }
     
@@ -51,7 +55,7 @@ export const withCache = async <T>(
   }
   
   // Try to get from cache first
-  const cached = readCache<T>(cacheKey);
+  const cached = await cache.readCache<T>(cacheKey);
   
   if (cached) {
     return {
@@ -66,7 +70,7 @@ export const withCache = async <T>(
   
   // Only cache successful results (no error property)
   if (!hasErrorProperty(result)) {
-    const metadata = writeCache(cacheKey, result, opts.ttl || DEFAULT_OPTIONS.ttl!);
+    const metadata = await cache.writeCache(cacheKey, result, opts.ttl || DEFAULT_OPTIONS.ttl!);
     return {
       data: result,
       isFromCache: false,
@@ -98,9 +102,10 @@ function hasErrorProperty(result: unknown): boolean {
  * @param params Cache parameters for generating the cache key
  * @returns Whether the cache was successfully cleared
  */
-export const clearCache = (params: CacheParams): boolean => {
-  const cacheKey = generateCacheKey(params);
-  return deleteCache(cacheKey);
+export const clearCache = async (params: CacheParams): Promise<boolean> => {
+  const cache = getCacheImplementation();
+  const cacheKey = cache.generateCacheKey(params);
+  return await cache.deleteCache(cacheKey);
 };
 
 /**
@@ -108,16 +113,18 @@ export const clearCache = (params: CacheParams): boolean => {
  * @param params Cache parameters for generating the cache key
  * @returns The status of the cache entry
  */
-export const getCacheStatus = (params: CacheParams): CacheStatus => {
-  return getStatus(params);
+export const getCacheStatus = async (params: CacheParams): Promise<CacheStatus> => {
+  const cache = getCacheImplementation();
+  return await cache.getCacheStatus(params);
 };
 
 /**
  * Clears all cache entries
  * @returns Whether all cache entries were successfully cleared
  */
-export const clearAllCache = (): boolean => {
-  return clearAll();
+export const clearAllCache = async (): Promise<boolean> => {
+  const cache = getCacheImplementation();
+  return await cache.clearAllCache();
 };
 
 export type { CacheOptions, CacheParams, CacheResult, CacheStatus } from './types';

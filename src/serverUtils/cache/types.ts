@@ -14,10 +14,10 @@ export interface CacheOptions {
 export interface CacheMetadata {
   /** When the cache entry was created */
   createdAt: string;
-  /** When the cache entry will expire */
-  expiresAt: string;
   /** The cache key used to store this entry */
   key: string;
+  /** The cache provider used (fs or s3) */
+  provider: 'fs' | 's3';
 }
 
 export interface CacheResult<T> { 

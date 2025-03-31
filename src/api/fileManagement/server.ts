@@ -2,62 +2,23 @@ import {
   FileManagementRequest, 
   FileManagementResponse,
   ListFilesResponse,
+  GetFileResponse,
   WriteFileResponse,
   DeleteFileResponse,
   CreateFolderResponse,
-  DeleteFolderResponse,
-  FileInfo
+  DeleteFolderResponse
 } from "./types";
 import { name } from './index';
 import {
-  uploadFile,
-  getFileAsString,
   listFiles,
+  getFile,
+  writeFile,
   deleteFile,
-  getS3Client,
-  getDefaultBucketName
-} from "@/serverUtils/s3/sdk";
+  createFolder,
+  deleteFolder
+} from './actions';
 
 export { name };
-
-// Helper function to convert S3 files to FileInfo
-const convertToFileInfo = (files: Array<{ key: string; size: number; lastModified: Date }>): FileInfo[] => {
-  // Group files by folder
-  const filesByFolder: Record<string, FileInfo[]> = {};
-  const result: FileInfo[] = [];
-  
-  // Process files and identify folders
-  files.forEach(file => {
-    const key = file.key;
-    const parts = key.split('/');
-    
-    // If this is a file in a subfolder
-    if (parts.length > 1) {
-      const folderPath = parts.slice(0, -1).join('/') + '/';
-      
-      // Add folder if it doesn't exist in our result
-      if (!filesByFolder[folderPath]) {
-        filesByFolder[folderPath] = [];
-        result.push({
-          key: folderPath,
-          size: 0,
-          lastModified: new Date(),
-          isFolder: true
-        });
-      }
-    }
-    
-    // Add the file itself
-    result.push({
-      key,
-      size: file.size,
-      lastModified: file.lastModified,
-      isFolder: false
-    });
-  });
-  
-  return result;
-};
 
 // Process function that handles all file management operations
 export const process = async (request: FileManagementRequest): Promise<FileManagementResponse> => {
@@ -70,91 +31,26 @@ export const process = async (request: FileManagementRequest): Promise<FileManag
       } as ListFilesResponse;
     }
 
-    // Handle different actions
+    // Route to the appropriate action handler
     switch (request.action) {
-      case 'list': {
-        const s3Files = await listFiles(request.prefix);
-        const files = convertToFileInfo(s3Files);
-        return { files } as ListFilesResponse;
-      }
-      
-      case 'write': {
-        if (!request.fileName || request.content === undefined) {
-          return {
-            key: "",
-            error: "Missing required fields: fileName and content are required"
-          } as WriteFileResponse;
-        }
+      case 'list':
+        return listFiles(request);
         
-        const key = await uploadFile({
-          content: request.content,
-          fileName: request.fileName,
-          contentType: request.contentType
-        });
+      case 'getFile':
+        return getFile(request);
         
-        return { key } as WriteFileResponse;
-      }
-      
-      case 'delete': {
-        if (!request.fileName) {
-          return {
-            success: false,
-            error: "Missing required field: fileName"
-          } as DeleteFileResponse;
-        }
+      case 'write':
+        return writeFile(request);
         
-        await deleteFile(request.fileName);
-        return { success: true } as DeleteFileResponse;
-      }
-      
-      case 'createFolder': {
-        if (!request.folderName) {
-          return {
-            key: "",
-            error: "Missing required field: folderName"
-          } as CreateFolderResponse;
-        }
+      case 'delete':
+        return deleteFile(request);
         
-        // Folders in S3 are just empty objects with a trailing slash
-        const folderKey = request.folderName.endsWith('/') 
-          ? request.folderName 
-          : `${request.folderName}/`;
-          
-        const key = await uploadFile({
-          content: '',
-          fileName: folderKey
-        });
+      case 'createFolder':
+        return createFolder(request);
         
-        return { key } as CreateFolderResponse;
-      }
-      
-      case 'deleteFolder': {
-        if (!request.folderName) {
-          return {
-            success: false,
-            error: "Missing required field: folderName"
-          } as DeleteFolderResponse;
-        }
+      case 'deleteFolder':
+        return deleteFolder(request);
         
-        // Get the folder name with trailing slash
-        const folderKey = request.folderName.endsWith('/') 
-          ? request.folderName 
-          : `${request.folderName}/`;
-        
-        // List all files in the folder
-        const files = await listFiles(folderKey);
-        
-        // Delete all files in the folder
-        for (const file of files) {
-          await deleteFile(file.key);
-        }
-        
-        // Delete the folder marker itself
-        await deleteFile(folderKey);
-        
-        return { success: true } as DeleteFolderResponse;
-      }
-      
       default:
         return {
           files: [],
@@ -171,6 +67,12 @@ export const process = async (request: FileManagementRequest): Promise<FileManag
           files: [],
           error: error instanceof Error ? error.message : String(error)
         } as ListFilesResponse;
+      
+      case 'getFile':
+        return {
+          content: "",
+          error: error instanceof Error ? error.message : String(error)
+        } as GetFileResponse;
         
       case 'write':
       case 'createFolder':

@@ -2,6 +2,7 @@ import {
   FileManagementRequest, 
   FileManagementResponse,
   ListFilesResponse,
+  GetFileResponse,
   WriteFileResponse,
   DeleteFileResponse,
   CreateFolderResponse,
@@ -17,7 +18,10 @@ export const manageFiles = async (
 ): Promise<CacheResult<FileManagementResponse>> => {
   return apiClient.call<CacheResult<FileManagementResponse>, FileManagementRequest>(
     name,
-    request
+    request,
+    {
+      disableCache: true
+    }
   );
 };
 
@@ -26,6 +30,15 @@ export const listFiles = async (
   prefix?: string
 ): Promise<CacheResult<ListFilesResponse>> => {
   return manageFiles({ action: 'list', prefix }) as Promise<CacheResult<ListFilesResponse>>;
+};
+
+export const getFile = async (
+  fileName: string
+): Promise<CacheResult<GetFileResponse>> => {
+  return manageFiles({
+    action: 'getFile',
+    fileName
+  }) as Promise<CacheResult<GetFileResponse>>;
 };
 
 export const writeFile = async (

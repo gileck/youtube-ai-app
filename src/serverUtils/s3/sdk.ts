@@ -10,8 +10,9 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
+const AWS_BUCKET_NAME = "app-template-1252343"
 // Constants
-const APP_FOLDER_PREFIX = 'app/';
+const APP_FOLDER_PREFIX = '';
 
 // S3 Configuration
 export interface S3Config {
@@ -23,14 +24,10 @@ export interface S3Config {
   };
 }
 
-console.log('AWS_ACCESS_KEY_ID', process.env.AWS_ACCESS_KEY_ID);
-console.log('AWS_SECRET_ACCESS_KEY', process.env.AWS_SECRET_ACCESS_KEY);
-
-
 // Default configuration - uses environment variables
 const defaultConfig: S3Config = {
   region: process.env.AWS_REGION || 'us-east-1',
-  bucketName: process.env.AWS_BUCKET_NAME || 'app-template',
+  bucketName: AWS_BUCKET_NAME,
   credentials: process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
     ? {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -45,6 +42,8 @@ export interface S3File {
   size: number;
   lastModified: Date;
   url?: string;
+  isFolder?: boolean;
+  fileCount?: number;
 }
 
 export interface S3UploadParams {
@@ -85,17 +84,23 @@ export const uploadFile = async (
   client: S3Client = getS3Client(),
   bucketName: string = getDefaultBucketName()
 ): Promise<string> => {
-  const key = `${APP_FOLDER_PREFIX}${params.fileName}`;
+  // Ensure the fileName doesn't already have the APP_FOLDER_PREFIX
+  const fileName = params.fileName.startsWith(APP_FOLDER_PREFIX) 
+    ? params.fileName 
+    : `${APP_FOLDER_PREFIX}${params.fileName}`;
+  
+  console.log('Uploading file with key:', fileName);
   
   const command = new PutObjectCommand({
     Bucket: bucketName,
-    Key: key,
+    Key: fileName,
     Body: params.content,
     ContentType: params.contentType || 'application/octet-stream',
   });
 
   await client.send(command);
-  return key;
+  // Return the key without the APP_FOLDER_PREFIX for consistency
+  return fileName.replace(APP_FOLDER_PREFIX, '');
 };
 
 // Get a file from S3
@@ -104,7 +109,12 @@ export const getFile = async (
   client: S3Client = getS3Client(),
   bucketName: string = getDefaultBucketName()
 ): Promise<GetObjectCommandOutput> => {
-  const key = `${APP_FOLDER_PREFIX}${fileName}`;
+  // Ensure the fileName has the APP_FOLDER_PREFIX
+  const key = fileName.startsWith(APP_FOLDER_PREFIX) 
+    ? fileName 
+    : `${APP_FOLDER_PREFIX}${fileName}`;
+  
+  console.log('Getting file with key:', key);
   
   const command = new GetObjectCommand({
     Bucket: bucketName,
@@ -140,24 +150,146 @@ export const listFiles = async (
     ? `${APP_FOLDER_PREFIX}${prefix}` 
     : APP_FOLDER_PREFIX;
   
+  // First, get all objects to count files in folders and calculate total sizes
+  const allObjectsCommand = new ListObjectsV2Command({
+    Bucket: bucketName,
+    Prefix: fullPrefix,
+  });
+  
+  const allObjectsResponse = await client.send(allObjectsCommand);
+  
+  // Create maps to track folder stats
+  const folderCounts: Record<string, number> = {};
+  const folderSizes: Record<string, number> = {};
+  
+  if (allObjectsResponse.Contents) {
+    for (const item of allObjectsResponse.Contents) {
+      if (!item.Key) continue;
+      
+      // Skip the current directory marker
+      if (item.Key === fullPrefix) continue;
+      
+      // Get the relative path from the current prefix
+      const relativePath = item.Key.replace(fullPrefix, '');
+      
+      // Skip empty paths
+      if (!relativePath) continue;
+      
+      // Count files in folders and sum up sizes
+      const parts = relativePath.split('/');
+      
+      // If we're at the root and this is a file (no trailing slash)
+      if (parts.length === 1 && !item.Key.endsWith('/')) {
+        // This is a file at the current level, not in a subfolder
+        continue;
+      }
+      
+      // If this is a folder at the current level
+      if (parts.length === 1 && item.Key.endsWith('/')) {
+        // This is a folder at the current level
+        const folderName = parts[0];
+        // Initialize counts if needed, but don't increment
+        if (!folderCounts[folderName]) {
+          folderCounts[folderName] = 0;
+          folderSizes[folderName] = 0;
+        }
+        continue;
+      }
+      
+      // This is a file in a subfolder
+      if (parts.length > 1 && parts[0]) {
+        const folderName = parts[0];
+        
+        // Only count actual files, not subfolder markers
+        if (!relativePath.endsWith('/')) {
+          folderCounts[folderName] = (folderCounts[folderName] || 0) + 1;
+          folderSizes[folderName] = (folderSizes[folderName] || 0) + (item.Size || 0);
+        }
+      }
+    }
+  }
+  
+  // Now get the actual listing with delimiter for proper folder structure
   const command = new ListObjectsV2Command({
     Bucket: bucketName,
     Prefix: fullPrefix,
+    Delimiter: '/' // This helps identify folders properly
   });
 
   const response: ListObjectsV2CommandOutput = await client.send(command);
   
-  if (!response.Contents) {
-    return [];
+  const result: S3File[] = [];
+  
+  // Process common prefixes (folders)
+  if (response.CommonPrefixes) {
+    for (const prefix of response.CommonPrefixes) {
+      if (prefix.Prefix) {
+        const folderKey = prefix.Prefix.replace(APP_FOLDER_PREFIX, '');
+        // Extract folder name from the path
+        const folderName = folderKey.split('/').filter(p => p).pop() || folderKey;
+        
+        // Get the simple folder name (without path)
+        const simpleFolderName = folderName.endsWith('/') 
+          ? folderName.slice(0, -1) 
+          : folderName;
+        
+        result.push({
+          key: folderKey,
+          size: folderSizes[simpleFolderName] || 0,
+          lastModified: new Date(),
+          isFolder: true,
+          fileCount: folderCounts[simpleFolderName] || 0
+        });
+      }
+    }
   }
-
-  return response.Contents
-    .filter(item => item.Key && item.Key !== fullPrefix) // Filter out the folder itself
-    .map(item => ({
-      key: item.Key!.replace(APP_FOLDER_PREFIX, ''), // Remove the prefix for cleaner keys
-      size: item.Size || 0,
-      lastModified: item.LastModified || new Date(),
-    }));
+  
+  // Process contents (files)
+  if (response.Contents) {
+    for (const item of response.Contents) {
+      // Skip the directory marker itself
+      if (item.Key === fullPrefix) continue;
+      
+      // Check if this is a folder marker (ends with /)
+      const isFolder = item.Key?.endsWith('/') || false;
+      
+      // If it's a folder marker and we already added it via CommonPrefixes, skip it
+      if (isFolder && result.some(f => f.isFolder && f.key === item.Key?.replace(APP_FOLDER_PREFIX, ''))) {
+        continue;
+      }
+      
+      if (item.Key) {
+        const key = item.Key.replace(APP_FOLDER_PREFIX, '');
+        
+        // For folder markers that weren't in CommonPrefixes
+        if (isFolder) {
+          const folderName = key.split('/').filter(p => p).pop() || key;
+          // Remove trailing slash for lookup
+          const simpleFolderName = folderName.endsWith('/') 
+            ? folderName.slice(0, -1) 
+            : folderName;
+            
+          result.push({
+            key,
+            size: folderSizes[simpleFolderName] || 0,
+            lastModified: item.LastModified || new Date(),
+            isFolder: true,
+            fileCount: folderCounts[simpleFolderName] || 0
+          });
+        } else {
+          // Regular files
+          result.push({
+            key,
+            size: item.Size || 0,
+            lastModified: item.LastModified || new Date(),
+            isFolder: false
+          });
+        }
+      }
+    }
+  }
+  
+  return result;
 };
 
 // Generate a pre-signed URL for temporary access
@@ -183,7 +315,12 @@ export const deleteFile = async (
   client: S3Client = getS3Client(),
   bucketName: string = getDefaultBucketName()
 ): Promise<void> => {
-  const key = `${APP_FOLDER_PREFIX}${fileName}`;
+  // Ensure the fileName has the APP_FOLDER_PREFIX
+  const key = fileName.startsWith(APP_FOLDER_PREFIX) 
+    ? fileName 
+    : `${APP_FOLDER_PREFIX}${fileName}`;
+  
+//   console.log('Deleting file with key:', key);
   
   const command = new DeleteObjectCommand({
     Bucket: bucketName,

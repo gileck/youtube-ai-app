@@ -5,17 +5,24 @@ export type FileInfo = {
   size: number;
   lastModified: Date;
   isFolder: boolean;
+  fileCount?: number;
 };
 
 // Base request type
 export type FileManagementBaseRequest = {
-  action: 'list' | 'write' | 'delete' | 'createFolder' | 'deleteFolder';
+  action: 'list' | 'write' | 'delete' | 'createFolder' | 'deleteFolder' | 'getFile';
 };
 
 // List files request
 export type ListFilesRequest = FileManagementBaseRequest & {
   action: 'list';
   prefix?: string;
+};
+
+// Get file content request
+export type GetFileRequest = FileManagementBaseRequest & {
+  action: 'getFile';
+  fileName: string;
 };
 
 // Write file request
@@ -47,6 +54,7 @@ export type DeleteFolderRequest = FileManagementBaseRequest & {
 // Combined request type
 export type FileManagementRequest = 
   | ListFilesRequest
+  | GetFileRequest
   | WriteFileRequest
   | DeleteFileRequest
   | CreateFolderRequest
@@ -55,6 +63,12 @@ export type FileManagementRequest =
 // Response types
 export type ListFilesResponse = {
   files: FileInfo[];
+  error?: string;
+};
+
+export type GetFileResponse = {
+  content: string;
+  contentType?: string;
   error?: string;
 };
 
@@ -81,6 +95,7 @@ export type DeleteFolderResponse = {
 // Combined response type
 export type FileManagementResponse = 
   | ListFilesResponse
+  | GetFileResponse
   | WriteFileResponse
   | DeleteFileResponse
   | CreateFolderResponse

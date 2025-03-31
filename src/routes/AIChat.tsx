@@ -10,7 +10,8 @@ import {
   Select, 
   MenuItem, 
   SelectChangeEvent,
-  IconButton
+  IconButton,
+  Chip
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { getAllModels } from '../ai/models';
@@ -26,6 +27,7 @@ interface Message {
   cost?: number;
   timestamp: Date;
   isFromCache?: boolean;
+  cacheProvider?: 'fs' | 's3';
 }
 
 export function AIChat() {
@@ -75,7 +77,7 @@ export function AIChat() {
     
     try {
       // Call the API
-      const { data, isFromCache } = await chatWithAI({
+      const { data, isFromCache, metadata } = await chatWithAI({
         modelId: settings.aiModel,
         text: input
       });
@@ -88,7 +90,8 @@ export function AIChat() {
         sender: 'ai',
         cost: cost.totalCost,
         timestamp: new Date(),
-        isFromCache
+        isFromCache,
+        cacheProvider: metadata?.provider
       };
       
       setMessages(prev => [...prev, aiMessage]);
@@ -183,7 +186,19 @@ export function AIChat() {
                 
                 {message.cost !== undefined && (
                   <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary' }}>
-                    {message.isFromCache ? '(from cache)' : `Cost: ${formatCost(message.cost)}`}
+                    {message.isFromCache ? (
+                      <span>
+                        <Chip 
+                          size="small" 
+                          label={`From cache (${message.cacheProvider || 'unknown'})`} 
+                          color={message.cacheProvider === 's3' ? 'primary' : 'default'}
+                          variant="outlined"
+                          sx={{ mr: 1 }}
+                        />
+                      </span>
+                    ) : (
+                      `Cost: ${formatCost(message.cost)}`
+                    )}
                   </Typography>
                 )}
               </Paper>

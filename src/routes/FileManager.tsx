@@ -14,6 +14,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   Divider,
   CircularProgress,
@@ -25,14 +26,16 @@ import {
   Delete as DeleteIcon,
   Add as AddIcon,
   CreateNewFolder as CreateNewFolderIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
 import { 
   listFiles, 
   writeFile, 
   deleteFile, 
   createFolder, 
-  deleteFolder 
+  deleteFolder,
+  getFile
 } from '@/api/fileManagement/client';
 import type { FileInfo } from '@/api/fileManagement/types';
 
@@ -53,6 +56,16 @@ export const FileManager = () => {
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
 
+  // File edit state
+  const [editingFile, setEditingFile] = useState<FileInfo | null>(null);
+  const [editFileContent, setEditFileContent] = useState('');
+  const [showEditFileDialog, setShowEditFileDialog] = useState(false);
+  const [loadingFileContent, setLoadingFileContent] = useState(false);
+  
+  // Delete confirmation state
+  const [itemToDelete, setItemToDelete] = useState<FileInfo | null>(null);
+  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
+
   // Load files on component mount and when prefix changes
   useEffect(() => {
     fetchFiles();
@@ -64,8 +77,11 @@ export const FileManager = () => {
     setError(null);
     
     try {
+      console.log('Fetching files with prefix:', currentPrefix);
       const response = await listFiles(currentPrefix);
+      console.log('API response:', response);
       setFiles(response.data.files || []);
+      console.log('Files state updated:', response.data.files);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load files');
       console.error('Error fetching files:', err);
@@ -87,7 +103,7 @@ export const FileManager = () => {
     } else {
       // For files, we could implement a preview or download feature
       // For now, we'll just log the file name
-      console.log('File clicked:', item.key);
+      // console.log('File clicked:', item.key);
     }
   };
 
@@ -159,16 +175,25 @@ export const FileManager = () => {
     }
   };
 
-  // Delete a file or folder
-  const handleDelete = async (item: FileInfo) => {
+  // Show delete confirmation dialog
+  const confirmDelete = (item: FileInfo) => {
+    setItemToDelete(item);
+    setShowDeleteConfirmDialog(true);
+  };
+
+  // Delete a file or folder after confirmation
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+    
     setLoading(true);
     setError(null);
+    setShowDeleteConfirmDialog(false);
     
     try {
-      if (item.isFolder) {
-        await deleteFolder(item.key);
+      if (itemToDelete.isFolder) {
+        await deleteFolder(itemToDelete.key);
       } else {
-        await deleteFile(item.key);
+        await deleteFile(itemToDelete.key);
       }
       
       // Refresh files
@@ -176,6 +201,44 @@ export const FileManager = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete item');
       console.error('Error deleting item:', err);
+    } finally {
+      setLoading(false);
+      setItemToDelete(null);
+    }
+  };
+
+  // Open file for editing
+  const handleEditFile = async (file: FileInfo) => {
+    setEditingFile(file);
+    setLoadingFileContent(true);
+    setError(null);
+    
+    try {
+      const response = await getFile(file.key);
+      setEditFileContent(response.data.content);
+      setShowEditFileDialog(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load file content');
+      console.error('Error loading file content:', err);
+    } finally {
+      setLoadingFileContent(false);
+    }
+  };
+
+  // Save edited file
+  const handleSaveFile = async () => {
+    if (!editingFile) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      await writeFile(editingFile.key, editFileContent);
+      setShowEditFileDialog(false);
+      fetchFiles();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save file');
+      console.error('Error saving file:', err);
     } finally {
       setLoading(false);
     }
@@ -207,6 +270,18 @@ export const FileManager = () => {
         ))}
       </Box>
     );
+  };
+
+  const formatFileSize = (size: number) => {
+    if (size < 1024) {
+      return `${size} bytes`;
+    } else if (size < 1024 * 1024) {
+      return `${(size / 1024).toFixed(2)} KB`;
+    } else if (size < 1024 * 1024 * 1024) {
+      return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+    } else {
+      return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+    }
   };
 
   return (
@@ -288,18 +363,33 @@ export const FileManager = () => {
                     primary={item.key.split('/').pop() || item.key} 
                     secondary={
                       item.isFolder 
-                        ? 'Folder' 
-                        : `${(item.size / 1024).toFixed(2)} KB • ${new Date(item.lastModified).toLocaleString()}`
+                        ? `Folder${item.fileCount !== undefined ? ` (${item.fileCount} files` : ''}${
+                            item.size > 0 ? `, ${formatFileSize(item.size)}` : ''
+                          }${item.fileCount !== undefined ? ')' : ''}` 
+                        : `${formatFileSize(item.size)} • ${new Date(item.lastModified).toLocaleString()}`
                     }
                   />
                   
                   <ListItemSecondaryAction>
+                    {!item.isFolder && (
+                      <IconButton
+                        edge="end"
+                        aria-label="edit"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditFile(item);
+                        }}
+                        sx={{ mr: 1 }}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    )}
                     <IconButton 
                       edge="end" 
                       aria-label="delete" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDelete(item);
+                        confirmDelete(item);
                       }}
                     >
                       <DeleteIcon />
@@ -358,6 +448,73 @@ export const FileManager = () => {
           <Button onClick={() => setShowNewFolderDialog(false)}>Cancel</Button>
           <Button onClick={handleCreateFolder} variant="contained" disabled={loading}>
             {loading ? <CircularProgress size={24} /> : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit File Dialog */}
+      <Dialog 
+        open={showEditFileDialog} 
+        onClose={() => setShowEditFileDialog(false)} 
+        maxWidth="md" 
+        fullWidth
+      >
+        <DialogTitle>
+          Edit File: {editingFile?.key.split('/').pop()}
+        </DialogTitle>
+        <DialogContent>
+          {loadingFileContent ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <TextField
+              multiline
+              rows={12}
+              fullWidth
+              value={editFileContent}
+              onChange={(e) => setEditFileContent(e.target.value)}
+              sx={{ mt: 2 }}
+              variant="outlined"
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowEditFileDialog(false)}>Cancel</Button>
+          <Button 
+            onClick={handleSaveFile} 
+            variant="contained" 
+            disabled={loading || loadingFileContent}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Save'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={showDeleteConfirmDialog}
+        onClose={() => setShowDeleteConfirmDialog(false)}
+        aria-labelledby="delete-confirm-dialog-title"
+        aria-describedby="delete-confirm-dialog-description"
+      >
+        <DialogTitle id="delete-confirm-dialog-title">
+          {itemToDelete?.isFolder ? 'Delete Folder?' : 'Delete File?'}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-confirm-dialog-description">
+            {itemToDelete?.isFolder 
+              ? `Are you sure you want to delete the folder "${itemToDelete?.key.split('/').pop()}" and all its contents? This action cannot be undone.`
+              : `Are you sure you want to delete the file "${itemToDelete?.key.split('/').pop()}"? This action cannot be undone.`
+            }
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowDeleteConfirmDialog(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="error" variant="contained" autoFocus>
+            Delete
           </Button>
         </DialogActions>
       </Dialog>

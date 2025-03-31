@@ -1,31 +1,19 @@
-import fs from 'fs';
-import path from 'path';
 import crypto from 'crypto';
 import { CacheMetadata } from './types';
+import { 
+  uploadFile, 
+  getFileAsString, 
+  deleteFile, 
+  listFiles, 
+  getS3Client, 
+  getDefaultBucketName 
+} from '@/serverUtils/s3/sdk';
 import { getCacheConfig } from './cacheConfig';
-
-// Constants
-const CACHE_DIR = process.env.NODE_ENV === 'production' 
-  ? '/tmp/app-cache' 
-  : path.join(process.cwd(), '.cache');
-
-/**
- * Ensures the cache directory exists
- */
-const ensureCacheDir = async (): Promise<void> => {
-  if (!fs.existsSync(CACHE_DIR)) {
-    try {
-      await fs.promises.mkdir(CACHE_DIR, { recursive: true });
-    } catch (error) {
-      console.error('Failed to create cache directory:', error);
-    }
-  }
-};
 
 /**
  * Generates a cache key from the provided parameters
  */
-const generateCacheKey = (params: { key: string; params?: Record<string, unknown> }): string => {
+export const generateCacheKey = (params: { key: string; params?: Record<string, unknown> }): string => {
   const { key, params: additionalParams } = params;
   
   // Create a stable representation of the parameters
@@ -63,24 +51,21 @@ const sortObjectKeys = (obj: Record<string, unknown>): Record<string, unknown> =
 };
 
 /**
- * Gets the path to a cache file
+ * Gets the path to a cache file in S3
  */
 const getCacheFilePath = (cacheKey: string): string => {
-  return path.join(CACHE_DIR, `${cacheKey}.json`);
+  const { s3CachePrefix } = getCacheConfig();
+  return `${s3CachePrefix}${cacheKey}.json`;
 };
 
 /**
- * Reads a cache entry
+ * Reads a cache entry from S3
  */
-const readCache = async <T>(cacheKey: string): Promise<{ data: T; metadata: CacheMetadata } | null> => {
+export const readCache = async <T>(cacheKey: string): Promise<{ data: T; metadata: CacheMetadata } | null> => {
   const filePath = getCacheFilePath(cacheKey);
   
-  if (!fs.existsSync(filePath)) {
-    return null;
-  }
-  
   try {
-    const fileContent = await fs.promises.readFile(filePath, 'utf-8');
+    const fileContent = await getFileAsString(filePath);
     const { data, metadata } = JSON.parse(fileContent);
     
     // Check if the cache has expired
@@ -90,16 +75,15 @@ const readCache = async <T>(cacheKey: string): Promise<{ data: T; metadata: Cach
     
     return { data, metadata };
   } catch (error) {
-    console.error('Failed to read cache:', error);
+    // File not found or other error
     return null;
   }
 };
 
 /**
- * Writes a cache entry
+ * Writes a cache entry to S3
  */
-const writeCache = async <T>(cacheKey: string, data: T, ttl: number): Promise<CacheMetadata> => {
-  await ensureCacheDir();
+export const writeCache = async <T>(cacheKey: string, data: T, ttl: number): Promise<CacheMetadata> => {
   const filePath = getCacheFilePath(cacheKey);
   
   const now = new Date();
@@ -107,67 +91,66 @@ const writeCache = async <T>(cacheKey: string, data: T, ttl: number): Promise<Ca
   const metadata: CacheMetadata = {
     createdAt: now.toISOString(),
     key: cacheKey,
-    provider: 'fs'
+    provider: 's3'
   };
   
   try {
-    await fs.promises.writeFile(
-      filePath,
-      JSON.stringify({ data, metadata }, null, 2),
-      'utf-8'
-    );
+    const cacheContent = JSON.stringify({ data, metadata });
+    await uploadFile({
+      content: cacheContent,
+      fileName: filePath,
+      contentType: 'application/json'
+    });
+    
     return metadata;
   } catch (error) {
-    console.error('Failed to write cache:', error);
-    throw new Error('Failed to write to cache');
+    console.error('Failed to write cache to S3:', error);
+    throw new Error('Failed to write to S3 cache');
   }
 };
 
 /**
- * Deletes a cache entry
+ * Deletes a cache entry from S3
  */
-const deleteCache = async (cacheKey: string): Promise<boolean> => {
+export const deleteCache = async (cacheKey: string): Promise<boolean> => {
   const filePath = getCacheFilePath(cacheKey);
   
-  if (!fs.existsSync(filePath)) {
-    return false;
-  }
-  
   try {
-    await fs.promises.unlink(filePath);
+    await deleteFile(filePath);
     return true;
   } catch (error) {
-    console.error('Failed to delete cache:', error);
+    console.error('Failed to delete cache from S3:', error);
     return false;
   }
 };
 
 /**
- * Clears all cache entries
+ * Clears all cache entries from S3
  */
-const clearAllCache = async (): Promise<boolean> => {
-  await ensureCacheDir();
+export const clearAllCache = async (): Promise<boolean> => {
+  const { s3CachePrefix } = getCacheConfig();
   
   try {
-    const files = await fs.promises.readdir(CACHE_DIR);
+    const files = await listFiles(s3CachePrefix);
     
+    // Delete all files in the cache folder
     for (const file of files) {
-      if (file.endsWith('.json')) {
-        await fs.promises.unlink(path.join(CACHE_DIR, file));
+      if (file.key.endsWith('.json')) {
+        await deleteFile(file.key);
       }
     }
     
     return true;
   } catch (error) {
-    console.error('Failed to clear all cache:', error);
+    console.error('Failed to clear all cache from S3:', error);
     return false;
   }
 };
 
 /**
- * Gets the status of a cache entry
+ * Gets the status of a cache entry in S3
  */
-const getCacheStatus = async (params: { key: string; params?: Record<string, unknown> }): Promise<{ 
+export const getCacheStatus = async (params: { key: string; params?: Record<string, unknown> }): Promise<{ 
   exists: boolean; 
   metadata?: CacheMetadata; 
   isExpired?: boolean; 
@@ -175,12 +158,8 @@ const getCacheStatus = async (params: { key: string; params?: Record<string, unk
   const cacheKey = generateCacheKey(params);
   const filePath = getCacheFilePath(cacheKey);
   
-  if (!fs.existsSync(filePath)) {
-    return { exists: false };
-  }
-  
   try {
-    const fileContent = await fs.promises.readFile(filePath, 'utf-8');
+    const fileContent = await getFileAsString(filePath);
     const { metadata } = JSON.parse(fileContent);
     const isExpired = new Date(metadata.expiresAt) < new Date();
     
@@ -190,16 +169,7 @@ const getCacheStatus = async (params: { key: string; params?: Record<string, unk
       isExpired,
     };
   } catch (error) {
-    console.error('Failed to get cache status:', error);
+    // File not found or other error
     return { exists: false };
   }
-};
-
-export {
-  generateCacheKey,
-  readCache,
-  writeCache,
-  deleteCache,
-  clearAllCache,
-  getCacheStatus
 };
