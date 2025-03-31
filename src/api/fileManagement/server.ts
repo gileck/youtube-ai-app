@@ -51,11 +51,14 @@ export const process = async (request: FileManagementRequest): Promise<FileManag
       case 'deleteFolder':
         return deleteFolder(request);
         
-      default:
+      default: {
+        // Use a type assertion to handle the unknown action
+        const action = request.action;
         return {
           files: [],
-          error: `Invalid action: ${(request as any).action}`
+          error: `Invalid action: ${action}`
         } as ListFilesResponse;
+      }
     }
   } catch (error) {
     console.error('Error in file management API:', error);
@@ -88,11 +91,13 @@ export const process = async (request: FileManagementRequest): Promise<FileManag
           error: error instanceof Error ? error.message : String(error)
         } as DeleteFileResponse | DeleteFolderResponse;
         
-      default:
+      default: {
+        // Use a type assertion to handle the unknown action
         return {
           files: [],
           error: error instanceof Error ? error.message : String(error)
         } as ListFilesResponse;
+      }
     }
   }
 };

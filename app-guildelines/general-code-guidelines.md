@@ -30,3 +30,6 @@
 
 * Avoid unnecessary abstractions or complex patterns when a simple solution would work just as well.
 * If I did not ask to imrpove performance, do not implement any optimizations and keep the code simple.
+
+# Unused variables
+* Never leave unused variables in the code. Always remove them. double check that you did not miss any.

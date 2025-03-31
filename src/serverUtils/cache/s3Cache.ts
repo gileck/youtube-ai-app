@@ -4,9 +4,7 @@ import {
   uploadFile, 
   getFileAsString, 
   deleteFile, 
-  listFiles, 
-  getS3Client, 
-  getDefaultBucketName 
+  listFiles
 } from '@/serverUtils/s3/sdk';
 import { getCacheConfig } from './cacheConfig';
 
@@ -69,12 +67,12 @@ export const readCache = async <T>(cacheKey: string): Promise<{ data: T; metadat
     const { data, metadata } = JSON.parse(fileContent);
     
     // Check if the cache has expired
-    if (new Date(metadata.expiresAt) < new Date()) {
+    if (new Date(metadata.createdAt).getTime() + 3600000 < Date.now()) {
       return null;
     }
     
     return { data, metadata };
-  } catch (error) {
+  } catch {
     // File not found or other error
     return null;
   }
@@ -83,7 +81,7 @@ export const readCache = async <T>(cacheKey: string): Promise<{ data: T; metadat
 /**
  * Writes a cache entry to S3
  */
-export const writeCache = async <T>(cacheKey: string, data: T, ttl: number): Promise<CacheMetadata> => {
+export const writeCache = async <T>(cacheKey: string, data: T): Promise<CacheMetadata> => {
   const filePath = getCacheFilePath(cacheKey);
   
   const now = new Date();
@@ -161,14 +159,14 @@ export const getCacheStatus = async (params: { key: string; params?: Record<stri
   try {
     const fileContent = await getFileAsString(filePath);
     const { metadata } = JSON.parse(fileContent);
-    const isExpired = new Date(metadata.expiresAt) < new Date();
+    const isExpired = new Date(metadata.createdAt).getTime() + 3600000 < Date.now();
     
     return {
       exists: true,
       metadata,
       isExpired,
     };
-  } catch (error) {
+  } catch {
     // File not found or other error
     return { exists: false };
   }

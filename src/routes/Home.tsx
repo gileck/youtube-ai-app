@@ -1,4 +1,4 @@
-import { Typography, Paper } from '@mui/material';
+import { Paper } from '@mui/material';
 
 export const Home = () => {
   return (

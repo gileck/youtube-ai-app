@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Typography, 
   Paper, 
@@ -16,7 +16,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  Divider,
   CircularProgress,
   Alert
 } from '@mui/material';
@@ -66,13 +65,8 @@ export const FileManager = () => {
   const [itemToDelete, setItemToDelete] = useState<FileInfo | null>(null);
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
 
-  // Load files on component mount and when prefix changes
-  useEffect(() => {
-    fetchFiles();
-  }, [currentPrefix]);
-
   // Fetch files from the API
-  const fetchFiles = async () => {
+  const fetchFiles = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -88,7 +82,12 @@ export const FileManager = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPrefix]);
+
+  // Load files on component mount and when prefix changes
+  useEffect(() => {
+    fetchFiles();
+  }, [fetchFiles]);
 
   // Handle file or folder click
   const handleItemClick = (item: FileInfo) => {

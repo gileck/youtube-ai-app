@@ -1,5 +1,5 @@
 import { 
-  FileManagementRequest,
+  FileManagementRequest, 
   FileManagementResponse,
   ListFilesRequest,
   GetFileRequest,
@@ -9,4 +9,14 @@ import {
   DeleteFolderRequest
 } from '../types';
 
-// No need for an interface, we'll use direct functions
+// Re-export types to be used by action handlers
+export type {
+  FileManagementRequest, 
+  FileManagementResponse,
+  ListFilesRequest,
+  GetFileRequest,
+  WriteFileRequest,
+  DeleteFileRequest,
+  CreateFolderRequest,
+  DeleteFolderRequest
+};

@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { CacheMetadata } from './types';
-import { getCacheConfig } from './cacheConfig';
 
 // Constants
 const CACHE_DIR = process.env.NODE_ENV === 'production' 
@@ -84,7 +83,7 @@ const readCache = async <T>(cacheKey: string): Promise<{ data: T; metadata: Cach
     const { data, metadata } = JSON.parse(fileContent);
     
     // Check if the cache has expired
-    if (new Date(metadata.expiresAt) < new Date()) {
+    if (new Date(metadata.createdAt).getTime() + 3600000 < Date.now()) {
       return null;
     }
     
@@ -98,7 +97,7 @@ const readCache = async <T>(cacheKey: string): Promise<{ data: T; metadata: Cach
 /**
  * Writes a cache entry
  */
-const writeCache = async <T>(cacheKey: string, data: T, ttl: number): Promise<CacheMetadata> => {
+const writeCache = async <T>(cacheKey: string, data: T): Promise<CacheMetadata> => {
   await ensureCacheDir();
   const filePath = getCacheFilePath(cacheKey);
   
@@ -182,7 +181,7 @@ const getCacheStatus = async (params: { key: string; params?: Record<string, unk
   try {
     const fileContent = await fs.promises.readFile(filePath, 'utf-8');
     const { metadata } = JSON.parse(fileContent);
-    const isExpired = new Date(metadata.expiresAt) < new Date();
+    const isExpired = new Date(metadata.createdAt).getTime() + 3600000 < Date.now();
     
     return {
       exists: true,
