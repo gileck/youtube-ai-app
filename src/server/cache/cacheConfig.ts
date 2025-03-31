@@ -2,6 +2,8 @@
  * Cache configuration settings
  */
 
+import { appConfig } from "@/app.config";
+
 export interface CacheConfig {
   /** The cache provider to use: 'fs' or 's3' */
   provider: 'fs' | 's3';
@@ -11,18 +13,18 @@ export interface CacheConfig {
   s3CachePrefix: string;
 }
 
-const isProduction = process.env.NODE_ENV === 'production';
+
 
 /**
  * Default cache configuration
  */
 export const defaultCacheConfig: CacheConfig = {
   // Default to filesystem cache, can be overridden by environment variable
-  provider: isProduction ? 's3' : 's3',
+  provider: appConfig.cacheType as 'fs' | 's3',
   // Default TTL: 1 hour in milliseconds
   ttl: parseInt(process.env.CACHE_TTL || '3600000', 10),
   // S3 cache folder prefix
-  s3CachePrefix: process.env.S3_CACHE_PREFIX || 'cache/',
+  s3CachePrefix: `cache/`,
 };
 
 /**

@@ -9,7 +9,7 @@ import { adapters } from './adapters';
 import { AIModel, AIModelAdapterResponse, AIModelBaseAdapter, AIModelCostEstimate, Usage } from './types';
 import { countTokens } from './utils/tokenizer';
 import { getPricePer1K } from './price';
-
+import { addAIUsageRecord } from '../ai-usage-monitoring';
 
 
 export class AIModelAdapter implements AIModelBaseAdapter {
@@ -59,10 +59,26 @@ export class AIModelAdapter implements AIModelBaseAdapter {
    */
   async processPromptToText(
     prompt: string,
+    endpoint: string = 'unknown'
   ): Promise<AIModelAdapterResponse<string>> {
 
     const response = await this.modelAdapter.processPromptToText(prompt, this.modelId);
     const cost = this.calculateCost(response.usage);
+    
+    // Track AI usage
+    try {
+      await addAIUsageRecord(
+        this.modelId,
+        this.modelDefinition,
+        response.usage,
+        cost.totalCost,
+        endpoint
+      );
+    } catch (error) {
+      console.error('Error tracking AI usage:', error);
+      // Continue even if tracking fails
+    }
+    
     return {
       result: response.result,
       usage: response.usage,
@@ -76,10 +92,26 @@ export class AIModelAdapter implements AIModelBaseAdapter {
    */
   async processPromptToJSON<T>(
     prompt: string,
+    endpoint: string = 'unknown'
   ): Promise<AIModelAdapterResponse<T>> {
 
     const response = await this.modelAdapter.processPromptToJSON<T>(prompt, this.modelId);
     const cost = this.calculateCost(response.usage);
+    
+    // Track AI usage
+    try {
+      await addAIUsageRecord(
+        this.modelId,
+        this.modelDefinition,
+        response.usage,
+        cost.totalCost,
+        endpoint
+      );
+    } catch (error) {
+      console.error('Error tracking AI usage:', error);
+      // Continue even if tracking fails
+    }
+    
     return {
       result: response.result,
       usage: response.usage,

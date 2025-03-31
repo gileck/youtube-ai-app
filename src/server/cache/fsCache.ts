@@ -2,11 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { CacheMetadata } from './types';
-
 // Constants
-const CACHE_DIR = process.env.NODE_ENV === 'production' 
-  ? '/tmp/app-cache' 
-  : path.join(process.cwd(), '.cache');
+const CACHE_DIR = path.join(process.cwd(), '.cache');
 
 /**
  * Ensures the cache directory exists
