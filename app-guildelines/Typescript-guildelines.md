@@ -31,6 +31,8 @@
 - `any` disables type checking—defeats the purpose of TypeScript.
 - Use `unknown` when needed, then narrow down with type checks.
 - If `any` is absolutely necessary, isolate and comment it.
+- **Never cast types to `any`** (e.g., `as any`). This bypasses TypeScript's type checking completely and can lead to runtime errors.
+- Instead, use proper type narrowing, type guards, or more specific type assertions when absolutely necessary.
 
 ### Always Type Function Parameters and Return Values
 - Explicit types prevent bugs and make functions easier to understand.
@@ -75,4 +77,3 @@
 - Use comments to explain why a type is structured a certain way, especially if it’s not obvious.
 - Helps others (and future you) understand your decisions.
 - Prefer simple, self-explanatory types.
-

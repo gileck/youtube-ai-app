@@ -1,15 +1,15 @@
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
-import { Home } from '../routes/Home';
-import { NotFound } from '../routes/NotFound';
-import { AIChat } from '../routes/AIChat';
-import { Settings } from '../routes/Settings';
-import { FileManager } from '../routes/FileManager';
-import { createRoutes } from '../router';
-import Layout from '../components/Layout';
+import { Home } from '../client/routes/Home';
+import { NotFound } from '../client/routes/NotFound';
+import { AIChat } from '../client/routes/AIChat';
+import { Settings } from '../client/routes/Settings';
+import { FileManager } from '../client/routes/FileManager';
+import { createRoutes } from '../client/router';
+import Layout from '../client/components/Layout';
 import dynamic from 'next/dynamic';
-import { SettingsProvider } from '../context/SettingsContext';
+import { SettingsProvider } from '../client/context/SettingsContext';
 
-const RouterProvider = dynamic(() => import('../router/index').then(module => module.RouterProvider), { ssr: false });
+const RouterProvider = dynamic(() => import('../client/router/index').then(module => module.RouterProvider), { ssr: false });
 
 // Define routes
 const routes = createRoutes({

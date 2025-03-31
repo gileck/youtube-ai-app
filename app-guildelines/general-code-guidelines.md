@@ -33,3 +33,6 @@
 
 # Unused variables
 * Never leave unused variables in the code. Always remove them. double check that you did not miss any.
+
+# ES LINT
+* Never disable eslint without asking for permission

@@ -15,6 +15,14 @@ const nextConfig: NextConfig = withPWA({
   typescript: {
     ignoreBuildErrors: true,
   },
+  webpack(config) {
+    // Enable WebAssembly
+    config.experiments = {
+      ...config.experiments,
+      asyncWebAssembly: true,
+    };
+    return config;
+  },
   async rewrites() {
     return [
       {

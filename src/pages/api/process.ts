@@ -1,4 +1,4 @@
-import { processApiCall } from "@/api/processApiCall";
+import { processApiCall } from "@/apis/processApiCall";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
@@ -10,5 +10,3 @@ export default async function handler(
   // console.log('API response:', response);
   return res.status(200).json(response);
 }
-
-  
