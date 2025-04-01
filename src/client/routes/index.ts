@@ -1,12 +1,20 @@
-// Import components from each route
-import Home from './home/route';
-import NotFound from './not-found/route';
-import AIChat from './ai-chat/route';
-import Settings from './settings/route';
-import FileManager from './file-manager/route';
-import AIMonitoring from './ai-monitoring/route';
+import { Home } from './Home';
+import { NotFound } from './NotFound';
+import { AIChat } from './AIChat';
+import { Settings } from './Settings';
+import { FileManager } from './FileManager';
+import { AIMonitoring } from './AIMonitoring';
 import { createRoutes } from '../router';
 
+// Export all route components
+export { Home } from './Home';
+export { NotFound } from './NotFound';
+export { AIChat } from './AIChat';
+export { Settings } from './Settings';
+export { FileManager } from './FileManager';
+export { AIMonitoring } from './AIMonitoring';
+
+// Define routes
 export const routes = createRoutes({
   '/': Home,
   '/ai-chat': AIChat,
