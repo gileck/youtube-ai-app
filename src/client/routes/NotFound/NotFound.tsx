@@ -1,6 +1,6 @@
 import { Typography, Paper, Button } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
-import { useRouter } from '../router';
+import { useRouter } from '../../router';
 
 export const NotFound = () => {
   const { navigate } = useRouter();

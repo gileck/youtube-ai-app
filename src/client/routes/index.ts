@@ -6,14 +6,6 @@ import { FileManager } from './FileManager';
 import { AIMonitoring } from './AIMonitoring';
 import { createRoutes } from '../router';
 
-// Export all route components
-export { Home } from './Home';
-export { NotFound } from './NotFound';
-export { AIChat } from './AIChat';
-export { Settings } from './Settings';
-export { FileManager } from './FileManager';
-export { AIMonitoring } from './AIMonitoring';
-
 // Define routes
 export const routes = createRoutes({
   '/': Home,

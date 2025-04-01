@@ -5,24 +5,13 @@ import {
   useMediaQuery,
   useTheme
 } from '@mui/material';
-import HomeIcon from '@mui/icons-material/Home';
-import ChatIcon from '@mui/icons-material/Chat';
-import SettingsIcon from '@mui/icons-material/Settings';
-import FolderIcon from '@mui/icons-material/Folder';
-import InsightsIcon from '@mui/icons-material/Insights';
 import { TopNavBar } from './layout/TopNavBar';
 import { BottomNavBar } from './layout/BottomNavBar';
 import { DrawerMenu } from './layout/DrawerMenu';
 import { Footer } from './layout/Footer';
-import { NavItem, NavigatorStandalone } from './layout/types';
+import { NavigatorStandalone } from './layout/types';
+import { navItems, menuItems } from './NavLinks';
 
-const navItems: NavItem[] = [
-  { path: '/', label: 'Home', icon: <HomeIcon /> },
-  { path: '/ai-chat', label: 'AI Chat', icon: <ChatIcon /> },
-  { path: '/file-manager', label: 'Files', icon: <FolderIcon /> },
-  { path: '/settings', label: 'Settings', icon: <SettingsIcon /> },
-  { path: '/ai-monitoring', label: 'AI Monitoring', icon: <InsightsIcon /> },
-];
 
 export const Layout = ({ children }: { children?: ReactNode }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -61,7 +50,7 @@ export const Layout = ({ children }: { children?: ReactNode }) => {
       
       {/* Mobile Drawer Menu */}
       <DrawerMenu 
-        navItems={navItems} 
+        navItems={menuItems} 
         mobileOpen={mobileOpen} 
         onDrawerToggle={handleDrawerToggle} 
       />

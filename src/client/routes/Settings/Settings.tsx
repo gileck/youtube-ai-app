@@ -14,9 +14,9 @@ import {
   Alert,
   CircularProgress
 } from '@mui/material';
-import { getAllModels } from '../../server/ai';
-import { AIModelDefinition } from '../../server/ai/models';
-import { useSettings } from '../context/SettingsContext';
+import { getAllModels } from '../../../server/ai';
+import { AIModelDefinition } from '../../../server/ai/models';
+import { useSettings } from '../../context/SettingsContext';
 
 interface SnackbarState {
   open: boolean;
