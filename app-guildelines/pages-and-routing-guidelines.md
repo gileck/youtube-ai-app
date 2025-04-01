@@ -7,7 +7,7 @@ This document outlines the process for adding new routes to our Single Page Appl
 Our application uses a custom SPA routing system built on top of Next.js. The routing system is implemented in the `src/client/router` directory and consists of:
 
 1. A `RouterProvider` component that manages navigation and renders the current route
-2. Route components defined in `src/client/routes` directory
+2. Route components organized in folders within the `src/client/routes` directory
 3. Route configuration in the `src/client/routes/index.ts` file
 4. Navigation components in the `src/client/components/layout` directory
 
@@ -15,14 +15,23 @@ Our application uses a custom SPA routing system built on top of Next.js. The ro
 
 Follow these steps to add a new route to the application:
 
-### 1. Create a Route Component
+### 1. Create a Route Component Folder
 
-Create a new component file in the `src/client/routes` directory:
+Create a new folder in the `src/client/routes` directory with the name of your route component:
+
+```
+src/client/routes/
+├── NewRoute/
+│   ├── NewRoute.tsx
+│   └── index.ts
+```
+
+#### Create the route component file:
 
 ```tsx
-// src/client/routes/NewRoute.tsx
+// src/client/routes/NewRoute/NewRoute.tsx
 import { Box, Typography } from '@mui/material';
-import { useRouter } from '../router';
+import { useRouter } from '../../router';
 
 export const NewRoute = () => {
   const { routeParams, queryParams } = useRouter();
@@ -36,11 +45,43 @@ export const NewRoute = () => {
 };
 ```
 
+#### Create the index.ts file to export the component:
+
+```tsx
+// src/client/routes/NewRoute/index.ts
+export { NewRoute } from './NewRoute';
+```
+
+### Component Organization Guidelines
+
 Follow these best practices for route components:
-- Keep route components focused on layout and composition
+
+- **Keep route components focused and small**: The main route component should be primarily responsible for layout and composition, not complex logic.
+  
+- **Split large components**: If a route component is getting too large (over 200-300 lines), split it into multiple smaller components within the same route folder.
+  
+- **Route-specific components**: Components that are only used by a specific route should be placed in that route's folder.
+  
+- **Shared components**: If a component is used by multiple routes, move it to `src/client/components` directory.
+  
+- **Component hierarchy**:
+  ```
+  src/client/routes/NewRoute/           # Route-specific folder
+  ├── NewRoute.tsx                      # Main route component (exported)
+  ├── NewRouteHeader.tsx                # Route-specific component
+  ├── NewRouteContent.tsx               # Route-specific component
+  ├── NewRouteFooter.tsx                # Route-specific component
+  └── index.ts                          # Exports the main component
+  
+  src/client/components/                # Shared components
+  ├── SharedComponent.tsx               # Used by multiple routes
+  └── ...
+  ```
+
 - Extract business logic into separate hooks or utility functions
-- Follow the naming convention of PascalCase for component files
+- Follow the naming convention of PascalCase for component files and folders
 - Use named exports (avoid default exports as per our guidelines)
+- Keep related components and utilities in the same folder
 
 ### 2. Register the Route in the Routes Configuration
 
@@ -68,12 +109,12 @@ Route path naming conventions:
 
 ### 3. Add Navigation Item
 
-Update the navigation items in `src/client/components/Layout.tsx` to include your new route:
+Update the navigation items in `src/client/components/NavLinks.tsx` to include your new route:
 
 ```tsx
 import NewRouteIcon from '@mui/icons-material/Extension'; // Choose an appropriate icon
 
-const navItems: NavItem[] = [
+export const navItems: NavItem[] = [
   { path: '/', label: 'Home', icon: <HomeIcon /> },
   { path: '/ai-chat', label: 'AI Chat', icon: <ChatIcon /> },
   { path: '/file-manager', label: 'Files', icon: <FolderIcon /> },
@@ -149,8 +190,8 @@ export const routes = createRoutes({
 Then access the parameters in your component using the `useRouter` hook:
 
 ```tsx
-// src/client/routes/ItemDetail.tsx
-import { useRouter } from '../router';
+// src/client/routes/ItemDetail/ItemDetail.tsx
+import { useRouter } from '../../router';
 
 export const ItemDetail = () => {
   const { routeParams } = useRouter();
@@ -170,8 +211,8 @@ export const ItemDetail = () => {
 The router also automatically parses query parameters from the URL. Access them in your component using the `useRouter` hook:
 
 ```tsx
-// src/client/routes/SearchResults.tsx
-import { useRouter } from '../router';
+// src/client/routes/SearchResults/SearchResults.tsx
+import { useRouter } from '../../router';
 
 export const SearchResults = () => {
   const { queryParams } = useRouter();
