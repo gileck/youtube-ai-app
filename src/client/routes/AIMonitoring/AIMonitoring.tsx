@@ -75,7 +75,6 @@ export const AIMonitoring = () => {
             {/* Overview Tab */}
             <TabPanel value={tabValue} index={0}>
               <OverviewCharts 
-                usageData={usageData}
                 formatCurrency={formatCurrency}
                 getDailyUsageData={getDailyUsageData}
                 getModelDistributionData={getModelDistributionData}
