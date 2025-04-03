@@ -3,7 +3,14 @@ import * as chat from "./chat/server";
 import * as clearCache from "./settings/clearCache/server";
 import * as fileManagement from "./fileManagement/server";
 import * as aiUsage from "./monitoring/aiUsage/server";
+import { searchApiName, videoApiName, channelApiName } from "./youtube/index";
+import { searchVideos, getVideoDetails, getChannelVideos } from "./youtube/server";
 import { GetAllAIUsageRequest, GetAIUsageSummaryRequest } from "./monitoring/aiUsage/types";
+import { 
+  YouTubeSearchRequest, 
+  YouTubeVideoRequest, 
+  YouTubeChannelRequest 
+} from "./youtube/types";
 
 
 export const apiHandlers: ApiHandlers = {
@@ -21,5 +28,15 @@ export const apiHandlers: ApiHandlers = {
       params as GetAIUsageSummaryRequest, 
       'summary'
     ) as Promise<unknown>
+  },
+  // YouTube API endpoints
+  [searchApiName]: { 
+    process: (params: unknown) => searchVideos(params as YouTubeSearchRequest) as Promise<unknown>
+  },
+  [videoApiName]: { 
+    process: (params: unknown) => getVideoDetails(params as YouTubeVideoRequest) as Promise<unknown>
+  },
+  [channelApiName]: { 
+    process: (params: unknown) => getChannelVideos(params as YouTubeChannelRequest) as Promise<unknown>
   },
 };
