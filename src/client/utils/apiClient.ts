@@ -20,7 +20,10 @@ export const apiClient = {
       body: JSON.stringify({ 
         name, 
         params,
-        options
+        options: {
+          ...options,
+          disableCache: window.location.href.includes('disableCache=true') ? true : options?.disableCache
+        }
        }),
     });
 

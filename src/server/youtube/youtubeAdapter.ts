@@ -1,6 +1,8 @@
 import { Innertube, YTNodes } from 'youtubei.js';
 import fs from 'fs';
 import path from 'path';
+import type { Types } from 'youtubei.js';
+
 import {
   YouTubeApiAdapter,
   YouTubeSearchParams,
@@ -9,6 +11,8 @@ import {
   YouTubeApiResponse,
   YouTubeVideoSearchResult,
   YouTubeVideoDetails,
+  YouTubeChannelSearchParams,
+  YouTubeChannelSearchResult
 } from './types';
 
 // Cache directory for YouTube API responses
@@ -89,45 +93,116 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
       duration: video.duration?.text || 'PT0S',
     };
   };
+  
+  // Helper to transform channel results to our format
+  /**
+   * 
+   * subscriber_count: Text { text: '@drandygalpin' },
+  video_count: Text { text: '162K subscribers' },
+   */
+  const transformChannelResult = (channel: YTNodes.Channel): YouTubeChannelSearchResult => {
+    return {
+      id: channel.id || '',
+      title: channel.author?.name || '',
+      description: channel.description_snippet?.text || '',
+      thumbnailUrl: channel.author?.thumbnails?.[0]?.url || '',
+      // subscriberCount: channel.subscriber_count?.text || '0 subscribers',
+      subscriberCount: channel.video_count?.text || '',
+      channelShortId: channel.subscriber_count?.text || '',
+      videoCount: channel.video_count?.text || '',
+      isVerified: channel.author.is_verified || false
+    };
+  };
+
+  const videoAsAtLeastMinViews = (video: YTNodes.Video, minViews: number): boolean => {
+    // Apply minimum views filter if set
+    const viewCountText = video.view_count?.text || '0';
+    const viewCount = parseInt(viewCountText.replace(/[^0-9]/g, ''), 10) || 0;
+    return viewCount >= minViews;
+  };
 
   return {
     async searchVideos(
       params: YouTubeSearchParams
     ): Promise<YouTubeApiResponse<YouTubeVideoSearchResult[]>> {
       try {
-        const { query, maxResults = 10 } = params;
-        
-        // Check cache first
-        const cacheKey = getCacheKey('search', params as unknown as Record<string, unknown>);
-        const cachedData = getCachedData<YouTubeApiResponse<YouTubeVideoSearchResult[]>>(cacheKey);
-        
-        if (cachedData) {
-          return cachedData;
-        }
+        // console.log('Search parameters:', params);
+        const { query, minViews = 0, pageNumber = 1 } = params;
         
         const youtube = await getInnertube();
-        const searchResults = await youtube.search(query, {
+        
+        // Prepare search options with filters
+        const searchOptions: Types.SearchFilters = {
           type: 'video',
-        });
+          sort_by: params.sortBy,
+          upload_date: params.upload_date,
+          duration: params.duration,
+          features: params.features
+        };
         
-        // Transform results to our format
-        const videos: YouTubeVideoSearchResult[] = [];
+        // Add additional filters if provided
+        if (params.upload_date && params.upload_date !== 'all') {
+          searchOptions.upload_date = params.upload_date;
+        }
         
-        for (const result of searchResults.results) {
-          if (videos.length >= maxResults) break;
+        if (params.type && params.type !== 'all') {
+          searchOptions.type = params.type;
+        }
+        
+        if (params.duration && params.duration !== 'all') {
+          searchOptions.duration = params.duration;
+        }
+        
+        if (params.features && params.features.length > 0) {
+          searchOptions.features = params.features;
+        }
+        
+        console.log('Search options:', searchOptions);
+        
+        // Always perform the initial search
+        let searchResults = await youtube.search(query, searchOptions);
+        
+        // If we need a page beyond the first one, use continuation to navigate to it
+        if (pageNumber > 1) {
+          console.log(`Navigating to page ${pageNumber}...`);
           
-          if (result.type === 'Video') {
-            videos.push(transformVideoResult(result as YTNodes.Video));
+          // Navigate to the requested page by calling getContinuation multiple times
+          for (let i = 2; i <= pageNumber; i++) {
+            console.log(`Getting page ${i} of search results...`);
+            searchResults = await searchResults.getContinuation();
           }
         }
         
+        // Transform results to our format
+        const videos: YouTubeVideoSearchResult[] = [];
+        const filteredVideos: YouTubeVideoSearchResult[] = [];
+        
+        for (const result of searchResults.results) {
+          if (result.type === 'Video') {
+            // Check if the video matches the search query
+            if (
+              ((result as YTNodes.Video).title.text?.toLowerCase().includes(query.toLowerCase()) ||
+               (result as YTNodes.Video).description_snippet?.text?.toLowerCase().includes(query.toLowerCase()) ||
+               (result as YTNodes.Video).author.name?.toLowerCase().includes(query.toLowerCase())) &&
+              videoAsAtLeastMinViews(result as YTNodes.Video, minViews)
+            ) {
+              videos.push(transformVideoResult(result as YTNodes.Video))
+            } else {
+              filteredVideos.push(transformVideoResult(result as YTNodes.Video))
+            }
+          }
+        }
+          
+        // Check if there are more pages available
+        const hasMorePages = typeof searchResults.getContinuation === 'function';
+          
         const response: YouTubeApiResponse<YouTubeVideoSearchResult[]> = {
           data: videos,
+          filteredVideos,
+          continuation: hasMorePages ? 'next_page' : undefined,
+          estimatedResults: searchResults.estimated_results
         };
-        
-        // Save to cache
-        saveToCache(cacheKey, response);
-        
+          
         return response;
       } catch (error) {
         console.error('Error searching YouTube videos:', error);
@@ -139,7 +214,48 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
         };
       }
     },
-    
+      
+    async searchChannels(
+      params: YouTubeChannelSearchParams
+    ): Promise<YouTubeApiResponse<YouTubeChannelSearchResult[]>> {
+      try {
+        const { query } = params;
+        
+        const youtube = await getInnertube();
+        
+        // Search for channels
+        const searchResults = await youtube.search(query, {
+          type: 'channel'
+        });
+
+        // Transform results to our format
+        const channels: YouTubeChannelSearchResult[] = [];
+        
+        for (const result of searchResults.results) {
+          if (result.type === 'Channel') {
+            const item = transformChannelResult(result as YTNodes.Channel)
+            if (item.isVerified && item.title.toLowerCase().includes(query.toLowerCase())) {
+              channels.push(item);
+            }
+          }
+        }
+        
+        const response: YouTubeApiResponse<YouTubeChannelSearchResult[]> = {
+          data: channels,
+        };
+        
+        return response;
+      } catch (error) {
+        console.error('Error searching YouTube channels:', error);
+        return {
+          error: {
+            message: error instanceof Error ? error.message : 'Unknown error occurred',
+            code: 'YOUTUBE_CHANNEL_SEARCH_ERROR',
+          },
+        };
+      }
+    },
+      
     async getVideoDetails(
       params: YouTubeVideoParams
     ): Promise<YouTubeApiResponse<YouTubeVideoDetails>> {
@@ -199,37 +315,16 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
       params: YouTubeChannelParams
     ): Promise<YouTubeApiResponse<YouTubeVideoSearchResult[]>> {
       try {
-        const { channelId, maxResults = 10 } = params;
-        
-        // Check cache first
-        const cacheKey = getCacheKey('channel', params as unknown as Record<string, unknown>);
-        const cachedData = getCachedData<YouTubeApiResponse<YouTubeVideoSearchResult[]>>(cacheKey);
-        
-        if (cachedData) {
-          return cachedData;
-        }
+        const { channelId } = params;
         
         const youtube = await getInnertube();
         const channel = await youtube.getChannel(channelId);
-        
-        if (!channel) {
-          return {
-            error: {
-              message: `Channel with ID ${channelId} not found`,
-              code: 'CHANNEL_NOT_FOUND',
-            },
-          };
-        }
-        
-        // Get channel videos
         const channelVideos = await channel.getVideos();
         
         // Transform results to our format
         const videos: YouTubeVideoSearchResult[] = [];
         
         for (const video of channelVideos.videos) {
-          if (videos.length >= maxResults) break;
-          
           if (video.type === 'Video') {
             videos.push(transformVideoResult(video as YTNodes.Video));
           }
@@ -238,9 +333,6 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
         const response: YouTubeApiResponse<YouTubeVideoSearchResult[]> = {
           data: videos,
         };
-        
-        // Save to cache
-        saveToCache(cacheKey, response);
         
         return response;
       } catch (error) {

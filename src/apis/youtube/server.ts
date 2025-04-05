@@ -2,61 +2,123 @@
  * Server-side implementation for YouTube API
  */
 
-import { youtubeAdapter } from '@/server/youtube';
-import { name } from './index';
+import { createYouTubeAdapter } from '../../server/youtube/youtubeAdapter';
 import {
   YouTubeSearchRequest,
   YouTubeSearchResponse,
   YouTubeVideoRequest,
   YouTubeVideoResponse,
   YouTubeChannelRequest,
-  YouTubeChannelResponse
+  YouTubeChannelResponse,
+  YouTubeChannelSearchRequest,
+  YouTubeChannelSearchResponse
 } from './types';
 
-// Export the base namespace
-export { name };
-
-// Define full API endpoint names
-
+// Create YouTube adapter
+const youtubeAdapter = createYouTubeAdapter();
 
 /**
- * Search for YouTube videos
+ * Search for YouTube videos and channels
  * @param request Search parameters
- * @returns Search results or error
+ * @returns Promise with search results or error
  */
-export const searchVideos = async (
+export const searchYouTubeVideos = async (
   request: YouTubeSearchRequest
 ): Promise<YouTubeSearchResponse> => {
   try {
-    const { query, maxResults } = request;
+    const { query, pageNumber } = request;
     
     // Validate input
     if (!query || typeof query !== 'string') {
       return {
         error: {
-          message: 'Query is required and must be a string',
-          code: 'INVALID_QUERY',
+          message: 'Invalid query parameter',
+          code: 'INVALID_PARAM',
+        },
+      };
+    }
+    
+    // Call the YouTube adapter with all parameters including filters for videos
+    const videoResponse = await youtubeAdapter.searchVideos({
+      query,
+      sortBy: request.filters?.sort_by,
+      upload_date: request.filters?.upload_date,
+      type: request.filters?.type,
+      duration: request.filters?.duration,
+      features: request.filters?.features,
+      minViews: request.filters?.minViews,
+      pageNumber
+    });
+    
+    // Only search for channels on the first page (not during pagination)
+    let channelResponse;
+    if (!pageNumber || pageNumber === 1) {
+      // Also search for channels with the same query
+      channelResponse = await youtubeAdapter.searchChannels({
+        query,
+      });
+    } else {
+      // Empty channel response for pagination requests
+      channelResponse = { data: [] };
+    }
+    
+    // Return the combined response with consistent structure
+    return {
+      videos: videoResponse.data,
+      filteredVideos: videoResponse.filteredVideos,
+      channels: channelResponse.data,
+      continuation: videoResponse.continuation,
+      estimatedResults: videoResponse.estimatedResults,
+      error: videoResponse.error || channelResponse.error,
+    };
+  } catch (error) {
+    console.error('Error in searchYouTubeVideos:', error);
+    return {
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+        code: 'SERVER_ERROR',
+      },
+    };
+  }
+};
+
+/**
+ * Search for YouTube channels
+ * @param request Search parameters
+ * @returns Promise with search results or error
+ */
+export const searchYouTubeChannels = async (
+  request: YouTubeChannelSearchRequest
+): Promise<YouTubeChannelSearchResponse> => {
+  try {
+    const { query } = request;
+    
+    // Validate input
+    if (!query || typeof query !== 'string') {
+      return {
+        error: {
+          message: 'Invalid query parameter',
+          code: 'INVALID_PARAM',
         },
       };
     }
     
     // Call the YouTube adapter
-    const response = await youtubeAdapter.searchVideos({
+    const response = await youtubeAdapter.searchChannels({
       query,
-      maxResults,
     });
     
     // Return the response with consistent structure
     return {
-      videos: response.data,
+      channels: response.data,
       error: response.error,
     };
   } catch (error) {
-    console.error('Error in searchVideos:', error);
+    console.error('Error in searchYouTubeChannels:', error);
     return {
       error: {
         message: error instanceof Error ? error.message : 'Unknown error occurred',
-        code: 'YOUTUBE_SEARCH_ERROR',
+        code: 'SERVER_ERROR',
       },
     };
   }
@@ -65,9 +127,9 @@ export const searchVideos = async (
 /**
  * Get YouTube video details by ID
  * @param request Video parameters
- * @returns Video details or error
+ * @returns Promise with video details or error
  */
-export const getVideoDetails = async (
+export const getYouTubeVideoDetails = async (
   request: YouTubeVideoRequest
 ): Promise<YouTubeVideoResponse> => {
   try {
@@ -77,8 +139,8 @@ export const getVideoDetails = async (
     if (!videoId || typeof videoId !== 'string') {
       return {
         error: {
-          message: 'Video ID is required and must be a string',
-          code: 'INVALID_VIDEO_ID',
+          message: 'Invalid videoId parameter',
+          code: 'INVALID_PARAM',
         },
       };
     }
@@ -94,11 +156,11 @@ export const getVideoDetails = async (
       error: response.error,
     };
   } catch (error) {
-    console.error('Error in getVideoDetails:', error);
+    console.error('Error in getYouTubeVideoDetails:', error);
     return {
       error: {
         message: error instanceof Error ? error.message : 'Unknown error occurred',
-        code: 'YOUTUBE_VIDEO_DETAILS_ERROR',
+        code: 'SERVER_ERROR',
       },
     };
   }
@@ -107,20 +169,20 @@ export const getVideoDetails = async (
 /**
  * Get videos from a YouTube channel
  * @param request Channel parameters
- * @returns Channel videos or error
+ * @returns Promise with channel videos or error
  */
-export const getChannelVideos = async (
+export const getYouTubeChannelVideos = async (
   request: YouTubeChannelRequest
 ): Promise<YouTubeChannelResponse> => {
   try {
-    const { channelId, maxResults } = request;
+    const { channelId } = request;
     
     // Validate input
     if (!channelId || typeof channelId !== 'string') {
       return {
         error: {
-          message: 'Channel ID is required and must be a string',
-          code: 'INVALID_CHANNEL_ID',
+          message: 'Invalid channelId parameter',
+          code: 'INVALID_PARAM',
         },
       };
     }
@@ -128,7 +190,6 @@ export const getChannelVideos = async (
     // Call the YouTube adapter
     const response = await youtubeAdapter.getChannelVideos({
       channelId,
-      maxResults,
     });
     
     // Return the response with consistent structure
@@ -137,12 +198,18 @@ export const getChannelVideos = async (
       error: response.error,
     };
   } catch (error) {
-    console.error('Error in getChannelVideos:', error);
+    console.error('Error in getYouTubeChannelVideos:', error);
     return {
       error: {
         message: error instanceof Error ? error.message : 'Unknown error occurred',
-        code: 'YOUTUBE_CHANNEL_VIDEOS_ERROR',
+        code: 'SERVER_ERROR',
       },
     };
   }
 };
+
+// Re-export with original names for backward compatibility
+export const searchVideos = searchYouTubeVideos;
+export const getVideoDetails = getYouTubeVideoDetails;
+export const getChannelVideos = getYouTubeChannelVideos;
+export const searchChannels = searchYouTubeChannels;

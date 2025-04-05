@@ -1,12 +1,7 @@
 import {
   Box,
   Typography,
-  Card,
-  CardContent,
-  CardMedia,
-  CardActionArea,
-  Avatar,
-  Chip
+  CardMedia
 } from '@mui/material';
 import { YouTubeVideoSearchResult } from '../../../server/youtube/types';
 
@@ -16,87 +11,81 @@ interface VideoCardProps {
   formatViewCount: (viewCount: string) => string;
 }
 
-export const VideoCard = ({ video, formatDuration, formatViewCount }: VideoCardProps) => {
+export const  VideoCard = ({ video, formatDuration, formatViewCount }: VideoCardProps) => {
   return (
-    <Card 
-      elevation={0} 
+    <Box 
       sx={{ 
-        display: 'flex', 
-        bgcolor: 'background.paper',
-        border: 'none',
-        borderRadius: 2,
-        overflow: 'hidden',
+        width: '100%',
+        cursor: 'pointer',
         '&:hover': {
           bgcolor: 'action.hover',
         }
       }}
+      onClick={() => window.open(`https://www.youtube.com/watch?v=${video.id}`, '_blank')}
     >
-      <CardActionArea 
-        sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start', textAlign: 'left' }}
-        onClick={() => window.open(`https://www.youtube.com/watch?v=${video.id}`, '_blank')}
-      >
-        <Box sx={{ position: 'relative', minWidth: { xs: 120, sm: 240 }, height: { xs: 90, sm: 135 } }}>
+      <Box sx={{ 
+        display: 'flex',
+        flexDirection: 'column',
+        p: 0
+      }}>
+        <Box sx={{ 
+          position: 'relative',
+          width: '100%',
+          mb: 1
+        }}>
           <CardMedia
             component="img"
-            sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            sx={{ 
+              width: '100%',
+              height: 'auto',
+              borderRadius: 2
+            }}
             image={video.thumbnailUrl}
             alt={video.title}
           />
           {video.duration && (
-            <Chip
-              label={formatDuration(video.duration)}
-              size="small"
+            <Box
               sx={{
                 position: 'absolute',
                 bottom: 8,
                 right: 8,
-                bgcolor: 'rgba(0, 0, 0, 0.7)',
+                bgcolor: 'rgba(0, 0, 0, 0.8)',
                 color: 'white',
                 fontWeight: 'bold',
                 fontSize: '0.75rem',
-                height: 24
+                padding: '2px 4px',
+                borderRadius: '2px',
               }}
-            />
+            >
+              {formatDuration(video.duration)}
+            </Box>
           )}
         </Box>
         
-        <CardContent sx={{ flex: '1 1 auto', p: 2 }}>
-          <Typography variant="subtitle1" component="div" fontWeight="bold" gutterBottom>
-            {video.title}
-          </Typography>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              {formatViewCount(video.viewCount)} • {video.publishedAt}
-            </Typography>
-          </Box>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Avatar 
-              sx={{ width: 24, height: 24, mr: 1 }}
-              alt={video.channelTitle}
-              src="/static/images/avatar/1.jpg" // Placeholder, would need actual channel avatar
-            />
-            <Typography variant="body2" color="text.secondary">
-              {video.channelTitle}
-            </Typography>
-          </Box>
-          
-          <Typography 
-            variant="body2" 
-            color="text.secondary" 
-            sx={{ 
-              mt: 1,
-              display: '-webkit-box',
-              overflow: 'hidden',
-              WebkitBoxOrient: 'vertical',
-              WebkitLineClamp: 2,
-            }}
-          >
-            {video.description}
-          </Typography>
-        </CardContent>
-      </CardActionArea>
-    </Card>
+        <Typography 
+          variant="h6" 
+          component="div" 
+          sx={{
+            fontSize: '1.1rem',
+            fontWeight: 'bold',
+            mb: 0.5,
+            textAlign: 'left'
+          }}
+        >
+          {video.title}
+        </Typography>
+        
+        <Typography 
+          variant="body2" 
+          sx={{ 
+            fontSize: '0.8rem',
+            color: 'text.secondary',
+            textAlign: 'left'
+          }}
+        >
+          {video.channelTitle} | {formatViewCount(video.viewCount)} | {video.publishedAt}
+        </Typography>
+      </Box>
+    </Box>
   );
 };

@@ -10,12 +10,14 @@ import {
   YouTubeVideoRequest,
   YouTubeVideoResponse,
   YouTubeChannelRequest,
-  YouTubeChannelResponse
+  YouTubeChannelResponse,
+  YouTubeChannelSearchRequest,
+  YouTubeChannelSearchResponse
 } from './types';
-import { searchApiName, videoApiName, channelApiName } from './index';
+import { searchApiName, videoApiName, channelApiName, channelSearchApiName } from './index';
 
 /**
- * Search for YouTube videos
+ * Search for YouTube videos and channels
  * @param request Search parameters
  * @returns Promise with search results or error
  */
@@ -25,6 +27,20 @@ export const searchYouTubeVideos = async (
   return apiClient.call<CacheResult<YouTubeSearchResponse>, YouTubeSearchRequest>(
     searchApiName,
     request
+  );
+};
+
+/**
+ * Search for YouTube channels
+ * @param request Search parameters
+ * @returns Promise with search results or error
+ */
+export const searchYouTubeChannels = async (
+  request: YouTubeChannelSearchRequest
+): Promise<CacheResult<YouTubeChannelSearchResponse>> => {
+  return apiClient.call<CacheResult<YouTubeChannelSearchResponse>, YouTubeChannelSearchRequest>(
+    channelSearchApiName,
+    request,
   );
 };
 

@@ -18,8 +18,13 @@ export const formatViewCount = (viewCount: string): string => {
  * Format duration from ISO 8601 format (PT1H2M3S) to readable format (1:02:03)
  */
 export const formatDuration = (duration: string): string => {
+  //match this 2:19:04
+  if (duration.match(/^(\d+):?(\d+):?(\d+)?/)) {
+    return duration;
+  }
   // Handle empty or invalid duration
   if (!duration || !duration.startsWith('PT')) return '';
+
   
   let hours = 0;
   let minutes = 0;

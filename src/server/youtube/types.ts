@@ -2,6 +2,9 @@
  * Types for the YouTube API adapter
  */
 
+// Import SortBy type directly from youtubei.js
+import type { Types } from 'youtubei.js';
+
 // Search results type
 export interface YouTubeVideoSearchResult {
   id: string;
@@ -14,6 +17,18 @@ export interface YouTubeVideoSearchResult {
   duration: string; // in ISO 8601 format (PT1H2M3S)
 }
 
+// Channel search result type
+export interface YouTubeChannelSearchResult {
+  id: string;
+  channelShortId: string;
+  title: string;
+  description: string;
+  thumbnailUrl: string;
+  subscriberCount: string;
+  videoCount: string;
+  isVerified: boolean;
+}
+
 // Video details type
 export interface YouTubeVideoDetails extends YouTubeVideoSearchResult {
   channelId: string;
@@ -23,10 +38,29 @@ export interface YouTubeVideoDetails extends YouTubeVideoSearchResult {
   commentCount: string;
 }
 
-// Search parameters
+// Define our own YouTubeSortOption type matching the YouTube API's sort options
+// These values match the SortBy type from youtubei.js
+export type YouTubeSortOption = Types.SortBy;
+
+// Search parameters with filter options
 export interface YouTubeSearchParams {
   query: string;
-  maxResults?: number; // Default can be set in the implementation
+  sortBy?: YouTubeSortOption;
+  
+  // Filter options
+  upload_date?: Types.UploadDate;
+  type?: Types.SearchType;
+  duration?: Types.Duration;
+  features?: Types.Feature[];
+  minViews?: number; // Minimum view count filter
+  
+  // Pagination
+  pageNumber?: number; // Page number for pagination
+}
+
+// Channel search parameters
+export interface YouTubeChannelSearchParams {
+  query: string;
 }
 
 // Get video parameters
@@ -37,7 +71,6 @@ export interface YouTubeVideoParams {
 // Get channel videos parameters
 export interface YouTubeChannelParams {
   channelId: string;
-  maxResults?: number; // Default can be set in the implementation
 }
 
 // Error type
@@ -49,7 +82,10 @@ export interface YouTubeApiError {
 // Response wrapper type with error handling
 export interface YouTubeApiResponse<T> {
   data?: T;
+  filteredVideos?: T;
   error?: YouTubeApiError;
+  continuation?: string;
+  estimatedResults?: number;
 }
 
 // Adapter interface
@@ -60,6 +96,13 @@ export interface YouTubeApiAdapter {
    * @returns Promise with search results or error
    */
   searchVideos(params: YouTubeSearchParams): Promise<YouTubeApiResponse<YouTubeVideoSearchResult[]>>;
+  
+  /**
+   * Search for channels by query
+   * @param params Search parameters
+   * @returns Promise with search results or error
+   */
+  searchChannels(params: YouTubeChannelSearchParams): Promise<YouTubeApiResponse<YouTubeChannelSearchResult[]>>;
   
   /**
    * Get video details by ID
