@@ -330,30 +330,31 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
         
         // Get channel videos
         async function getVideos() {
-          let channelVideos = await channel.getVideos();
-          // const allVideos = [...channelVideos.videos]
+          const channelVideos = await channel.getVideos();
+          let currentVideos = channelVideos.videos;
+          let hasContinuation = channelVideos.has_continuation;
           
           // If we need a page beyond the first one, use continuation to navigate to it
           if (pageNumber && pageNumber > 1) {
             console.log(`Navigating to page ${pageNumber}...`);
           
-          // Navigate to the requested page by calling getContinuation multiple times
-          for (let i = 2; i <= pageNumber; i++) {
-            channelVideos = (await channelVideos.getContinuation()).videos
-            // allVideos.push(...moreVideos.videos);
-            // if (!moreVideos.has_continuation) {
-            //   break;
-            // }
+            // Navigate to the requested page by calling getContinuation multiple times
+            for (let i = 2; i <= pageNumber; i++) {
+              if (hasContinuation) {
+                const continuation = await channelVideos.getContinuation();
+                currentVideos = continuation.videos;
+                hasContinuation = continuation.has_continuation;
+              } else {
+                break;
+              }
+            }
           }
-        }
 
           return {
-            videos: channelVideos.videos,
-            hasContinuation: channelVideos.has_continuation
-          }
+            videos: currentVideos,
+            hasContinuation: hasContinuation
+          };
         }
-
-
 
         const { videos: channelVideos, hasContinuation } = await getVideos();
         
