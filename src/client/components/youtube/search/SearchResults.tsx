@@ -11,42 +11,41 @@ import {
   CardContent,
   CircularProgress
 } from '@mui/material';
-import { YouTubeVideoSearchResult, YouTubeChannelSearchResult } from '../../../server/youtube/types';
+import { YouTubeVideoSearchResult, YouTubeChannelSearchResult } from '../../../../server/youtube/types';
 import { VideoCard } from './VideoCard';
 import { ChannelCard } from './ChannelCard';
 import { useState } from 'react';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import { formatDuration, formatViewCount } from './utils';
 
 interface SearchResultsProps {
-  searchQuery: string | undefined;
+  title?: string;
+  searchQuery?: string;
   isSearching: boolean;
   searchResults: YouTubeVideoSearchResult[];
-  filteredVideos: YouTubeVideoSearchResult[];
+  filteredVideos?: YouTubeVideoSearchResult[];
   channelResults?: YouTubeChannelSearchResult[];
   error: string | null;
-  formatDuration: (duration: string) => string;
-  formatViewCount: (viewCount: string) => string;
-  hasMoreResults: boolean;
+  hasMoreResults?: boolean;
   estimatedResults?: number;
-  onLoadMore: () => void;
-  isLoadingMore: boolean;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
 }
 
 export const SearchResults = ({
+  title,
   searchQuery,
   isSearching,
   searchResults,
   channelResults = [],
   error,
-  formatDuration,
-  formatViewCount,
-  filteredVideos,
-  hasMoreResults,
+  filteredVideos = [],
+  hasMoreResults = false,
   estimatedResults,
   onLoadMore,
-  isLoadingMore
+  isLoadingMore = false
 }: SearchResultsProps) => {
 
   const [showFilteredVideos, setShowFilteredVideos] = useState(false);
@@ -68,19 +67,23 @@ export const SearchResults = ({
     );
   }
 
-  if (searchQuery && !isSearching && searchResults.length === 0 && channelResults.length === 0) {
+  if (!isSearching && searchResults.length === 0 && channelResults.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
         <Typography variant="h5" gutterBottom>No results found</Typography>
         <Typography variant="body1" color="text.secondary">
-          Try different keywords or check your spelling
+          {searchQuery ? 'Try different keywords or check your spelling' : 'No videos available'}
         </Typography>
       </Box>
     );
   }
 
-  if (searchResults.length === 0 && channelResults.length === 0) {
-    return null;
+  if (searchResults.length === 0 && channelResults.length === 0 && isSearching) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
   }
   
   // Format the estimated results count
@@ -99,17 +102,21 @@ export const SearchResults = ({
   return (
     <Box sx={{ mt: 2 }}>
       
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        mb: 1, 
-        flexDirection: 'column',
-        gap: 2
-      }}>
-        <Typography variant="body1" sx={{ fontWeight: 500, color: 'text.secondary' }}>
-          About {formatEstimatedResults(estimatedResults) || searchResults.length + channelResults.length} results for &ldquo;{searchQuery}&rdquo;
-        </Typography>
-      </Box>
+      {(title || searchQuery) && (
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          mb: 1, 
+          flexDirection: 'column',
+          gap: 2
+        }}>
+          <Typography variant="body1" sx={{ fontWeight: 500, color: 'text.secondary' }}>
+            {title ? title : (
+              searchQuery ? `About ${formatEstimatedResults(estimatedResults) || searchResults.length + channelResults.length} results for "${searchQuery}"` : ''
+            )}
+          </Typography>
+        </Box>
+      )}
       
       <Divider sx={{ mb: 2 }} />
       
@@ -153,7 +160,7 @@ export const SearchResults = ({
       </Box>
       
       {/* Load More Button */}
-      {hasMoreResults && (
+      {hasMoreResults && onLoadMore && (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
           <Button
             variant="outlined"
@@ -200,7 +207,7 @@ export const SearchResults = ({
                     Filtered Videos
                   </Typography>
                   <Chip 
-                    label={filteredVideos.length} 
+                    label={`${filteredVideos.length}`} 
                     size="small" 
                     color="primary" 
                     sx={{ ml: 1 }}
@@ -208,24 +215,26 @@ export const SearchResults = ({
                 </Box>
                 <IconButton
                   onClick={() => setShowFilteredVideos(!showFilteredVideos)}
-                  aria-expanded={showFilteredVideos}
-                  aria-label="show filtered videos"
-                  sx={{ 
+                  sx={{
                     transform: showFilteredVideos ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s'
+                    transition: 'transform 0.3s'
                   }}
                 >
                   <ExpandMoreIcon />
                 </IconButton>
               </Box>
+              
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                These videos matched your filters but may not be directly relevant to your search query.
+              </Typography>
             </CardContent>
+            
             <Collapse in={showFilteredVideos}>
-              <CardContent sx={{ pt: 0 }}>
-                <Divider sx={{ my: 2 }} />
+              <CardContent>
                 <Box sx={{ 
                   display: 'flex', 
                   flexWrap: 'wrap', 
-                  margin: -1 
+                  margin: -1
                 }}>
                   {filteredVideos.map((video) => (
                     <Box 
@@ -237,7 +246,8 @@ export const SearchResults = ({
                           md: '33.333%', 
                           lg: '25%' 
                         }, 
-                        padding: 1 
+                        paddingLeft: 1,
+                        paddingRight: 1
                       }}
                     >
                       <VideoCard 
@@ -245,6 +255,7 @@ export const SearchResults = ({
                         formatDuration={formatDuration} 
                         formatViewCount={formatViewCount} 
                       />
+                      <Divider sx={{ my: 1 }} />
                     </Box>
                   ))}
                 </Box>

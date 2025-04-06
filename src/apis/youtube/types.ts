@@ -7,7 +7,8 @@ import {
   YouTubeVideoDetails, 
   YouTubeSortOption as ServerYouTubeSortOption,
   YouTubeChannelSearchResult,
-  YouTubeApiError
+  YouTubeApiError,
+  YouTubeChannelInfo
 } from '../../server/youtube/types';
 import type { Types } from 'youtubei.js';
 
@@ -15,7 +16,8 @@ import type { Types } from 'youtubei.js';
 export type { 
   YouTubeVideoSearchResult,
   YouTubeVideoDetails,
-  YouTubeChannelSearchResult
+  YouTubeChannelSearchResult,
+  YouTubeChannelInfo
 };
 
 // Sort options - matching the server-side type
@@ -43,7 +45,7 @@ export interface YouTubeSearchResponse {
   videos?: YouTubeVideoSearchResult[];
   filteredVideos?: YouTubeVideoSearchResult[];
   channels?: YouTubeChannelSearchResult[];
-  continuation?: string;
+  continuation?: boolean;
   estimatedResults?: number;
   error?: YouTubeApiError;
 }
@@ -67,16 +69,5 @@ export interface YouTubeVideoRequest {
 // Video details response type
 export interface YouTubeVideoResponse {
   video?: YouTubeVideoDetails;
-  error?: YouTubeApiError;
-}
-
-// Channel videos request type
-export interface YouTubeChannelRequest {
-  channelId: string;
-}
-
-// Channel videos response type
-export interface YouTubeChannelResponse {
-  videos?: YouTubeVideoSearchResult[];
   error?: YouTubeApiError;
 }

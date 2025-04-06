@@ -8,9 +8,9 @@ import { searchVideos, getVideoDetails, getChannelVideos } from "./youtube/serve
 import { GetAllAIUsageRequest, GetAIUsageSummaryRequest } from "./monitoring/aiUsage/types";
 import { 
   YouTubeSearchRequest, 
-  YouTubeVideoRequest, 
-  YouTubeChannelRequest 
+  YouTubeVideoRequest,  
 } from "./youtube/types";
+import { YouTubeChannelParams } from "@/server/youtube";
 
 
 export const apiHandlers: ApiHandlers = {
@@ -37,6 +37,6 @@ export const apiHandlers: ApiHandlers = {
     process: (params: unknown) => getVideoDetails(params as YouTubeVideoRequest) as Promise<unknown>
   },
   [channelApiName]: { 
-    process: (params: unknown) => getChannelVideos(params as YouTubeChannelRequest) as Promise<unknown>
+    process: (params: unknown) => getChannelVideos(params as YouTubeChannelParams) as Promise<unknown>
   },
 };

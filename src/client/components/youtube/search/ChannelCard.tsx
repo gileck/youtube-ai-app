@@ -7,7 +7,8 @@ import {
   Avatar
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { YouTubeChannelSearchResult } from '../../../server/youtube/types';
+import { YouTubeChannelSearchResult } from '../../../../server/youtube/types';
+import { useRouter } from '../../../router';
 
 interface ChannelCardProps {
   channel: YouTubeChannelSearchResult;
@@ -15,6 +16,11 @@ interface ChannelCardProps {
 
 export const ChannelCard: React.FC<ChannelCardProps> = ({ channel }) => {
   const subscriberCount = channel.subscriberCount;
+  const { navigate } = useRouter();
+  
+  const handleChannelClick = () => {
+    navigate(`/channel/${channel.id}`);
+  };
   
   return (
     <Card 
@@ -23,8 +29,13 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({ channel }) => {
         mb: 3, 
         borderRadius: 2,
         overflow: 'hidden',
-        boxShadow: 1
+        boxShadow: 1,
+        cursor: 'pointer',
+        '&:hover': {
+          bgcolor: 'action.hover',
+        }
       }}
+      onClick={handleChannelClick}
     >
       <Box sx={{ 
         display: 'flex', 
@@ -64,20 +75,18 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({ channel }) => {
           <Typography variant="body2" color="text.secondary" sx={{ mr: 2 }}>
             {subscriberCount}
           </Typography>
-          {/* <Typography variant="body2" color="text.secondary">
-            {channel.videoCount}
-          </Typography> */}
         </Box>
         <Box>
           <Button 
             variant="contained" 
             color="primary" 
             size="small"
-            href={`https://www.youtube.com/channel/${channel.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(`https://www.youtube.com/channel/${channel.id}`, '_blank');
+            }}
           >
-            Visit Channel
+            Visit YouTube Channel
           </Button>
         </Box>
       </Box>

@@ -2,17 +2,18 @@
  * Server-side implementation for YouTube API
  */
 
+import { YouTubeChannelResponse } from '@/shared/types/youtube';
 import { createYouTubeAdapter } from '../../server/youtube/youtubeAdapter';
 import {
   YouTubeSearchRequest,
   YouTubeSearchResponse,
   YouTubeVideoRequest,
   YouTubeVideoResponse,
-  YouTubeChannelRequest,
-  YouTubeChannelResponse,
   YouTubeChannelSearchRequest,
-  YouTubeChannelSearchResponse
+  YouTubeChannelSearchResponse,
+  
 } from './types';
+import { YouTubeChannelParams } from '@/server/youtube';
 
 // Create YouTube adapter
 const youtubeAdapter = createYouTubeAdapter();
@@ -172,7 +173,7 @@ export const getYouTubeVideoDetails = async (
  * @returns Promise with channel videos or error
  */
 export const getYouTubeChannelVideos = async (
-  request: YouTubeChannelRequest
+  request: YouTubeChannelParams
 ): Promise<YouTubeChannelResponse> => {
   try {
     const { channelId } = request;
@@ -188,15 +189,7 @@ export const getYouTubeChannelVideos = async (
     }
     
     // Call the YouTube adapter
-    const response = await youtubeAdapter.getChannelVideos({
-      channelId,
-    });
-    
-    // Return the response with consistent structure
-    return {
-      videos: response.data,
-      error: response.error,
-    };
+    return youtubeAdapter.getChannelVideos(request);
   } catch (error) {
     console.error('Error in getYouTubeChannelVideos:', error);
     return {

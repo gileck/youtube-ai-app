@@ -4,10 +4,11 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import { useRouter } from '../../router';
 import { searchYouTubeVideos } from '../../../apis/youtube/client';
 import { YouTubeVideoSearchResult, YouTubeChannelSearchResult } from '../../../server/youtube/types';
-import { SearchForm } from './SearchForm';
-import { SearchResults } from './SearchResults';
-import { formatDuration, formatViewCount } from './utils';
-import { FilterDialog } from './FilterDialog';
+import { 
+  SearchForm, 
+  SearchResults,
+  FilterDialog
+} from '../../components/youtube/search';
 import { YouTubeSearchFilters } from '../../../apis/youtube/types';
 
 // Local storage key for filters
@@ -99,7 +100,7 @@ export const Search = () => {
         }
         
         // Check if there are more results available
-        setHasMoreResults(response.data.continuation !== undefined);
+        setHasMoreResults(response.data.continuation || false);
         
         // Set estimated results count
         if (response.data.estimatedResults) {
@@ -134,6 +135,10 @@ export const Search = () => {
       // Update URL with search query
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`, { replace: true });
     }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
   };
 
   // Handle loading more results
@@ -177,10 +182,11 @@ export const Search = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default', p:0 }}>
       <SearchForm
-          searchQuery={searchQuery}
-          onSearchChange={handleSearchChange}
-          onSearchSubmit={handleSearchSubmit}
-        />
+        searchQuery={searchQuery}
+        onSearchChange={handleSearchChange}
+        onSearchSubmit={handleSearchSubmit}
+        onClearSearch={handleClearSearch}
+      />
       <Box sx={{ 
         alignItems: 'center', 
         display: 'flex',
@@ -199,8 +205,8 @@ export const Search = () => {
       </Box>
       
       <Container maxWidth="lg" sx={{ flex: 1, p: 0 }}>
-        {isSearching ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        {isSearching && searchResults.length === 0 ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
             <CircularProgress />
           </Box>
         ) : (
@@ -211,8 +217,6 @@ export const Search = () => {
             filteredVideos={filteredVideos}
             channelResults={channelResults}
             error={error}
-            formatDuration={formatDuration}
-            formatViewCount={formatViewCount}
             hasMoreResults={hasMoreResults}
             estimatedResults={estimatedResults}
             onLoadMore={handleLoadMore}
@@ -221,12 +225,11 @@ export const Search = () => {
         )}
       </Container>
       
-      {/* Filter Dialog */}
       <FilterDialog
         open={isFilterDialogOpen}
         onClose={handleCloseFilterDialog}
+        initialFilters={filters}
         onApplyFilters={handleApplyFilters}
-        currentFilters={filters}
       />
     </Box>
   );

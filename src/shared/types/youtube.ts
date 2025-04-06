@@ -4,6 +4,8 @@
  * used across both server and client code.
  */
 
+import { YouTubeChannelInfo } from '@/apis/youtube';
+import { YouTubeChannelParams } from '@/server/youtube';
 import type { Types } from 'youtubei.js';
 
 // ==========================================
@@ -15,13 +17,14 @@ import type { Types } from 'youtubei.js';
  */
 export interface YouTubeVideoSearchResult {
   id: string;
+  channelId: string;
   title: string;
   description: string;
   thumbnailUrl: string;
   channelTitle: string;
   publishedAt: string;
   viewCount: string;
-  duration: string; // in ISO 8601 format (PT1H2M3S)
+  duration: string; 
 }
 
 /**
@@ -81,7 +84,7 @@ export interface YouTubeSearchParams {
   minViews?: number; // Minimum view count filter
   
   // Pagination
-  continuation?: string;
+  continuation?: boolean;
   pageNumber?: number; // Page number for pagination
 }
 
@@ -100,20 +103,13 @@ export interface YouTubeVideoParams {
 }
 
 /**
- * Channel videos parameters (server-side)
- */
-export interface YouTubeChannelParams {
-  channelId: string;
-}
-
-/**
  * Response wrapper type with error handling (server-side)
  */
 export interface YouTubeApiResponse<T> {
   data?: T;
   filteredVideos?: T;
   error?: YouTubeApiError;
-  continuation?: string;
+  continuation?: boolean;
   estimatedResults?: number;
 }
 
@@ -139,7 +135,7 @@ export interface YouTubeSearchFilters {
 export interface YouTubeSearchRequest {
   query: string;
   filters?: YouTubeSearchFilters;
-  continuation?: string;
+  continuation?: boolean;
   pageNumber?: number;
 }
 
@@ -150,7 +146,7 @@ export interface YouTubeSearchResponse {
   videos?: YouTubeVideoSearchResult[];
   filteredVideos?: YouTubeVideoSearchResult[];
   channels?: YouTubeChannelSearchResult[];
-  continuation?: string;
+  continuation?: boolean;
   estimatedResults?: number;
   error?: YouTubeApiError;
 }
@@ -196,8 +192,18 @@ export interface YouTubeChannelRequest {
  * Channel videos response type (client-side)
  */
 export interface YouTubeChannelResponse {
-  videos?: YouTubeVideoSearchResult[];
-  error?: YouTubeApiError;
+  data?: {
+    videos: YouTubeVideoSearchResult[];
+    channelInfo: YouTubeChannelInfo;
+    continuation: boolean;
+    estimatedResults: number;
+  }
+  error?: YouTubeApiError
+}
+
+
+export interface ErrorResponse {
+  error: YouTubeApiError
 }
 
 /**
@@ -230,5 +236,5 @@ export interface YouTubeApiAdapter {
    * @param params Channel parameters
    * @returns Promise with channel videos or error
    */
-  getChannelVideos(params: YouTubeChannelParams): Promise<YouTubeApiResponse<YouTubeVideoSearchResult[]>>;
+  getChannelVideos(params: YouTubeChannelParams): Promise<YouTubeChannelResponse>;
 }

@@ -3,7 +3,8 @@ import {
   Typography,
   CardMedia
 } from '@mui/material';
-import { YouTubeVideoSearchResult } from '../../../server/youtube/types';
+import { YouTubeVideoSearchResult } from '../../../../server/youtube/types';
+import { useRouter } from '../../../router';
 
 interface VideoCardProps {
   video: YouTubeVideoSearchResult;
@@ -11,7 +12,14 @@ interface VideoCardProps {
   formatViewCount: (viewCount: string) => string;
 }
 
-export const  VideoCard = ({ video, formatDuration, formatViewCount }: VideoCardProps) => {
+export const VideoCard = ({ video, formatDuration, formatViewCount }: VideoCardProps) => {
+  const { navigate } = useRouter();
+  
+  const handleChannelClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/channel/${video.channelId}`);
+  };
+
   return (
     <Box 
       sx={{ 
@@ -75,16 +83,34 @@ export const  VideoCard = ({ video, formatDuration, formatViewCount }: VideoCard
           {video.title}
         </Typography>
         
-        <Typography 
-          variant="body2" 
-          sx={{ 
-            fontSize: '0.8rem',
-            color: 'text.secondary',
-            textAlign: 'left'
-          }}
-        >
-          {video.channelTitle} | {formatViewCount(video.viewCount)} | {video.publishedAt}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontSize: '0.8rem',
+              color: 'primary.main',
+              textAlign: 'left',
+              cursor: 'pointer',
+              '&:hover': {
+                textDecoration: 'underline'
+              }
+            }}
+            onClick={handleChannelClick}
+          >
+            {video.channelTitle}
+          </Typography>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              fontSize: '0.8rem',
+              color: 'text.secondary',
+              textAlign: 'left',
+              ml: 0.5
+            }}
+          >
+            | {formatViewCount(video.viewCount)} | {video.publishedAt}
+          </Typography>
+        </Box>
       </Box>
     </Box>
   );

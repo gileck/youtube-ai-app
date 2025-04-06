@@ -9,12 +9,12 @@ import {
   YouTubeSearchResponse,
   YouTubeVideoRequest,
   YouTubeVideoResponse,
-  YouTubeChannelRequest,
-  YouTubeChannelResponse,
   YouTubeChannelSearchRequest,
   YouTubeChannelSearchResponse
 } from './types';
 import { searchApiName, videoApiName, channelApiName, channelSearchApiName } from './index';
+import { YouTubeChannelParams } from '@/server/youtube';
+import { YouTubeChannelResponse } from '@/shared/types/youtube';
 
 /**
  * Search for YouTube videos and channels
@@ -64,9 +64,9 @@ export const getYouTubeVideoDetails = async (
  * @returns Promise with channel videos or error
  */
 export const getYouTubeChannelVideos = async (
-  request: YouTubeChannelRequest
+  request: YouTubeChannelParams
 ): Promise<CacheResult<YouTubeChannelResponse>> => {
-  return apiClient.call<CacheResult<YouTubeChannelResponse>, YouTubeChannelRequest>(
+  return apiClient.call<CacheResult<YouTubeChannelResponse>, YouTubeChannelParams>(
     channelApiName,
     request
   );

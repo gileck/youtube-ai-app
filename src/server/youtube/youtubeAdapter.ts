@@ -1,6 +1,4 @@
 import { Innertube, YTNodes } from 'youtubei.js';
-import fs from 'fs';
-import path from 'path';
 import type { Types } from 'youtubei.js';
 
 import {
@@ -12,22 +10,16 @@ import {
   YouTubeVideoSearchResult,
   YouTubeVideoDetails,
   YouTubeChannelSearchParams,
-  YouTubeChannelSearchResult
+  YouTubeChannelSearchResult,
+  YouTubeChannelInfo
 } from './types';
-
-// Cache directory for YouTube API responses
-const CACHE_DIR = path.join(process.cwd(), '.cache', 'youtube');
-
-// Ensure cache directory exists
-if (!fs.existsSync(CACHE_DIR)) {
-  fs.mkdirSync(CACHE_DIR, { recursive: true });
-}
+import { YouTubeChannelResponse } from '@/shared/types/youtube';
 
 /**
  * YouTube API adapter implementation using youtubei.js
  */
 export const createYouTubeAdapter = (): YouTubeApiAdapter => {
-  // Initialize Innertube instance lazily
+  // Initialize Innertube instance lazily`
   let innertubeInstance: Innertube | null = null;
   
   const getInnertube = async (): Promise<Innertube> => {
@@ -53,33 +45,6 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
     return result;
   };
 
-  // Helper to get cache key
-  const getCacheKey = (type: string, params: Record<string, unknown>): string => {
-    return path.join(CACHE_DIR, `${type}-${JSON.stringify(params)}.json`);
-  };
-
-  // Helper to get cached data
-  const getCachedData = <T>(cacheKey: string): T | null => {
-    try {
-      if (fs.existsSync(cacheKey)) {
-        const cacheData = fs.readFileSync(cacheKey, 'utf-8');
-        return JSON.parse(cacheData) as T;
-      }
-    } catch (error) {
-      console.error('Error reading cache:', error);
-    }
-    return null;
-  };
-
-  // Helper to save data to cache
-  const saveToCache = <T>(cacheKey: string, data: T): void => {
-    try {
-      fs.writeFileSync(cacheKey, JSON.stringify(data), 'utf-8');
-    } catch (error) {
-      console.error('Error writing to cache:', error);
-    }
-  };
-
   // Helper to transform video results to our format
   const transformVideoResult = (video: YTNodes.Video): YouTubeVideoSearchResult => {
     return {
@@ -88,6 +53,7 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
       description: video.description || '',
       thumbnailUrl: video.thumbnails?.[0]?.url || '',
       channelTitle: video.author?.name || '',
+      channelId: video.author?.id || '',
       publishedAt: video.published?.text || new Date().toISOString(), // Fallback to current date if published date is not available
       viewCount: video.view_count?.text || '0',
       duration: video.duration?.text || 'PT0S',
@@ -120,6 +86,33 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
     const viewCount = parseInt(viewCountText.replace(/[^0-9]/g, ''), 10) || 0;
     return viewCount >= minViews;
   };
+
+  function parseVideoDuration(duration: string): number {
+    if (duration.match(/^\d+:\d+:\d+$/)) {
+      const [hours, minutes, seconds] = duration.split(':').map(Number);
+      return hours * 3600 + minutes * 60 + seconds;
+    } else if (duration.match(/^\d+:\d+$/)) {
+      const [minutes, seconds] = duration.split(':').map(Number);
+      return minutes * 60 + seconds;
+    } else if (duration.match(/^\d+$/)) {
+      return parseInt(duration, 10);
+    } else {
+      console.log('Invalid duration format:', duration);
+      return 0;
+    }
+  }
+
+  function applyFilters(video: YouTubeVideoSearchResult, filters: YouTubeChannelParams['filters']): boolean {
+    if (!filters) {
+      return true;
+    }
+    if (filters['duration'] && filters['duration'] === 'long') {
+      // console.log('Applying long duration filter', video.duration, parseVideoDuration(video.duration));
+      const durationInSeconds = parseVideoDuration(video.duration);
+      return durationInSeconds >= 60 * 30; // 30 minutes
+    }
+    return true;
+  }
 
   return {
     async searchVideos(
@@ -199,7 +192,7 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
         const response: YouTubeApiResponse<YouTubeVideoSearchResult[]> = {
           data: videos,
           filteredVideos,
-          continuation: hasMorePages ? 'next_page' : undefined,
+          continuation: hasMorePages ? true : false,
           estimatedResults: searchResults.estimated_results
         };
           
@@ -262,14 +255,6 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
       try {
         const { videoId } = params;
         
-        // Check cache first
-        const cacheKey = getCacheKey('video', params as unknown as Record<string, unknown>);
-        const cachedData = getCachedData<YouTubeApiResponse<YouTubeVideoDetails>>(cacheKey);
-        
-        if (cachedData) {
-          return cachedData;
-        }
-        
         const youtube = await getInnertube();
         const videoInfo = await youtube.getInfo(videoId);
         
@@ -296,8 +281,6 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
           data: videoDetails,
         };
         
-        // Save to cache
-        saveToCache(cacheKey, response);
         
         return response;
       } catch (error) {
@@ -313,28 +296,166 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
 
     async getChannelVideos(
       params: YouTubeChannelParams
-    ): Promise<YouTubeApiResponse<YouTubeVideoSearchResult[]>> {
+    ): Promise<YouTubeChannelResponse> {
       try {
-        const { channelId } = params;
+        const { channelId, filters, pageNumber } = params;
+
+        console.log({filters});
+        
+        
+        console.log('Getting videos for channel:', channelId);
         
         const youtube = await getInnertube();
+
+        console.log('channelId:', channelId);
+        
+        // Get channel info
         const channel = await youtube.getChannel(channelId);
-        const channelVideos = await channel.getVideos();
+
+        // console.log('channel:', channel);
+      
+        
+        // Extract channel information directly from channel metadata
+        const channelInfo: YouTubeChannelInfo = {
+          id: channelId,
+          title: channel.metadata?.title || '',
+          description: channel.metadata?.description || '',
+          thumbnailUrl: channel.metadata?.avatar?.[0]?.url || channel.metadata?.thumbnail?.[0]?.url || '',
+          subscriberCount: '',
+          videoCount: '',
+          isVerified: false
+        };
+        
+        // console.log('Channel info:', channelInfo);
+        
+        // Get channel videos
+        async function getVideos() {
+          let channelVideos = await channel.getVideos();
+          // const allVideos = [...channelVideos.videos]
+          
+          // If we need a page beyond the first one, use continuation to navigate to it
+          if (pageNumber && pageNumber > 1) {
+            console.log(`Navigating to page ${pageNumber}...`);
+          
+          // Navigate to the requested page by calling getContinuation multiple times
+          for (let i = 2; i <= pageNumber; i++) {
+            channelVideos = (await channelVideos.getContinuation()).videos
+            // allVideos.push(...moreVideos.videos);
+            // if (!moreVideos.has_continuation) {
+            //   break;
+            // }
+          }
+        }
+
+          return {
+            videos: channelVideos.videos,
+            hasContinuation: channelVideos.has_continuation
+          }
+        }
+
+
+
+        const { videos: channelVideos, hasContinuation } = await getVideos();
+        
+        
+
+        // console.log('channelVideos:', channelVideos.videos);
+        // channelVideos.applyFilter();
+        
+        // console.log('Channel videos count:', channelVideos.videos.length);
         
         // Transform results to our format
         const videos: YouTubeVideoSearchResult[] = [];
         
-        for (const video of channelVideos.videos) {
+        for (const video of channelVideos) {
           if (video.type === 'Video') {
-            videos.push(transformVideoResult(video as YTNodes.Video));
+            const videoResult = transformVideoResult(video as YTNodes.Video);
+            
+            // Ensure channel info is properly set if missing
+            if (!videoResult.channelTitle && channelInfo.title) {
+              videoResult.channelTitle = channelInfo.title;
+            }
+            
+            if (!videoResult.channelId) {
+              videoResult.channelId = channelId;
+            }
+
+            if (applyFilters(videoResult, filters)) {
+              videos.push(videoResult);
+            }
           }
         }
+
+        const sortedVideos = videos.sort((a, b) => {
+          const sortBy = filters?.sort_by || 'upload_date';
+          if (sortBy === 'upload_date') {
+            return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+          }
+          if (sortBy === 'view_count') {
+            const viewCountA = Number(a.viewCount.replace(/,/g, '').replace(' views', ''));
+            const viewCountB = Number(b.viewCount.replace(/,/g, '').replace(' views', ''));
+            return viewCountB - viewCountA;
+          }
+          return 0;
+        });
         
-        const response: YouTubeApiResponse<YouTubeVideoSearchResult[]> = {
-          data: videos,
-        };
+        // // If we have no videos but the channel exists, try to get videos from the channel's home tab
+        // if (videos.length === 0 && channelInfo.title) {
+        //   try {
+        //     const homeTab = await channel.getHome();
+        //     console.log('Getting videos from home tab');
+            
+        //     // Process videos from home tab
+        //     if (homeTab && typeof homeTab === 'object') {
+        //       // Try to process videos from contents
+        //       if ('contents' in homeTab && Array.isArray(homeTab.contents)) {
+        //         for (const item of homeTab.contents) {
+        //           if (item && typeof item === 'object' && 'type' in item && item.type === 'Video') {
+        //             const videoResult = transformVideoResult(item as YTNodes.Video);
+        //             if (!videoResult.channelTitle && channelInfo.title) {
+        //               videoResult.channelTitle = channelInfo.title;
+        //             }
+        //             if (!videoResult.channelId) {
+        //               videoResult.channelId = channelId;
+        //             }
+        //             videos.push(videoResult);
+        //           }
+        //         }
+        //       }
+              
+        //       // Try to process videos from sections
+        //       if ('sections' in homeTab && Array.isArray(homeTab.sections)) {
+        //         for (const section of homeTab.sections) {
+        //           if (section && typeof section === 'object' && 'contents' in section && Array.isArray(section.contents)) {
+        //             for (const item of section.contents) {
+        //               if (item && typeof item === 'object' && 'type' in item && item.type === 'Video') {
+        //                 const videoResult = transformVideoResult(item as YTNodes.Video);
+        //                 if (!videoResult.channelTitle && channelInfo.title) {
+        //                   videoResult.channelTitle = channelInfo.title;
+        //                 }
+        //                 if (!videoResult.channelId) {
+        //                   videoResult.channelId = channelId;
+        //                 }
+        //                 videos.push(videoResult);
+        //               }
+        //             }
+        //           }
+        //         }
+        //       }
+        //     }
+        //   } catch (homeError) {
+        //     console.error('Error getting channel home tab:', homeError);
+        //   }
+        // }
         
-        return response;
+        return {
+          data: {
+            videos: sortedVideos,
+            channelInfo: channelInfo,
+            continuation: hasContinuation,
+            estimatedResults: channelVideos.length
+          }
+        }
       } catch (error) {
         console.error('Error getting YouTube channel videos:', error);
         return {

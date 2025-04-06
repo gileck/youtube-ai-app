@@ -3,18 +3,32 @@
  */
 
 // Import SortBy type directly from youtubei.js
+import { YouTubeChannelResponse, YouTubeSearchFilters } from '@/shared/types/youtube';
 import type { Types } from 'youtubei.js';
-
+import type { YouTubeVideoSearchResult } from '@/shared/types/youtube'
+export type { YouTubeVideoSearchResult }
 // Search results type
-export interface YouTubeVideoSearchResult {
+// export interface YouTubeVideoSearchResult {
+//   id: string;
+//   title: string;
+//   description: string;
+//   thumbnailUrl: string;
+//   channelTitle: string;
+//   channelId: string;
+//   publishedAt: string;
+//   viewCount: string;
+//   duration: string; // in ISO 8601 format (PT1H2M3S)
+// }
+
+// Channel info type
+export interface YouTubeChannelInfo {
   id: string;
   title: string;
-  description: string;
-  thumbnailUrl: string;
-  channelTitle: string;
-  publishedAt: string;
-  viewCount: string;
-  duration: string; // in ISO 8601 format (PT1H2M3S)
+  description?: string;
+  thumbnailUrl?: string;
+  subscriberCount?: string;
+  videoCount?: string;
+  isVerified?: boolean;
 }
 
 // Channel search result type
@@ -31,7 +45,6 @@ export interface YouTubeChannelSearchResult {
 
 // Video details type
 export interface YouTubeVideoDetails extends YouTubeVideoSearchResult {
-  channelId: string;
   tags: string[];
   category: string;
   likeCount: string;
@@ -71,6 +84,8 @@ export interface YouTubeVideoParams {
 // Get channel videos parameters
 export interface YouTubeChannelParams {
   channelId: string;
+  filters?: YouTubeSearchFilters;
+  pageNumber?: number;
 }
 
 // Error type
@@ -84,8 +99,9 @@ export interface YouTubeApiResponse<T> {
   data?: T;
   filteredVideos?: T;
   error?: YouTubeApiError;
-  continuation?: string;
+  continuation?: boolean;
   estimatedResults?: number;
+  channelInfo?: YouTubeChannelInfo;
 }
 
 // Adapter interface
@@ -116,5 +132,5 @@ export interface YouTubeApiAdapter {
    * @param params Channel parameters
    * @returns Promise with channel videos or error
    */
-  getChannelVideos(params: YouTubeChannelParams): Promise<YouTubeApiResponse<YouTubeVideoSearchResult[]>>;
+  getChannelVideos(params: YouTubeChannelParams): Promise<YouTubeChannelResponse>;
 }
