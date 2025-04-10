@@ -131,7 +131,7 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
           sort_by: params.sortBy,
           upload_date: params.upload_date,
           duration: params.duration,
-          features: params.features
+          features: params.features || ['hd'],
         };
         
         // Add additional filters if provided
@@ -151,7 +151,7 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
           searchOptions.features = params.features;
         }
         
-        console.log('Search options:', searchOptions);
+        // console.log('Search options:', searchOptions);
         
         // Always perform the initial search
         let searchResults = await youtube.search(query, searchOptions);
@@ -172,6 +172,8 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
         const filteredVideos: YouTubeVideoSearchResult[] = [];
         
         for (const result of searchResults.results) {
+          // console.log('Search result:', result);
+          
           if (result.type === 'Video') {
             // Check if the video matches the search query
             if (
