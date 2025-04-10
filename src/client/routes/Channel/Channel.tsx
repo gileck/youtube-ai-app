@@ -78,7 +78,13 @@ export const Channel = () => {
         setError(error.message);
         setChannelVideos([]);
       } else if (data?.videos && data.videos.length > 0) {
-        setChannelVideos(data?.videos || []);
+        if (page && page > 1) {
+          // Append new videos to existing list when loading more
+          setChannelVideos(prevVideos => [...prevVideos, ...data.videos]);
+        } else {
+          // Replace videos for initial load
+          setChannelVideos(data.videos);
+        }
         setChannelInfo(data.channelInfo || null);
         setHasMoreResults(data.continuation || false);
         setEstimatedResults(data.estimatedResults);
@@ -94,7 +100,7 @@ export const Channel = () => {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [channelId, filters, currentPage]);
+  }, [channelId, filters]);
 
   // Load channel videos when channelId changes
   useEffect(() => {

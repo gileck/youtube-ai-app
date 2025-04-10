@@ -1,5 +1,6 @@
 import { Innertube, YTNodes } from 'youtubei.js';
-import type { Types } from 'youtubei.js';
+import Feed from 'youtubei.js'
+import type { IBrowseResponse, Types } from 'youtubei.js';
 
 import {
   YouTubeApiAdapter,
@@ -330,6 +331,8 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
         
         // Get channel videos
         async function getVideos() {
+          // channel.applySort('latest');
+          // channel.applyContentTypeFilter('video');
           const channelVideos = await channel.getVideos();
           let currentVideos = channelVideos.videos;
           let hasContinuation = channelVideos.has_continuation;
@@ -339,11 +342,15 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
             console.log(`Navigating to page ${pageNumber}...`);
           
             // Navigate to the requested page by calling getContinuation multiple times
+            // Explicitly type currentFeed with the Feed type from youtubei.js
+            let currentFeed: any = channelVideos;
+            
             for (let i = 2; i <= pageNumber; i++) {
               if (hasContinuation) {
-                const continuation = await channelVideos.getContinuation();
-                currentVideos = continuation.videos;
-                hasContinuation = continuation.has_continuation;
+                const feed = await currentFeed.getContinuation()
+                currentVideos = feed.videos
+                hasContinuation = feed.has_continuation;
+                currentFeed = feed;
               } else {
                 break;
               }
