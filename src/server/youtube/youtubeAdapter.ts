@@ -48,6 +48,8 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
 
   // Helper to transform video results to our format
   const transformVideoResult = (video: YTNodes.Video): YouTubeVideoSearchResult => {
+
+    // console.log('video:', video);
     return {
       id: video.id || '',
       title: video.title?.text || '',
@@ -381,16 +383,8 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
         for (const video of channelVideos) {
           if (video.type === 'Video') {
             const videoResult = transformVideoResult(video as YTNodes.Video);
-            
-            // Ensure channel info is properly set if missing
-            if (!videoResult.channelTitle && channelInfo.title) {
               videoResult.channelTitle = channelInfo.title;
-            }
-            
-            if (!videoResult.channelId) {
               videoResult.channelId = channelId;
-            }
-
             if (applyFilters(videoResult, filters)) {
               videos.push(videoResult);
             }
@@ -409,55 +403,6 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
           }
           return 0;
         });
-        
-        // // If we have no videos but the channel exists, try to get videos from the channel's home tab
-        // if (videos.length === 0 && channelInfo.title) {
-        //   try {
-        //     const homeTab = await channel.getHome();
-        //     console.log('Getting videos from home tab');
-            
-        //     // Process videos from home tab
-        //     if (homeTab && typeof homeTab === 'object') {
-        //       // Try to process videos from contents
-        //       if ('contents' in homeTab && Array.isArray(homeTab.contents)) {
-        //         for (const item of homeTab.contents) {
-        //           if (item && typeof item === 'object' && 'type' in item && item.type === 'Video') {
-        //             const videoResult = transformVideoResult(item as YTNodes.Video);
-        //             if (!videoResult.channelTitle && channelInfo.title) {
-        //               videoResult.channelTitle = channelInfo.title;
-        //             }
-        //             if (!videoResult.channelId) {
-        //               videoResult.channelId = channelId;
-        //             }
-        //             videos.push(videoResult);
-        //           }
-        //         }
-        //       }
-              
-        //       // Try to process videos from sections
-        //       if ('sections' in homeTab && Array.isArray(homeTab.sections)) {
-        //         for (const section of homeTab.sections) {
-        //           if (section && typeof section === 'object' && 'contents' in section && Array.isArray(section.contents)) {
-        //             for (const item of section.contents) {
-        //               if (item && typeof item === 'object' && 'type' in item && item.type === 'Video') {
-        //                 const videoResult = transformVideoResult(item as YTNodes.Video);
-        //                 if (!videoResult.channelTitle && channelInfo.title) {
-        //                   videoResult.channelTitle = channelInfo.title;
-        //                 }
-        //                 if (!videoResult.channelId) {
-        //                   videoResult.channelId = channelId;
-        //                 }
-        //                 videos.push(videoResult);
-        //               }
-        //             }
-        //           }
-        //         }
-        //       }
-        //     }
-        //   } catch (homeError) {
-        //     console.error('Error getting channel home tab:', homeError);
-        //   }
-        // }
         
         return {
           data: {

@@ -67,7 +67,7 @@ export const SearchResults = ({
     );
   }
 
-  if (!isSearching && searchResults.length === 0 && channelResults.length === 0) {
+    if (!isSearching && searchResults.length === 0 && channelResults.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
         <Typography variant="h5" gutterBottom>No results found</Typography>

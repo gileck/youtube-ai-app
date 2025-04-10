@@ -157,9 +157,17 @@ export const Channel = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default', p: 0 }}>
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      minHeight: '100vh', 
+      bgcolor: 'background.default', 
+      p: 0, 
+      
+      }}>
       {/* Channel Header */}
       <Box sx={{ 
+      visibility: isLoading ? 'hidden' : 'visible',  
         bgcolor: 'background.paper', 
         borderBottom: 1, 
         borderColor: 'divider',
@@ -178,23 +186,19 @@ export const Channel = () => {
           <Avatar 
             sx={{ width: 80, height: 80, mb: 1, bgcolor: 'primary.main' }}
           >
-            {channelInfo?.title?.charAt(0) || 'C'}
+            {channelInfo?.title?.charAt(0) || ''}
           </Avatar>
         )}
         <Typography variant="h5" component="h1" gutterBottom>
-          {channelInfo?.title || 'Channel Videos'}
+          {channelInfo?.title || ''}
         </Typography>
-        {isLoading ? (
-          <CircularProgress size={24} sx={{ my: 1 }} />
-        ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            {channelInfo?.subscriberCount && (
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                {channelInfo.subscriberCount}
-              </Typography>
-            )}
-          </Box>
-        )}
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          {channelInfo?.subscriberCount && (
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {channelInfo.subscriberCount}
+            </Typography>
+          )}
+        </Box>
       </Box>
       
       {/* Search Form */}
@@ -232,7 +236,7 @@ export const Channel = () => {
           </Box>
         ) : (
           <SearchResults
-            title={`${channelInfo?.title || 'Channel'} Videos`}
+            title={isLoading ? '' : `${channelInfo?.title || 'Channel'} Videos`}
             isSearching={isLoading}
             searchResults={channelVideos}
             filteredVideos={[]}
