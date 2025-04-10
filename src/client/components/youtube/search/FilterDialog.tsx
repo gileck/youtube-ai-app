@@ -125,10 +125,10 @@ export const FilterDialog: React.FC<FilterDialogProps> = ({
         <Typography variant="h6">Advanced Filters</Typography>
       </DialogTitle>
       
-      <DialogContent sx={{ py: 3 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <DialogContent sx={{ py: 2}}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
           {/* Upload Date Filter */}
-          <FormControl fullWidth>
+          {/* <FormControl fullWidth>
             <InputLabel id="upload-date-label">Upload Date</InputLabel>
             <Select
               labelId="upload-date-label"
@@ -145,10 +145,10 @@ export const FilterDialog: React.FC<FilterDialogProps> = ({
               <MenuItem value="month">This month</MenuItem>
               <MenuItem value="year">This year</MenuItem>
             </Select>
-          </FormControl>
+          </FormControl> */}
           
           {/* Type Filter */}
-          <FormControl fullWidth>
+          {/* <FormControl fullWidth>
             <InputLabel id="type-label">Type</InputLabel>
             <Select
               labelId="type-label"
@@ -163,7 +163,7 @@ export const FilterDialog: React.FC<FilterDialogProps> = ({
               <MenuItem value="playlist">Playlist</MenuItem>
               <MenuItem value="movie">Movie</MenuItem>
             </Select>
-          </FormControl>
+          </FormControl> */}
           
           {/* Duration Filter */}
           <FormControl fullWidth>
@@ -190,12 +190,12 @@ export const FilterDialog: React.FC<FilterDialogProps> = ({
               labelId="sort-by-label"
               id="sort-by"
               name="sort_by"
-              value={filters.sort_by || 'relevance'}
+              value={filters.sort_by || 'upload_date'}
               label="Sort By"
               onChange={handleFilterChange}
             >
-              <MenuItem value="relevance">Relevance</MenuItem>
-              <MenuItem value="rating">Rating</MenuItem>
+              {/* <MenuItem value="relevance">Relevance</MenuItem> */}
+              {/* <MenuItem value="rating">Rating</MenuItem> */}
               <MenuItem value="upload_date">Upload date</MenuItem>
               <MenuItem value="view_count">View count</MenuItem>
             </Select>
@@ -218,7 +218,7 @@ export const FilterDialog: React.FC<FilterDialogProps> = ({
           <Divider sx={{ my: 1 }} />
           
           {/* Features Filter */}
-          <Typography variant="subtitle1" gutterBottom>
+          {/* <Typography variant="subtitle1" gutterBottom>
             Features
           </Typography>
           
@@ -315,7 +315,7 @@ export const FilterDialog: React.FC<FilterDialogProps> = ({
                 label="HDR"
               />
             </Box>
-          </FormGroup>
+          </FormGroup> */}
         </Box>
       </DialogContent>
       

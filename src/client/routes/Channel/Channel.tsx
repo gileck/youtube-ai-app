@@ -26,7 +26,7 @@ export const Channel = () => {
   const [estimatedResults, setEstimatedResults] = useState<number | undefined>(undefined);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  console.log({channelVideos});
+  // console.log({channelVideos});
   // const [filteredVideos, setFilteredVideos] = useState<YouTubeVideoSearchResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [channelInfo, setChannelInfo] = useState<YouTubeChannelInfo | null>(null);
@@ -58,7 +58,7 @@ export const Channel = () => {
 
   // Define loadChannelVideos as useCallback to avoid dependency issues
   const loadChannelVideos = useCallback(async (page?: number) => {
-    console.log('Loading channel videos...', {page});
+    // console.log('Loading channel videos...', {page});
     if (!channelId) return;
 
     if (!page || page === 1) {
@@ -85,6 +85,8 @@ export const Channel = () => {
           // Replace videos for initial load
           setChannelVideos(data.videos);
         }
+        
+        
         setChannelInfo(data.channelInfo || null);
         setHasMoreResults(data.continuation || false);
         setEstimatedResults(data.estimatedResults);

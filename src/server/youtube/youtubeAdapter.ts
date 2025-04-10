@@ -331,7 +331,8 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
         
         // Get channel videos
         async function getVideos() {
-          // channel.applySort('latest');
+          
+          // channel.applySort('Latest');
           // channel.applyContentTypeFilter('video');
           const channelVideos = await channel.getVideos();
           let currentVideos = channelVideos.videos;
