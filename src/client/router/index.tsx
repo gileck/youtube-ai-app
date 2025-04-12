@@ -80,15 +80,16 @@ export const RouterProvider = ({ children, routes }: {
 
   // Find matching route pattern and parse route parameters
   const { RouteComponent, routeParams } = useMemo(() => {
+    const pathWithoutQuery = currentPath.split('?')[0];
     // First check for exact matches
-    if (routes[currentPath]) {
-      return { RouteComponent: routes[currentPath], routeParams: {} };
+    if (routes[pathWithoutQuery]) {
+      return { RouteComponent: routes[pathWithoutQuery], routeParams: {} };
     }
     
     // Then check for parameterized routes
     for (const pattern in routes) {
       if (pattern.includes(':')) {
-        const params = parseRouteParams(currentPath, pattern);
+        const params = parseRouteParams(pathWithoutQuery, pattern);
         if (Object.keys(params).length > 0) {
           return { RouteComponent: routes[pattern], routeParams: params };
         }
