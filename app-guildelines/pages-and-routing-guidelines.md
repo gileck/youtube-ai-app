@@ -155,6 +155,59 @@ const MyComponent = () => {
 };
 ```
 
+### Navigation Guidelines
+
+- **Always use the navigation API from useRouter**: Never use `window.location.href` for navigation as it causes a full page reload and breaks the SPA behavior.
+
+```tsx
+// ❌ Don't do this
+window.location.href = '/some-route';
+
+// ✅ Do this instead
+const { navigate } = useRouter();
+navigate('/some-route');
+```
+
+- This ensures consistent navigation behavior throughout the application
+- Preserves the SPA (Single Page Application) experience
+- Maintains application state during navigation
+- Enables proper history management
+
+### Navigating with Parameters
+
+When navigating to routes that require parameters (like IDs), construct the path with the parameters included:
+
+```tsx
+// Navigating to a route with a parameter
+const { navigate } = useRouter();
+
+// Navigate to a video page with a specific video ID
+const handleVideoClick = (videoId) => {
+  navigate(`/video/${videoId}`);
+};
+
+// Navigate to a channel page with a specific channel ID
+const handleChannelClick = (channelId) => {
+  navigate(`/channel/${channelId}`);
+};
+```
+
+For routes with multiple parameters, include all parameters in the path:
+
+```tsx
+// Route with multiple parameters
+navigate(`/category/${categoryId}/product/${productId}`);
+```
+
+You can also include query parameters:
+
+```tsx
+// Navigate with query parameters
+navigate(`/search?q=${encodeURIComponent(searchQuery)}&filter=${filter}`);
+
+// Note: When using query parameters, always use `encodeURIComponent()` for any user-provided values to ensure proper URL encoding.
+```
+
 ### Getting Current Route
 
 You can access the current route path using the `useRouter` hook:
