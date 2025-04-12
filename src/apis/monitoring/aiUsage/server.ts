@@ -14,42 +14,13 @@ import {
 } from './types';
 
 // Export the API name
-export const name = "monitoring/ai-usage";
-
-/**
- * Process function for the AI usage monitoring API
- * Handles both "all" and "summary" endpoints
- */
-export const process = async (
-  params: GetAllAIUsageRequest | GetAIUsageSummaryRequest,
-  endpoint: string
-): Promise<GetAllAIUsageResponse | GetAIUsageSummaryResponse> => {
-  // Determine which endpoint was called based on the endpoint parameter
-  if (endpoint === 'all') {
-    return getAllUsage(params as GetAllAIUsageRequest);
-  } else if (endpoint === 'summary') {
-    return getSummary(params as GetAIUsageSummaryRequest);
-  } else {
-    return {
-      records: [],
-      summary: {
-        totalCost: 0,
-        totalTokens: 0,
-        totalPromptTokens: 0,
-        totalCompletionTokens: 0,
-        usageByModel: {},
-        usageByDay: {}
-      },
-      success: false,
-      error: `Unknown endpoint: ${endpoint}`
-    };
-  }
-};
+export const all = "monitoring/ai-usage/all";
+export const summary = "monitoring/ai-usage/summary";
 
 /**
  * Get all AI usage records with summary
  */
-const getAllUsage = async (
+export const getAllUsage = async (
   params: GetAllAIUsageRequest
 ): Promise<GetAllAIUsageResponse> => {
   try {
@@ -85,7 +56,7 @@ const getAllUsage = async (
 /**
  * Get AI usage summary
  */
-const getSummary = async (
+export const getSummary = async (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   params: GetAIUsageSummaryRequest
 ): Promise<GetAIUsageSummaryResponse> => {

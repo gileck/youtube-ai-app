@@ -13,7 +13,7 @@ import { appConfig } from '../../app.config';
 
 const AWS_BUCKET_NAME = "app-template-1252343"
 // Constants
-const APP_FOLDER_PREFIX = appConfig.appName || '';
+const APP_FOLDER_PREFIX = appConfig.appName.replace(/\s/g, '_') + '/'
 
 // S3 Configuration
 export interface S3Config {
