@@ -1,6 +1,5 @@
 import { Innertube, YTNodes } from 'youtubei.js';
-import Feed from 'youtubei.js'
-import type { IBrowseResponse, Types } from 'youtubei.js';
+import type { Types } from 'youtubei.js';
 
 import {
   YouTubeApiAdapter,
@@ -347,13 +346,14 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
             console.log(`Navigating to page ${pageNumber}...`);
           
             // Navigate to the requested page by calling getContinuation multiple times
-            // Explicitly type currentFeed with the Feed type from youtubei.js
-            let currentFeed: any = channelVideos;
+            let currentFeed = channelVideos;
             
             for (let i = 2; i <= pageNumber; i++) {
               if (hasContinuation) {
-                const feed = await currentFeed.getContinuation()
-                currentVideos = feed.videos
+                // We know the feed has the getContinuation method and returns the expected structure
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const feed = await (currentFeed as any).getContinuation();
+                currentVideos = feed.videos;
                 hasContinuation = feed.has_continuation;
                 currentFeed = feed;
               } else {

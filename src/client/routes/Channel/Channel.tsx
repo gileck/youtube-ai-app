@@ -6,7 +6,6 @@ import { getYouTubeChannelVideos } from '../../../apis/youtube/client';
 import { YouTubeVideoSearchResult, YouTubeChannelInfo } from '../../../apis/youtube/types';
 import { 
   SearchResults, 
-  SearchForm,
   FilterDialog
 } from '../../components/youtube/search';
 import { YouTubeSearchFilters } from '../../../apis/youtube/types';
@@ -109,7 +108,7 @@ export const Channel = () => {
     if (channelId) {
       loadChannelVideos(currentPage);
     }
-  }, [channelId, currentPage]);
+  }, [channelId, currentPage, loadChannelVideos]);
 
   function onLoadMore() {
     setCurrentPage(currentPage + 1);

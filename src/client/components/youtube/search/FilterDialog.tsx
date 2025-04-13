@@ -9,9 +9,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  FormGroup,
-  FormControlLabel,
-  Checkbox,
   Typography,
   Divider,
   Box,
@@ -19,7 +16,6 @@ import {
   TextField
 } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import type { Types } from 'youtubei.js';
 import { YouTubeSearchFilters } from '../../../../apis/youtube/types';
 
 // Default filter values
@@ -62,24 +58,6 @@ export const FilterDialog: React.FC<FilterDialogProps> = ({
       ...prev,
       [name]: value
     }));
-  };
-  
-  // Handle feature toggles
-  const handleFeatureToggle = (feature: Types.Feature) => {
-    setFilters(prev => {
-      const features = prev.features || [];
-      if (features.includes(feature)) {
-        return {
-          ...prev,
-          features: features.filter(f => f !== feature)
-        };
-      } else {
-        return {
-          ...prev,
-          features: [...features, feature]
-        };
-      }
-    });
   };
   
   // Handle minimum views change

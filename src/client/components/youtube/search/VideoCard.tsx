@@ -40,6 +40,10 @@ export const VideoCard = ({ video, formatDuration, formatViewCount }: VideoCardP
     navigate(`/channel/${video.channelId}`);
   };
 
+  const handleVideoClick = () => {
+    navigate(`/video/${video.id}`);
+  };
+
   const handleBookmarkClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -63,7 +67,7 @@ export const VideoCard = ({ video, formatDuration, formatViewCount }: VideoCardP
         p: { xs: 0.5, sm: 0.75, md: 1 },
         borderRadius: 1
       }}
-      onClick={() => window.open(`https://www.youtube.com/watch?v=${video.id}`, '_blank')}
+      onClick={handleVideoClick}
     >
       <Box sx={{ 
         display: 'flex',

@@ -49,3 +49,21 @@ export const formatDuration = (duration: string): string => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }
 };
+
+/**
+ * Format date string to a human-readable format
+ * @param dateString Date string in ISO format
+ * @returns Formatted date (e.g., "Apr 12, 2025")
+ */
+export const formatDate = (dateString: string): string => {
+  if (!dateString) return '';
+  
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString;
+  
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
