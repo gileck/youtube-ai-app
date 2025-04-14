@@ -1,0 +1,1 @@
+export { VideoChapters } from './VideoChapters';

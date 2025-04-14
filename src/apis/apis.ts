@@ -3,12 +3,14 @@ import * as chat from "./chat/server";
 import * as clearCache from "./settings/clearCache/server";
 import * as fileManagement from "./fileManagement/server";
 import * as aiUsage from "./monitoring/aiUsage/server";
-import { searchApiName, videoApiName, channelApiName } from "./youtube/index";
-import { searchVideos, getVideoDetails, getChannelVideos } from "./youtube/server";
+import * as aiVideoActions from "./aiVideoActions/server";
+import { searchApiName, videoApiName, channelApiName, chaptersTranscriptApiName } from "./youtube/index";
+import { searchVideos, getVideoDetails, getChannelVideos, getYouTubeChaptersTranscript } from "./youtube/server";
 import { GetAllAIUsageRequest, GetAIUsageSummaryRequest } from "./monitoring/aiUsage/types";
 import { 
   YouTubeSearchRequest, 
-  YouTubeVideoRequest,  
+  YouTubeVideoRequest,
+  YouTubeChaptersTranscriptRequest,
 } from "./youtube/types";
 import { YouTubeChannelParams } from "@/server/youtube";
 
@@ -17,6 +19,7 @@ export const apiHandlers: ApiHandlers = {
   [chat.name]: { process: chat.process as (params: unknown) => Promise<unknown>},
   [clearCache.name]: { process: clearCache.process as (params: unknown) => Promise<unknown>},
   [fileManagement.name]: { process: fileManagement.process as (params: unknown) => Promise<unknown>},
+  [aiVideoActions.name]: { process: aiVideoActions.process as (params: unknown) => Promise<unknown>},
   [`${aiUsage.name}/all`]: { 
     process: (params: unknown) => aiUsage.process(
       params as GetAllAIUsageRequest, 
@@ -38,5 +41,8 @@ export const apiHandlers: ApiHandlers = {
   },
   [channelApiName]: { 
     process: (params: unknown) => getChannelVideos(params as YouTubeChannelParams) as Promise<unknown>
+  },
+  [chaptersTranscriptApiName]: {
+    process: (params: unknown) => getYouTubeChaptersTranscript(params as YouTubeChaptersTranscriptRequest) as Promise<unknown>
   },
 };

@@ -13,7 +13,7 @@ import { appConfig } from '../../app.config';
 
 const AWS_BUCKET_NAME = "app-template-1252343"
 // Constants
-const APP_FOLDER_PREFIX = appConfig.appName || '';
+const APP_FOLDER_PREFIX = appConfig.appName.replace(/\s+/g, '_') + '/' || '';
 
 // S3 Configuration
 export interface S3Config {
@@ -115,7 +115,7 @@ export const getFile = async (
     ? fileName 
     : `${APP_FOLDER_PREFIX}${fileName}`;
   
-  console.log('Getting file with key:', key);
+  // console.log('Getting file with key:', key);
   
   const command = new GetObjectCommand({
     Bucket: bucketName,

@@ -10,9 +10,17 @@ import {
   YouTubeVideoRequest,
   YouTubeVideoResponse,
   YouTubeChannelSearchRequest,
-  YouTubeChannelSearchResponse
+  YouTubeChannelSearchResponse,
+  YouTubeChaptersTranscriptRequest,
+  YouTubeChaptersTranscriptResponse
 } from './types';
-import { searchApiName, videoApiName, channelApiName, channelSearchApiName } from './index';
+import { 
+  searchApiName, 
+  videoApiName, 
+  channelApiName, 
+  channelSearchApiName, 
+  chaptersTranscriptApiName 
+} from './index';
 import { YouTubeChannelParams } from '@/server/youtube';
 import { YouTubeChannelResponse } from '@/shared/types/youtube';
 
@@ -68,6 +76,20 @@ export const getYouTubeChannelVideos = async (
 ): Promise<CacheResult<YouTubeChannelResponse>> => {
   return apiClient.call<CacheResult<YouTubeChannelResponse>, YouTubeChannelParams>(
     channelApiName,
+    request
+  );
+};
+
+/**
+ * Get YouTube video chapters and transcript
+ * @param request Video ID and optional parameters
+ * @returns Promise with chapters and transcript data or error
+ */
+export const getYouTubeChaptersTranscript = async (
+  request: YouTubeChaptersTranscriptRequest
+): Promise<CacheResult<YouTubeChaptersTranscriptResponse>> => {
+  return apiClient.call<CacheResult<YouTubeChaptersTranscriptResponse>, YouTubeChaptersTranscriptRequest>(
+    chaptersTranscriptApiName,
     request
   );
 };

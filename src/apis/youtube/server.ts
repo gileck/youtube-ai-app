@@ -11,9 +11,11 @@ import {
   YouTubeVideoResponse,
   YouTubeChannelSearchRequest,
   YouTubeChannelSearchResponse,
-  
+  YouTubeChaptersTranscriptRequest,
+  YouTubeChaptersTranscriptResponse
 } from './types';
 import { YouTubeChannelParams } from '@/server/youtube';
+import { getChaptersTranscripts } from '../../server/youtube/chaptersTranscriptService';
 
 // Create YouTube adapter
 const youtubeAdapter = createYouTubeAdapter();
@@ -192,6 +194,46 @@ export const getYouTubeChannelVideos = async (
     return youtubeAdapter.getChannelVideos(request);
   } catch (error) {
     console.error('Error in getYouTubeChannelVideos:', error);
+    return {
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+        code: 'SERVER_ERROR',
+      },
+    };
+  }
+};
+
+/**
+ * Get YouTube video chapters and transcript
+ * @param request Video ID and optional parameters
+ * @returns Promise with chapters and transcript data or error
+ */
+export const getYouTubeChaptersTranscript = async (
+  request: YouTubeChaptersTranscriptRequest
+): Promise<YouTubeChaptersTranscriptResponse> => {
+  try {
+    const { videoId, overlapOffsetSeconds } = request;
+    
+    // Validate input
+    if (!videoId || typeof videoId !== 'string') {
+      return {
+        error: {
+          message: 'Invalid videoId parameter',
+          code: 'INVALID_PARAM',
+        },
+      };
+    }
+    
+    // Call the chapters transcript service
+    const result = await getChaptersTranscripts(videoId, {
+      overlapOffsetSeconds: overlapOffsetSeconds || 5
+    });
+    
+    return {
+      data: result,
+    };
+  } catch (error) {
+    console.error('Error in getYouTubeChaptersTranscript:', error);
     return {
       error: {
         message: error instanceof Error ? error.message : 'Unknown error occurred',

@@ -11,6 +11,7 @@ import {
   YouTubeChannelInfo
 } from '../../server/youtube/types';
 import type { Types } from 'youtubei.js';
+import type { CombinedTranscriptChapters } from '../../server/youtube/chaptersTranscriptService';
 
 // Re-export common types
 export type { 
@@ -69,5 +70,17 @@ export interface YouTubeVideoRequest {
 // Video details response type
 export interface YouTubeVideoResponse {
   video?: YouTubeVideoDetails;
+  error?: YouTubeApiError;
+}
+
+// Chapters and transcript request type
+export interface YouTubeChaptersTranscriptRequest {
+  videoId: string;
+  overlapOffsetSeconds?: number;
+}
+
+// Chapters and transcript response type
+export interface YouTubeChaptersTranscriptResponse {
+  data?: CombinedTranscriptChapters;
   error?: YouTubeApiError;
 }

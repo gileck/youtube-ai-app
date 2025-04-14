@@ -94,20 +94,23 @@ export const getAllAIUsageRecords = async (
     // Limit the number of records to retrieve
     const limitedFiles = sortedFiles.slice(0, options.maxRecords || DEFAULT_OPTIONS.maxRecords);
     
-    // Retrieve and parse each file
-    const records: AIUsageRecord[] = [];
-    for (const file of limitedFiles) {
+    // Create an array of promises for fetching records in parallel
+    const recordPromises = limitedFiles.map(async (file) => {
       try {
         // Extract the record ID from the file key
         const recordId = file.key.replace(AI_USAGE_PREFIX, '').replace('.json', '');
-        const record = await getAIUsageRecord(recordId);
-        if (record) {
-          records.push(record);
-        }
+        return await getAIUsageRecord(recordId);
       } catch (error) {
         console.error(`Error retrieving record from file ${file.key}:`, error);
+        return null;
       }
-    }
+    });
+    
+    // Wait for all promises to resolve in parallel
+    const recordsWithNulls = await Promise.all(recordPromises);
+    
+    // Filter out null values (failed retrievals)
+    const records = recordsWithNulls.filter((record): record is AIUsageRecord => record !== null);
     
     return records;
   } catch (error) {

@@ -66,7 +66,7 @@ export const useFileManager = () => {
 
   // Handle navigation to a folder
   const handleNavigateToFolder = useCallback((prefix: string, folderName: string) => {
-    const newPrefix = `${prefix}${folderName}/`;
+    const newPrefix = `${prefix}${folderName}`;
     setCurrentPrefix(newPrefix);
     
     // Update breadcrumbs
@@ -127,7 +127,7 @@ export const useFileManager = () => {
     setError(null);
     
     try {
-      const folderPath = `${currentPrefix}${newFolderName}/`;
+      const folderPath = `${currentPrefix}${newFolderName}`;
       await createFolder(folderPath);
       
       // Reset state and refresh files
@@ -229,7 +229,7 @@ export const useFileManager = () => {
     setError(null);
     
     try {
-      const path = itemToDelete.key + (itemToDelete.isFolder ? '/' : '');
+      const path = itemToDelete.key + (itemToDelete.isFolder ? '' : '');
       
       if (itemToDelete.isFolder) {
         await deleteFolder(path);

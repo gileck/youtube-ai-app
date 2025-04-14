@@ -10,6 +10,8 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import SubtitlesIcon from '@mui/icons-material/Subtitles';
+import SummarizeIcon from '@mui/icons-material/Summarize';
 
 export const Video = () => {
   const { routeParams, navigate } = useRouter();
@@ -189,6 +191,27 @@ export const Video = () => {
               size={isMobile ? "small" : "medium"}
             />
           </Box>
+        </Box>
+
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<SubtitlesIcon />}
+            onClick={() => navigate(`/video-chapters?id=${videoId}`)}
+            size={isMobile ? "small" : "medium"}
+          >
+            View Chapters & Transcript
+          </Button>
+          <Button
+            variant="outlined"
+            color="secondary"
+            startIcon={<SummarizeIcon />}
+            onClick={() => navigate(`/ai-video-actions?id=${videoId}`)}
+            size={isMobile ? "small" : "medium"}
+          >
+            AI Actions
+          </Button>
         </Box>
 
         <Divider sx={{ my: 2 }} />
