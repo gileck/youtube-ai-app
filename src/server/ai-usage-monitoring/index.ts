@@ -51,7 +51,7 @@ export const addAIUsageRecord = async (
       contentType: 'application/json'
     });
 
-    console.log(`AI usage record saved: ${record.id}`);
+    // console.log(`AI usage record saved: ${record.id}`);
     return record;
   } catch (error) {
     console.error('Error saving AI usage record:', error);

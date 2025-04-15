@@ -1,4 +1,4 @@
-import { Drawer, Box, Typography, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
+import { Drawer, Box, Typography, List, ListItem, ListItemButton, ListItemIcon, ListItemText, useTheme, useMediaQuery } from '@mui/material';
 import { useRouter } from '../../router';
 import { NavItem } from '../../components/layout/types';
 
@@ -10,14 +10,18 @@ interface DrawerMenuProps {
 
 export const DrawerMenu = ({ navItems, mobileOpen, onDrawerToggle }: DrawerMenuProps) => {
   const { currentPath, navigate } = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleNavigation = (path: string) => {
     navigate(path);
-    onDrawerToggle();
+    if (isMobile) {
+      onDrawerToggle();
+    }
   };
 
   const drawerContent = (
-    <Box onClick={onDrawerToggle} sx={{ textAlign: 'center' }}>
+    <Box sx={{ textAlign: 'center' }}>
       <Typography variant="h6" sx={{ my: 2 }}>
         SPA Router
       </Typography>
@@ -39,20 +43,44 @@ export const DrawerMenu = ({ navItems, mobileOpen, onDrawerToggle }: DrawerMenuP
   );
 
   return (
-    <Drawer
-      variant="temporary"
-      open={mobileOpen}
-      onClose={onDrawerToggle}
-      ModalProps={{
-        keepMounted: true, // Better open performance on mobile
-      }}
-      sx={{
-        display: { xs: 'block', sm: 'none' },
-        '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 240 },
-      }}
-    >
-      {drawerContent}
-    </Drawer>
+    <>
+      {/* Mobile drawer (temporary) */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={onDrawerToggle}
+        ModalProps={{
+          keepMounted: true, // Better open performance on mobile
+        }}
+        sx={{
+          display: { xs: 'block', sm: 'none' },
+          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 240 },
+        }}
+      >
+        <Box onClick={isMobile ? onDrawerToggle : undefined}>
+          {drawerContent}
+        </Box>
+      </Drawer>
+
+      {/* Desktop drawer (permanent) */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          display: { xs: 'none', sm: 'block' },
+          '& .MuiDrawer-paper': { 
+            boxSizing: 'border-box', 
+            width: 240,
+            position: 'relative',
+            height: '100%'
+          },
+          width: 240,
+          flexShrink: 0
+        }}
+        open
+      >
+        {drawerContent}
+      </Drawer>
+    </>
   );
 };
 

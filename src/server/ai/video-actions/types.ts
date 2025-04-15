@@ -25,6 +25,7 @@ export interface VideoActionResponse {
 export interface VideoActionHandler {
   process: (
     chaptersData: CombinedTranscriptChapters,
-    modelId?: string
+    modelId?: string,
+    videoTitle?: string
   ) => Promise<AIModelAdapterResponse<string>>;
 }

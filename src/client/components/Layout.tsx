@@ -48,26 +48,33 @@ export const Layout = ({ children }: { children?: ReactNode }) => {
         onDrawerToggle={handleDrawerToggle} 
       />
       
-      {/* Mobile Drawer Menu */}
-      <DrawerMenu 
-        navItems={menuItems} 
-        mobileOpen={mobileOpen} 
-        onDrawerToggle={handleDrawerToggle} 
-      />
-      
-      {/* Main Content */}
-      <Container component="main" sx={{ 
-        flexGrow: 1, 
-        py: 3,
-        px: { xs: 2, sm: 3 },
-        maxWidth: { xs: '100%', sm: 'md', md: 'lg' },
-        // Add iOS momentum scrolling for a more native feel
-        WebkitOverflowScrolling: 'touch',
-        // Add bottom padding on mobile to account for bottom navigation
-        pb: { xs: 7, sm: 3 }
+      {/* Main Content Area with Drawer */}
+      <Box sx={{ 
+        display: 'flex', 
+        flexGrow: 1,
+        flexDirection: { xs: 'column', sm: 'row' }
       }}>
-        {children}
-      </Container>
+        {/* Drawer Menu (Mobile and Desktop) */}
+        <DrawerMenu 
+          navItems={menuItems} 
+          mobileOpen={mobileOpen} 
+          onDrawerToggle={handleDrawerToggle} 
+        />
+        
+        {/* Main Content */}
+        <Container component="main" sx={{ 
+          flexGrow: 1, 
+          py: 3,
+          px: { xs: 2, sm: 3 },
+          maxWidth: { xs: '100%', sm: 'md', md: 'lg' },
+          // Add iOS momentum scrolling for a more native feel
+          WebkitOverflowScrolling: 'touch',
+          // Add bottom padding on mobile to account for bottom navigation
+          pb: { xs: 7, sm: 3 }
+        }}>
+          {children}
+        </Container>
+      </Box>
       
       {/* Footer (hidden on mobile) */}
       <Footer isStandalone={isStandalone} />

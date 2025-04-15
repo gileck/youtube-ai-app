@@ -15,12 +15,14 @@ const DEFAULT_MODEL_ID = 'gemini-1.5-flash-8b';
  * Generate a summary for each chapter and then summarize those summaries
  * @param chaptersData The combined chapters and transcript data
  * @param modelId Optional model ID to use for summarization
+ * @param videoTitle Optional video title to include in the summary
  * @returns Promise with the summary result and accumulated cost
  */
 const summaryAction: VideoActionHandler = {
   process: async (
     chaptersData: CombinedTranscriptChapters,
-    modelId: string = DEFAULT_MODEL_ID
+    modelId: string = DEFAULT_MODEL_ID,
+    videoTitle: string = 'Unknown Video Title'
   ): Promise<AIModelAdapterResponse<string>> => {
     // Initialize the AI model adapter
     const modelAdapter = new AIModelAdapter(modelId);
@@ -77,10 +79,8 @@ const summaryAction: VideoActionHandler = {
     // Step 2: Generate an overall summary from the chapter summaries
     const overallSummaryPrompt = `
       Create a comprehensive summary of this video based on the following chapter summaries:
-      
-      Video ID: ${chaptersData.videoId}
-      Total Duration: ${Math.floor(chaptersData.metadata.totalDuration / 60)} minutes
-      Number of Chapters: ${chaptersData.metadata.chapterCount}
+
+      Video Title: ${videoTitle}
       
       Chapter Summaries:
       ${chapterSummaries.map(summary => `

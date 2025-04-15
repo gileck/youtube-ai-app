@@ -90,7 +90,7 @@ export const uploadFile = async (
     ? params.fileName 
     : `${APP_FOLDER_PREFIX}${params.fileName}`;
   
-  console.log('Uploading file with key:', fileName);
+  // console.log('Uploading file with key:', fileName);
   
   const command = new PutObjectCommand({
     Bucket: bucketName,

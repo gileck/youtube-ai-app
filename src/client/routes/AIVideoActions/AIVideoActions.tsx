@@ -90,15 +90,12 @@ export const AIVideoActions = () => {
     processAction(true);
   };
 
-  // Process the action automatically when the page loads with a video ID
+  // Check for video ID when the component mounts
   useEffect(() => {
-    if (videoId) {
-      processAction();
-    } else {
+    if (!videoId) {
       setError('No video ID provided. Please access this page from a video.');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [videoId, actionType]);
+  }, [videoId]);
 
   // Handle action type change
   const handleActionTypeChange = (event: SelectChangeEvent<VideoActionType>) => {
