@@ -18,24 +18,15 @@ import {
   useMediaQuery,
   Stack
 } from '@mui/material';
-import { useRouter } from '../../router';
 import { processAIVideoAction } from '../../../apis/aiVideoActions/client';
-import { VideoActionType } from '../../../server/ai/video-actions';
-import SubtitlesIcon from '@mui/icons-material/Subtitles';
-import SummarizeIcon from '@mui/icons-material/Summarize';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CachedIcon from '@mui/icons-material/Cached';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { actionRenderers } from './aiActionsRenderers';
+import { aiActions, VideoActionType } from '../../../services/AiActions';
 
 // Available action types
-const actionTypes: { value: VideoActionType; label: string; icon: React.ReactNode }[] = [
-  { value: 'summary', label: 'Summarize Video', icon: <SummarizeIcon /> },
-];
 
-export const AIVideoActions = () => {
-  const { queryParams, navigate } = useRouter();
-  const videoId = queryParams.id as string;
+
+export const AIVideoActions = ({videoId}: { videoId: string }) => {
   const [actionType, setActionType] = useState<VideoActionType>('summary');
   const [loading, setLoading] = useState<boolean>(false);
   const [result, setResult] = useState<string>('');
@@ -102,35 +93,12 @@ export const AIVideoActions = () => {
     setActionType(event.target.value as VideoActionType);
   };
 
-  // View the original video
-  const handleViewVideo = () => {
-    if (videoId) {
-      navigate(`/video/${videoId}`);
-    }
-  };
-
-  // View the video chapters
-  const handleViewChapters = () => {
-    if (videoId) {
-      navigate(`/video-chapters?id=${videoId}`);
-    }
-  };
-
-  // Go back to the video page
-  const handleBackToVideo = () => {
-    if (videoId) {
-      navigate(`/video/${videoId}`);
-    } else {
-      navigate('/search');
-    }
-  };
-
   // Render the appropriate content based on the action type
   const renderActionResult = () => {
     if (!result) return null;
 
     // Get the renderer component for the current action type
-    const Renderer = actionRenderers[actionType];
+    const Renderer = aiActions[actionType].rendeder
     
     // If a renderer exists for this action type, use it
     if (Renderer) {
@@ -162,95 +130,52 @@ export const AIVideoActions = () => {
       overflow: 'hidden'
     }}>
       <Paper 
-        elevation={2} 
+        elevation={3} 
         sx={{ 
-          borderRadius: 2, 
+          borderRadius: 4, 
           overflow: 'hidden', 
-          mb: 3, 
-          p: { xs: 2, sm: 3 }
+          mb: 4, 
+          boxShadow: '0 4px 24px 0 rgba(0,0,0,0.08)',
+          bgcolor: 'background.paper',
+          p: { xs: 2.5, sm: 4 },
+          maxWidth: 700,
+          mx: 'auto',
         }}
       >
         {/* Header with back button */}
         <Box 
           sx={{ 
             display: 'flex', 
-            mb: 2,
+            mb: 3,
             flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'stretch' : 'center',
+            gap: 2,
+            bgcolor: 'background.default',
+            borderRadius: 3,
+            p: { xs: 1.5, sm: 2 },
+            boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)',
           }}
         >
-          <Button 
-            startIcon={<ArrowBackIcon />} 
-            onClick={handleBackToVideo}
-            sx={{ 
-              mr: isMobile ? 0 : 2,
-              mb: isMobile ? 1 : 0,
-              color: theme.palette.primary.main,
-              px: 2,
-              py: 1,
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 'bold'
-            }}
-            variant="text"
-          >
-            BACK TO VIDEO
-          </Button>
-          {!isMobile && (
-            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-              AI Video Actions
-            </Typography>
-          )}
-        </Box>
-        
-        {isMobile && (
-          <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>
+          
+          <Typography variant={isMobile ? 'h5' : 'h4'} sx={{ fontWeight: 800, letterSpacing: -0.5, flex: 1, textAlign: isMobile ? 'left' : 'center', color: 'text.primary' }}>
             AI Video Actions
           </Typography>
-        )}
+        </Box>
         
-        {/* Video ID chip */}
-        {videoId ? (
-          <Chip 
-            label={`Video ID: ${videoId}`} 
-            color="primary" 
-            variant="outlined" 
-            onClick={handleViewVideo}
-            sx={{ 
-              mb: 2,
-              borderRadius: 4,
-              px: 1,
-              '& .MuiChip-label': {
-                px: 1
-              }
-            }}
-          />
-        ) : (
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            No video ID provided. Please access this page from a video.
-          </Alert>
-        )}
-
-        <Typography 
-          variant="body1" 
-          color="text.secondary" 
-          paragraph
-          sx={{ mb: 3 }}
-        >
-          Process YouTube videos with AI to generate summaries and other useful content.
-        </Typography>
-
-        {/* Action controls - stacked on mobile */}
+        
         <Stack 
           direction={isMobile ? 'column' : 'row'} 
           spacing={2} 
-          sx={{ mb: 3 }}
-          alignItems={isMobile ? 'stretch' : 'center'}
+          sx={{ mb: 3, alignItems: isMobile ? 'stretch' : 'center' }}
         >
           <FormControl 
             variant="outlined" 
             sx={{ 
-              minWidth: isMobile ? '100%' : 200,
-              mb: isMobile ? 1 : 0
+              minWidth: isMobile ? '100%' : 220,
+              mb: isMobile ? 1 : 0,
+              borderRadius: 3,
+              bgcolor: 'background.default',
+              boxShadow: '0 1px 4px 0 rgba(0,0,0,0.03)',
             }}
             fullWidth={isMobile}
           >
@@ -262,24 +187,26 @@ export const AIVideoActions = () => {
               label="Action Type"
               disabled={loading}
               sx={{
-                borderRadius: 1,
+                borderRadius: 2,
                 '& .MuiSelect-select': {
                   display: 'flex',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  py: 1.2,
+                  fontWeight: 500,
+                  fontSize: '1.05rem',
                 }
               }}
             >
-              {actionTypes.map((type) => (
-                <MenuItem key={type.value} value={type.value}>
+              {Object.entries(aiActions).map(([key, type]) => (
+                <MenuItem key={key} value={key} sx={{ py: 1.2, fontWeight: 500 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    {type.icon}
+                    {<type.icon />}
                     <Typography sx={{ ml: 1 }}>{type.label}</Typography>
                   </Box>
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
-          
           <Stack 
             direction="row" 
             spacing={1}
@@ -292,15 +219,16 @@ export const AIVideoActions = () => {
               disabled={loading || !videoId}
               sx={{ 
                 flex: isMobile ? 1 : 'auto',
-                borderRadius: 2,
+                borderRadius: 3,
                 py: 1.5,
                 textTransform: 'uppercase',
-                fontWeight: 'bold'
+                fontWeight: 700,
+                fontSize: '1.08rem',
+                boxShadow: '0 2px 8px 0 rgba(0,0,0,0.06)',
               }}
             >
-              {isMobile ? 'PROCESS' : 'PROCESS VIDEO'}
+              {isMobile ? 'Process' : 'Process Video'}
             </Button>
-
             {result && (
               <Tooltip title="Generate a fresh result without using cache">
                 <Button
@@ -311,26 +239,25 @@ export const AIVideoActions = () => {
                   startIcon={!isMobile && <RefreshIcon />}
                   sx={{ 
                     flex: isMobile ? 1 : 'auto',
-                    borderRadius: 2,
+                    borderRadius: 3,
                     py: 1.5,
                     textTransform: 'uppercase',
-                    fontWeight: 'bold'
+                    fontWeight: 700,
+                    fontSize: '1.08rem',
                   }}
                 >
-                  {isMobile ? 'REFRESH' : 'REGENERATE'}
+                  {isMobile ? 'Refresh' : 'Regenerate'}
                 </Button>
               </Tooltip>
             )}
           </Stack>
         </Stack>
-
         {/* Error message */}
         {error && (
-          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+          <Alert severity="error" sx={{ mb: 3, borderRadius: 3, fontSize: '1.05rem' }}>
             {error}
           </Alert>
         )}
-
         {/* Loading indicator */}
         {loading && (
           <Box sx={{ 
@@ -340,39 +267,35 @@ export const AIVideoActions = () => {
             py: 5 
           }}>
             <CircularProgress color="primary" />
-            <Typography sx={{ ml: 2 }}>Processing video...</Typography>
+            <Typography sx={{ ml: 2, fontWeight: 500, fontSize: '1.08rem' }}>Processing video...</Typography>
           </Box>
         )}
-
         {/* Results section */}
         {result && (
           <Box>
             {/* Result header with metadata */}
             <Box sx={{ mb: 2 }}>
-              <Box sx={{ 
+              
+              {/* Navigation buttons */}
+              <Stack 
+                direction="row" 
+                spacing={1} 
+                sx={{ mb: 2 }}
+                flexWrap="wrap"
+                useFlexGap
+              >
+                
+                
+              </Stack>
+            </Box>
+            <Divider sx={{ my: 2 }} />
+            {/* Render the result content */}
+            <Box sx={{ 
                 display: 'flex', 
                 flexDirection: isMobile ? 'column' : 'row',
                 justifyContent: 'space-between', 
                 mb: 2
               }}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: isMobile ? 'flex-start' : 'center',
-                  mb: isMobile ? 1 : 0
-                }}>
-                  <Typography variant={isMobile ? 'h6' : 'h5'} sx={{ fontWeight: 'bold' }}>
-                    {actionTypes.find(t => t.value === actionType)?.label || 'Result'}
-                  </Typography>
-                  {isFromCache && (
-                    <Tooltip title="Result retrieved from cache">
-                      <CachedIcon 
-                        color="primary" 
-                        fontSize="small" 
-                        sx={{ ml: 1 }} 
-                      />
-                    </Tooltip>
-                  )}
-                </Box>
                 
                 <Stack 
                   direction="row" 
@@ -388,7 +311,9 @@ export const AIVideoActions = () => {
                     variant="outlined" 
                     sx={{ 
                       borderRadius: 4,
-                      fontWeight: 'medium'
+                      fontWeight: 500,
+                      fontSize: '0.98rem',
+                      bgcolor: 'background.default',
                     }}
                   />
                   {isFromCache && (
@@ -399,53 +324,14 @@ export const AIVideoActions = () => {
                       icon={<CachedIcon />}
                       sx={{ 
                         borderRadius: 4,
-                        fontWeight: 'medium'
+                        fontWeight: 100,
+                        fontSize: '0.98rem',
+                        bgcolor: 'background.default',
                       }}
                     />
                   )}
                 </Stack>
               </Box>
-
-              {/* Navigation buttons */}
-              <Stack 
-                direction="row" 
-                spacing={1} 
-                sx={{ mb: 2 }}
-                flexWrap="wrap"
-                useFlexGap
-              >
-                <Button
-                  variant="outlined"
-                  size={isMobile ? "medium" : "small"}
-                  onClick={handleViewVideo}
-                  startIcon={<SummarizeIcon />}
-                  sx={{ 
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    mb: isMobile ? 1 : 0
-                  }}
-                >
-                  View Video
-                </Button>
-                <Button
-                  variant="outlined"
-                  size={isMobile ? "medium" : "small"}
-                  onClick={handleViewChapters}
-                  startIcon={<SubtitlesIcon />}
-                  sx={{ 
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    mb: isMobile ? 1 : 0
-                  }}
-                >
-                  View Chapters & Transcript
-                </Button>
-              </Stack>
-            </Box>
-
-            <Divider sx={{ my: 2 }} />
-            
-            {/* Render the result content */}
             {renderActionResult()}
           </Box>
         )}

@@ -12,6 +12,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import SubtitlesIcon from '@mui/icons-material/Subtitles';
 import SummarizeIcon from '@mui/icons-material/Summarize';
+import { AIVideoActions } from '@/client/components/AiActions/AIVideoActions';
 
 export const Video = () => {
   const { routeParams, navigate } = useRouter();
@@ -268,6 +269,7 @@ export const Video = () => {
           </Box>
         )}
       </Box>
+      <AIVideoActions videoId={videoId} />
     </Box>
   );
 };

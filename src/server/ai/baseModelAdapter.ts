@@ -11,15 +11,15 @@ import { countTokens } from './utils/tokenizer';
 import { getPricePer1K } from './price';
 import { addAIUsageRecord } from '../ai-usage-monitoring';
 
-
+const DEFAULT_MODEL_ID = 'gemini-1.5-flash-8b';
 export class AIModelAdapter implements AIModelBaseAdapter {
   modelId: string;
   modelDefinition: AIModelDefinition;
   modelAdapter: AIModel;
   
-  constructor(modelId: string) {
-    this.modelId = modelId;
-    this.modelDefinition = getModelById(modelId);
+  constructor(modelId?: string) {
+    this.modelId = modelId || DEFAULT_MODEL_ID;
+    this.modelDefinition = getModelById(this.modelId);
     this.modelAdapter = adapters[this.modelDefinition.provider]();
   }
 

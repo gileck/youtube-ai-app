@@ -3,8 +3,9 @@
  */
 import { CombinedTranscriptChapters } from '../../youtube/chaptersTranscriptService';
 import { AIModelAdapterResponse } from '../types';
+import { VideoActionType } from '@/services/AiActions/index';
 
-export type VideoActionType = 'summary' | 'highlights' | 'questions';
+
 
 export interface VideoActionRequest {
   videoId: string;

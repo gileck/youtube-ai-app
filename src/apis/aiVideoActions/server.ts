@@ -2,11 +2,11 @@
  * Server-side implementation for AI Video Actions API
  */
 
-import { getVideoActionHandler } from '../../server/ai/video-actions';
 import { getChaptersTranscripts } from '../../server/youtube/chaptersTranscriptService';
 import { AIVideoActionRequest, AIVideoActionResponse } from './types';
 import { name } from './index';
 import { youtubeAdapter } from '../../server/youtube';
+import { processAiAction } from '@/server/ai/video-actions/aiAction';
 
 /**
  * Process an AI video action request
@@ -44,22 +44,12 @@ export const process = async (
     const chaptersData = await getChaptersTranscripts(videoId);
     
     // Get the video details to retrieve the title
-    let videoTitle = 'Unknown Video Title';
-    try {
-      const videoDetails = await youtubeAdapter.getVideoDetails({ videoId });
-      if (!videoDetails.error && videoDetails.data) {
-        videoTitle = videoDetails.data.title || videoTitle;
-      }
-    } catch (error) {
-      console.error('Error fetching video title:', error);
-      // Continue with default title if there's an error
-    }
-    
-    // Get the handler for the requested action type
-    const actionHandler = getVideoActionHandler(actionType);
-    
-    // Process the action with the video title
-    const actionResult = await actionHandler.process(chaptersData, modelId, videoTitle);
+    const videoDetails = await youtubeAdapter.getVideoDetails({ videoId })
+  
+    const actionResult = await processAiAction({chaptersData, modelId, videoDetails, actionType});
+
+    // const actionHandler = getVideoActionHandler(actionType);
+    // const actionResult = await actionHandler.process(chaptersData, modelId, videoTitle);
     
     // Return the result
     return {

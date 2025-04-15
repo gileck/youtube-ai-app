@@ -9,7 +9,7 @@ import { VideoActionHandler } from './types';
 import { AIModelAdapterResponse } from '../types';
 
 // Default model to use if none specified
-const DEFAULT_MODEL_ID = 'gemini-1.5-flash-8b';
+
 
 /**
  * Generate a summary for each chapter and then summarize those summaries
@@ -21,8 +21,8 @@ const DEFAULT_MODEL_ID = 'gemini-1.5-flash-8b';
 const summaryAction: VideoActionHandler = {
   process: async (
     chaptersData: CombinedTranscriptChapters,
-    modelId: string = DEFAULT_MODEL_ID,
-    videoTitle: string = 'Unknown Video Title'
+    modelId: string | undefined,
+    videoTitle: string = 'Unknown Video Title',
   ): Promise<AIModelAdapterResponse<string>> => {
     // Initialize the AI model adapter
     const modelAdapter = new AIModelAdapter(modelId);

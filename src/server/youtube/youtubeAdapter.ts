@@ -255,7 +255,7 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
       
     async getVideoDetails(
       params: YouTubeVideoParams
-    ): Promise<YouTubeApiResponse<YouTubeVideoDetails>> {
+    ): Promise<YouTubeVideoDetails | null> {
       try {
         const { videoId } = params;
         
@@ -281,20 +281,9 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
           commentCount: '0', // Default to 0 if comment count is not available
         };
         
-        const response: YouTubeApiResponse<YouTubeVideoDetails> = {
-          data: videoDetails,
-        };
-        
-        
-        return response;
-      } catch (error) {
-        console.error('Error getting YouTube video details:', error);
-        return {
-          error: {
-            message: error instanceof Error ? error.message : 'Unknown error occurred',
-            code: 'YOUTUBE_VIDEO_DETAILS_ERROR',
-          },
-        };
+        return videoDetails;
+      } catch {
+        return null
       }
     },
 

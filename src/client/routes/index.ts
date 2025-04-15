@@ -10,7 +10,6 @@ import { Bookmarks } from './Bookmarks';
 import { Video } from './Video';
 import { VideoFeed } from './VideoFeed';
 import { VideoChapters } from './VideoChapters';
-import { AIVideoActions } from './AIVideoActions';
 import { createRoutes } from '../router';
 
 // Define routes
@@ -24,7 +23,6 @@ export const routes = createRoutes({
   '/channel/:id': Channel,
   '/video/:id': Video,
   '/video-chapters': VideoChapters,
-  '/ai-video-actions': AIVideoActions,
   '/bookmarks': Bookmarks,
   '/video-feed': VideoFeed,
   '/not-found': NotFound,

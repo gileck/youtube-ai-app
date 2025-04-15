@@ -4,7 +4,7 @@ import {
   Paper,
 } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
-import { ActionRendererProps } from './index';
+import { ActionRendererProps } from '@/services/AiActions/types';
 
 /**
  * Renders a summary with proper markdown formatting

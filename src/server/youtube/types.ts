@@ -125,7 +125,7 @@ export interface YouTubeApiAdapter {
    * @param params Video parameters
    * @returns Promise with video details or error
    */
-  getVideoDetails(params: YouTubeVideoParams): Promise<YouTubeApiResponse<YouTubeVideoDetails>>;
+  getVideoDetails(params: YouTubeVideoParams): Promise<YouTubeVideoDetails | null>;
 
   /**
    * Get videos from a specific channel
@@ -133,4 +133,19 @@ export interface YouTubeApiAdapter {
    * @returns Promise with channel videos or error
    */
   getChannelVideos(params: YouTubeChannelParams): Promise<YouTubeChannelResponse>;
+}
+
+export interface TranscriptSegment {
+  text: string;
+  offset: number;  // in seconds
+  duration: number; // in seconds
+  relativeOffset: number; // position within chapter (0-1)
+}
+
+export interface ChapterWithContent {
+  title: string;
+  startTime: number;
+  endTime: number;
+  content: string;
+  segments: TranscriptSegment[];
 }

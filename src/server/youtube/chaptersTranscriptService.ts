@@ -1,53 +1,42 @@
-import { fetchTranscript, TranscriptResponse } from '../youtube/transcript/youtubeTranscriptService';
-import { Chapter, fetchChapters } from '../youtube/chapters/chaptersService';
-
-
-/**
- * Configuration for filtering out chapters and transcript items based on their content
- */
-const chapterFilterConfig = {
-  /**
-   * List of words/phrases that will cause a chapter to be filtered out
-   * Case-insensitive matching is applied
-   */
-  filteredPhrases: [
-    'sponsor',
-    'advertisement',
-    'ad break',
-    'promotion',
-  ],
+  import { fetchTranscript, TranscriptResponse } from '../youtube/transcript/youtubeTranscriptService';
+  import { Chapter, fetchChapters } from '../youtube/chapters/chaptersService';
+  import { ChapterWithContent } from '../youtube/types';
 
   /**
-   * List of words/phrases that will cause a transcript item to be filtered out
-   * Case-insensitive matching is applied
+   * Configuration for filtering out chapters and transcript items based on their content
    */
-  filteredTranscriptPhrases: [
-    'is sponsored by',
-    'this video is sponsored by',
-    'today\'s sponsor',
-    'special thanks to our sponsor',
-  ]
-};
+  const chapterFilterConfig = {
+    /**
+     * List of words/phrases that will cause a chapter to be filtered out
+     * Case-insensitive matching is applied
+     */
+    filteredPhrases: [
+      'sponsor',
+      'advertisement',
+      'ad break',
+      'promotion',
+    ],
+
+    /**
+     * List of words/phrases that will cause a transcript item to be filtered out
+     * Case-insensitive matching is applied
+     */
+    filteredTranscriptPhrases: [
+      'is sponsored by',
+      'this video is sponsored by',
+      'today\'s sponsor',
+      'special thanks to our sponsor',
+    ]
+  };
 
 
 
-interface TranscriptSegment {
-  text: string;
-  offset: number;  // in seconds
-  duration: number; // in seconds
-  relativeOffset: number; // position within chapter (0-1)
-}
 
-interface ChapterWithContent {
-  title: string;
-  startTime: number;
-  endTime: number;
-  content: string;
-  segments: TranscriptSegment[];
-}
 
-export interface CombinedTranscriptChapters {
-  videoId: string;
+
+
+  export interface CombinedTranscriptChapters {
+    videoId: string;
   metadata: {
     totalDuration: number;
     chapterCount: number;

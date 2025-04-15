@@ -2,7 +2,7 @@
  * Types for AI Video Actions API
  */
 
-import { VideoActionType } from '../../server/ai/video-actions';
+import { VideoActionType } from '@/services/AiActions/index';
 
 // Request type for AI video actions
 export interface AIVideoActionRequest {

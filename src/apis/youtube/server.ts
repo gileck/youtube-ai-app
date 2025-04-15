@@ -152,12 +152,20 @@ export const getYouTubeVideoDetails = async (
     const response = await youtubeAdapter.getVideoDetails({
       videoId,
     });
+
+    if (!response) {
+      return {
+        error: {    
+          message: 'Video not found',
+          code: 'VIDEO_NOT_FOUND',
+        },
+      };
+    }
     
     // Return the response with consistent structure
     return {
-      video: response.data,
-      error: response.error,
-    };
+      video: response,
+    }
   } catch (error) {
     console.error('Error in getYouTubeVideoDetails:', error);
     return {
