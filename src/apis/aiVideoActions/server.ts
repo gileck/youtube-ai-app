@@ -33,25 +33,17 @@ export const process = async (
     if (!actionType) {
       return {
         videoId,
-        actionType: 'summary', // Default to summary if not specified
+        actionType,
         result: '',
         cost: { totalCost: 0 },
         error: 'Invalid actionType parameter'
       };
     }
     
-    // Get the chapters and transcript data
     const chaptersData = await getChaptersTranscripts(videoId);
-    
-    // Get the video details to retrieve the title
     const videoDetails = await youtubeAdapter.getVideoDetails({ videoId })
-  
     const actionResult = await processAiAction({chaptersData, modelId, videoDetails, actionType});
 
-    // const actionHandler = getVideoActionHandler(actionType);
-    // const actionResult = await actionHandler.process(chaptersData, modelId, videoTitle);
-    
-    // Return the result
     return {
       videoId,
       actionType,
@@ -62,7 +54,7 @@ export const process = async (
     console.error('Error in AI video action:', error);
     return {
       videoId: request.videoId || '',
-      actionType: request.actionType || 'summary',
+      actionType: request.actionType,
       result: '',
       cost: { totalCost: 0 },
       error: error instanceof Error ? error.message : 'Unknown error occurred'

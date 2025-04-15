@@ -1,42 +1,36 @@
   import { fetchTranscript, TranscriptResponse } from '../youtube/transcript/youtubeTranscriptService';
-  import { Chapter, fetchChapters } from '../youtube/chapters/chaptersService';
-  import { ChapterWithContent } from '../youtube/types';
+import { Chapter, fetchChapters } from '../youtube/chapters/chaptersService';
+import { ChapterWithContent, TranscriptSegment } from '../youtube/types';
+
+/**
+ * Configuration for filtering out chapters and transcript items based on their content
+ */
+const chapterFilterConfig = {
+  /**
+   * List of words/phrases that will cause a chapter to be filtered out
+   * Case-insensitive matching is applied
+   */
+  filteredPhrases: [
+    'sponsor',
+    'advertisement',
+    'ad break',
+    'promotion',
+  ],
 
   /**
-   * Configuration for filtering out chapters and transcript items based on their content
+   * List of words/phrases that will cause a transcript item to be filtered out
+   * Case-insensitive matching is applied
    */
-  const chapterFilterConfig = {
-    /**
-     * List of words/phrases that will cause a chapter to be filtered out
-     * Case-insensitive matching is applied
-     */
-    filteredPhrases: [
-      'sponsor',
-      'advertisement',
-      'ad break',
-      'promotion',
-    ],
+  filteredTranscriptPhrases: [
+    'is sponsored by',
+    'this video is sponsored by',
+    'today\'s sponsor',
+    'special thanks to our sponsor',
+  ]
+};
 
-    /**
-     * List of words/phrases that will cause a transcript item to be filtered out
-     * Case-insensitive matching is applied
-     */
-    filteredTranscriptPhrases: [
-      'is sponsored by',
-      'this video is sponsored by',
-      'today\'s sponsor',
-      'special thanks to our sponsor',
-    ]
-  };
-
-
-
-
-
-
-
-  export interface CombinedTranscriptChapters {
-    videoId: string;
+export interface CombinedTranscriptChapters {
+  videoId: string;
   metadata: {
     totalDuration: number;
     chapterCount: number;
@@ -44,7 +38,136 @@
     overlapOffsetSeconds: number;
   };
   chapters: ChapterWithContent[];
+  transcript: TranscriptResponse['segments'];
   error?: string;
+}
+
+/**
+ * Split transcript into artificial chapters when no chapters are available from the video
+ * 
+ * @param transcript Array of transcript items
+ * @param videoId YouTube video ID
+ * @param options Processing options including overlap offset
+ * @returns Combined transcript and chapters data
+ */
+export function splitTranscriptToChapters(
+  transcript: TranscriptResponse['segments'], 
+  videoId: string, 
+  options: { 
+    overlapOffsetSeconds: number;
+    segmentsPerChapter?: number;
+    totalChapters?: number;
+  } = { 
+    overlapOffsetSeconds: 5,
+    segmentsPerChapter: 30,
+    totalChapters: 0, // 0 means auto-calculate based on segmentsPerChapter
+  }
+): CombinedTranscriptChapters {
+  if (!transcript || transcript.length === 0) {
+    return {
+      videoId,
+      metadata: {
+        totalDuration: 0,
+        chapterCount: 0,
+        transcriptItemCount: 0,
+        overlapOffsetSeconds: options.overlapOffsetSeconds
+      },
+      chapters: [],
+      transcript: [],
+      error: 'No transcript available to split into chapters'
+    };
+  }
+
+  // Sort transcript by start time to ensure chronological order
+  const sortedTranscript = [...transcript].sort((a, b) => a.start_seconds - b.start_seconds);
+  
+  // Determine the total duration from the last transcript item
+  const lastItem = sortedTranscript[sortedTranscript.length - 1];
+  const totalDuration = lastItem.end_seconds;
+  
+  // Determine number of chapters based on options
+  const segmentsPerChapter = options.segmentsPerChapter || 30;
+  let totalChapters = options.totalChapters || 0;
+  
+  if (totalChapters <= 0) {
+    // Auto-calculate number of chapters based on segmentsPerChapter
+    totalChapters = Math.ceil(sortedTranscript.length / segmentsPerChapter);
+    // Ensure we have at least 3 chapters and at most 10 for reasonable navigation
+    totalChapters = Math.max(3, Math.min(10, totalChapters));
+  }
+  
+  // Calculate segments per chapter based on total transcript length and desired chapter count
+  const actualSegmentsPerChapter = Math.ceil(sortedTranscript.length / totalChapters);
+  
+  // Create artificial chapters
+  const artificialChapters: Chapter[] = [];
+  
+  for (let i = 0; i < totalChapters; i++) {
+    const startIndex = i * actualSegmentsPerChapter;
+    const endIndex = Math.min((i + 1) * actualSegmentsPerChapter - 1, sortedTranscript.length - 1);
+    
+    // Use the start and end timestamps from the transcript segments
+    const startTime = sortedTranscript[startIndex].start_seconds;
+    const endTime = i === totalChapters - 1 
+      ? totalDuration 
+      : sortedTranscript[endIndex].end_seconds;
+    
+    // Generate a title based on the chapter number and timestamp
+    const startMinutes = Math.floor(startTime / 60);
+    const startSeconds = Math.floor(startTime % 60);
+    const formattedTime = `${startMinutes}:${startSeconds.toString().padStart(2, '0')}`;
+    
+    artificialChapters.push({
+      title: `Chapter ${i + 1} (${formattedTime})`,
+      startTime,
+      endTime
+    });
+  }
+  
+  // Apply overlap to chapters
+  const chaptersWithOverlap = applyChapterOverlap(artificialChapters, options.overlapOffsetSeconds);
+  
+  // Initialize chapters with content containers
+  const chaptersWithContent = initializeChaptersWithContent(chaptersWithOverlap);
+  
+  // Assign transcript segments to chapters
+  for (const segment of sortedTranscript) {
+    // Skip filtered transcript items
+    if (shouldFilterTranscriptItem(segment.text)) {
+      continue;
+    }
+    
+    // Find all chapters that contain this segment's timestamp
+    for (const chapter of chaptersWithContent) {
+      if (segment.start_seconds >= chapter.startTime && segment.start_seconds <= chapter.endTime) {
+        // Calculate relative position within the chapter (0-1)
+        const relativePosition = calculateRelativePosition(segment.start_seconds, chapter);
+        
+        // Convert YouTube transcript segment to TranscriptSegment format
+        const transcriptSegment: TranscriptSegment = {
+          text: segment.text,
+          offset: segment.start_seconds,
+          duration: segment.end_seconds - segment.start_seconds,
+          relativeOffset: relativePosition
+        };
+        
+        // Add segment to this chapter
+        chapter.segments.push(transcriptSegment);
+        
+        // Add to content (will be rebuilt in finalizeOutput)
+        if (!chapter.content) {
+          chapter.content = segment.text;
+        } else {
+          chapter.content += ' ' + segment.text;
+        }
+      }
+    }
+  }
+  
+  // Finalize the output using the existing finalizeOutput function
+  return finalizeOutput(chaptersWithContent, transcript, videoId, {
+    overlapOffsetSeconds: options.overlapOffsetSeconds
+  });
 }
 
 /**
@@ -91,17 +214,6 @@ function initializeChaptersWithContent(chapters: Chapter[]): ChapterWithContent[
     segments: []
   }));
 }
-
-/**
- * Find the chapter that contains a specific timestamp
- * 
- * @param timestamp Timestamp in seconds
- * @param chapters Array of chapters
- * @returns Index of the matching chapter or -1 if not found
- */
-// Function commented out as it's not currently used but may be needed in the future
-// function findChapterForTimestamp(timestamp: number, chapters: Chapter[]): number { }
-
 
 /**
  * Calculate relative position of a timestamp within a chapter (0-1)
@@ -195,7 +307,8 @@ function finalizeOutput(
       transcriptItemCount: transcript.length,
       overlapOffsetSeconds: options.overlapOffsetSeconds
     },
-    chapters: processedChapters
+    chapters: processedChapters,
+    transcript
   };
 }
 
@@ -220,6 +333,7 @@ function combineTranscriptAndChapters(
   // If no transcript or chapters, return empty structure
   if (!transcript.length || !chapters.length) {
     return {
+      transcript: [],
       videoId,
       metadata: {
         totalDuration: 0,
@@ -256,7 +370,7 @@ function combineTranscriptAndChapters(
         // Add segment to chapter's segments array
         chapterContent.segments.push({
           text: item.text,
-          offset: segmentTimeSeconds,
+          offset: item.start_seconds,
           duration: item.end_seconds - item.start_seconds,
           relativeOffset: relativePosition
         });
@@ -279,8 +393,12 @@ export async function getChaptersTranscripts(
   videoId: string,
   options: {
     overlapOffsetSeconds: number;
+    segmentsPerChapter?: number;
+    totalChapters?: number;
   } = { 
-    overlapOffsetSeconds: 5, 
+    overlapOffsetSeconds: 5,
+    segmentsPerChapter: 30,
+    totalChapters: 0
   }
 ): Promise<CombinedTranscriptChapters> {
   try {
@@ -289,6 +407,11 @@ export async function getChaptersTranscripts(
       fetchTranscript(videoId),
       fetchChapters(videoId)
     ]);
+
+    if (chapters.length === 0) {
+      // Use the splitTranscriptToChapters as a fallback when no chapters are available
+      return splitTranscriptToChapters(transcript.segments, videoId, options);
+    }
 
     // Filter out transcript items based on their content if filtering is enabled
     const filteredTranscript = transcript.segments.filter(item => !shouldFilterTranscriptItem(item.text))
@@ -314,6 +437,7 @@ export async function getChaptersTranscripts(
         transcriptItemCount: 0,
         overlapOffsetSeconds: options.overlapOffsetSeconds
       },
+      transcript: [],
       chapters: [],
       error: error instanceof Error ? error.message : String(error)
     } as CombinedTranscriptChapters & { error: string };

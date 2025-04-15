@@ -36,6 +36,13 @@ async function processAiAction(
     const modelAdapter = new AIModelAdapter(modelId);
 
     let totalCost = 0;
+
+    if (chaptersData.chapters.length === 0) {
+      //defulat to full transcript
+      // const transcript = chaptersData.transcript.map(segment => segment.text).join(' ');
+
+      
+    }
     
     const chapterPromises = chaptersData.chapters.map(async (chapter) => {
 
