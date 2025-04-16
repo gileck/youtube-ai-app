@@ -10,17 +10,17 @@ import {
   ListItemButton,
   Divider
 } from '@mui/material';
-import { ExpandMore, ExpandLess } from '@mui/icons-material';
+import { ExpandMore, ExpandLess, QuestionAnswer } from '@mui/icons-material';
 import { ActionRendererProps } from '@/services/AiActions/types';
-import { KeyPointsResult } from '.';
+import { PodcastQAResult } from '.';
 import ReactMarkdown from 'react-markdown';
 
 /**
- * Renders a list of key points with expandable descriptions
+ * Renders a list of podcast questions and answers with expandable answers
  * 
- * @param result The key points with title, emoji and description
+ * @param result The podcast Q&A pairs
  */
-export const KeyPointsRenderer: React.FC<ActionRendererProps<KeyPointsResult>> = ({ result }) => {
+export const PodcastQARenderer: React.FC<ActionRendererProps<PodcastQAResult>> = ({ result }) => {
   const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>({});
 
   const handleToggle = (index: number) => {
@@ -40,12 +40,16 @@ export const KeyPointsRenderer: React.FC<ActionRendererProps<KeyPointsResult>> =
         overflow: 'auto'
       }}
     >
-      <Typography variant="h6" gutterBottom>
-        Key Points
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <QuestionAnswer sx={{ mr: 1, color: 'primary.main' }} />
+        <Typography variant="h6">
+          Podcast Questions & Answers
+        </Typography>
+      </Box>
+      
       <List sx={{ width: '100%' }}>
-        {result?.keyPoints?.length > 0 ? (
-          result.keyPoints.map((keyPoint, index) => (
+        {result?.qaPairs?.length > 0 ? (
+          result.qaPairs.map((qaPair, index) => (
             <React.Fragment key={index}>
               <ListItem 
                 disablePadding
@@ -59,9 +63,8 @@ export const KeyPointsRenderer: React.FC<ActionRendererProps<KeyPointsResult>> =
                 <ListItemButton onClick={() => handleToggle(index)}>
                   <ListItemText 
                     primary={
-                      <Typography>
-                        <Box component="span" mr={1}>{keyPoint.emoji}</Box>
-                        {keyPoint.title}
+                      <Typography fontWeight="medium" color="primary.main">
+                        {qaPair.question}
                       </Typography>
                     } 
                   />
@@ -80,11 +83,11 @@ export const KeyPointsRenderer: React.FC<ActionRendererProps<KeyPointsResult>> =
                   className="markdown-content"
                 >
                   <ReactMarkdown>
-                    {keyPoint.description}
+                    {qaPair.answer}
                   </ReactMarkdown>
                 </Box>
               </Collapse>
-              {index < result.keyPoints.length - 1 && (
+              {index < result.qaPairs.length - 1 && (
                 <Box sx={{ my: 1 }}>
                   <Divider />
                 </Box>
@@ -94,7 +97,7 @@ export const KeyPointsRenderer: React.FC<ActionRendererProps<KeyPointsResult>> =
         ) : (
           <Box sx={{ p: 2, textAlign: 'center' }}>
             <Typography color="text.secondary">
-              No key points were found in this content.
+              No questions and answers were found in this content. This might not be a podcast or interview format.
             </Typography>
           </Box>
         )}
@@ -103,4 +106,4 @@ export const KeyPointsRenderer: React.FC<ActionRendererProps<KeyPointsResult>> =
   );
 };
 
-export default KeyPointsRenderer;
+export default PodcastQARenderer;

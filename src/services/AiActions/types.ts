@@ -9,7 +9,7 @@ export type ChaptersData = Array<{
 export interface ActionRendererProps<T> {
     result: T;
   }
-export type VideoActionType = 'summary' | 'keyPoints'
+export type VideoActionType = 'summary' | 'keyPoints' | 'podcastQA'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AiAction<T = any> = {
     icon: typeof Summarize,
@@ -21,10 +21,9 @@ export type AiAction<T = any> = {
     }: {
         videoDetails: YouTubeVideoDetails | null
         chapters: ChaptersData;
-    }) => string;
+    }) => string ;
     chapterPrompt: ({ videoDetails, chapter }: { videoDetails: YouTubeVideoDetails | null; chapter: ChapterWithContent }) => string;
 };
 export type AiActionsData = {
     [key in VideoActionType]: AiAction
 };
-
