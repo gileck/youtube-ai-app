@@ -6,14 +6,15 @@ export type ChaptersData = Array<{
     title: string;
     result: string
 }>;
-export interface ActionRendererProps {
-    result: string;
+export interface ActionRendererProps<T> {
+    result: T;
   }
-export type VideoActionType = 'summary'
-export type AiAction = {
+export type VideoActionType = 'summary' | 'keyPoints'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AiAction<T = any> = {
     icon: typeof Summarize,
     label: string,
-    rendeder: React.FC<ActionRendererProps>;
+    rendeder: React.FC<ActionRendererProps<T>>;
     mainPrompt: ({
         videoDetails,
         chapters,
@@ -26,3 +27,4 @@ export type AiAction = {
 export type AiActionsData = {
     [key in VideoActionType]: AiAction
 };
+

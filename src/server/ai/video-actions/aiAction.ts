@@ -17,7 +17,7 @@ import { VideoActionType } from '@/services/AiActions/index';
  * @param videoTitle Optional video title to include in the summary
  * @returns Promise with the summary result and accumulated cost
  */
-async function processAiAction(
+async function processAiAction<T>(
     {
 
       chaptersData,
@@ -31,7 +31,7 @@ async function processAiAction(
       videoDetails: YouTubeVideoDetails | null,
       actionType: VideoActionType
     }
-  ): Promise<AIModelAdapterResponse<string>> {
+  ): Promise<AIModelAdapterResponse<T>> {
     const { chapterPrompt, mainPrompt } = aiActions[actionType]
     const modelAdapter = new AIModelAdapter(modelId);
 
@@ -64,7 +64,7 @@ async function processAiAction(
         console.error(`Error summarizing chapter "${chapter.title}":`, error);
         return {
           title: chapter.title,
-          result: `Error generating summary for this chapter: ${error instanceof Error ? error.message : 'Unknown error'}`
+          result: ''
         };
       }
     });
@@ -75,11 +75,11 @@ async function processAiAction(
       videoDetails: videoDetails,
       chapters: chapterResults.map(chapter => ({
         title: chapter.title,
-        result: chapter.result
+        result: chapter.result || ''
       }))
     });
 
-    const finalResult = await modelAdapter.processPromptToText(
+    const finalResult = await modelAdapter.processPromptToJSON<T>(
       finalPrompt,
       actionType
     );

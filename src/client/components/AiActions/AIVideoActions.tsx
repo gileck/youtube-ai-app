@@ -29,7 +29,7 @@ import { aiActions, VideoActionType } from '../../../services/AiActions';
 export const AIVideoActions = ({videoId}: { videoId: string }) => {
   const [actionType, setActionType] = useState<VideoActionType>('summary');
   const [loading, setLoading] = useState<boolean>(false);
-  const [result, setResult] = useState<string>('');
+  const [result, setResult] = useState<unknown | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cost, setCost] = useState<number>(0);
   const [isFromCache, setIsFromCache] = useState<boolean>(false);
@@ -96,30 +96,10 @@ export const AIVideoActions = ({videoId}: { videoId: string }) => {
   // Render the appropriate content based on the action type
   const renderActionResult = () => {
     if (!result) return null;
-
-    // Get the renderer component for the current action type
     const Renderer = aiActions[actionType].rendeder
-    
-    // If a renderer exists for this action type, use it
-    if (Renderer) {
-      return <Renderer result={result} />;
-    }
-    
-    // Fallback for any unimplemented action types
-    return (
-      <Paper 
-        elevation={0} 
-        sx={{ 
-          p: 3, 
-          bgcolor: 'background.default',
-          borderRadius: 2,
-          maxHeight: '600px',
-          overflow: 'auto'
-        }}
-      >
-        <Typography variant="body1">{result}</Typography>
-      </Paper>
-    );
+    // Type assertion to tell TypeScript that we know what we're doing
+    // Each renderer is responsible for handling its specific result type
+    return <Renderer result={result} />;
   };
 
   return (
@@ -229,7 +209,7 @@ export const AIVideoActions = ({videoId}: { videoId: string }) => {
             >
               {isMobile ? 'Process' : 'Process Video'}
             </Button>
-            {result && (
+            {!!result && (
               <Tooltip title="Generate a fresh result without using cache">
                 <Button
                   variant="outlined"
@@ -253,11 +233,11 @@ export const AIVideoActions = ({videoId}: { videoId: string }) => {
           </Stack>
         </Stack>
         {/* Error message */}
-        {error && (
+        {error ? (
           <Alert severity="error" sx={{ mb: 3, borderRadius: 3, fontSize: '1.05rem' }}>
             {error}
           </Alert>
-        )}
+        ) : ''}
         {/* Loading indicator */}
         {loading && (
           <Box sx={{ 
@@ -271,7 +251,7 @@ export const AIVideoActions = ({videoId}: { videoId: string }) => {
           </Box>
         )}
         {/* Results section */}
-        {result && (
+        {!!result && (
           <Box>
             {/* Result header with metadata */}
             <Box sx={{ mb: 2 }}>

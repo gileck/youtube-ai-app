@@ -12,10 +12,10 @@ export interface AIVideoActionRequest {
 }
 
 // Response type for AI video actions
-export interface AIVideoActionResponse {
+export interface AIVideoActionResponse<T> {
   videoId: string;
   actionType: VideoActionType;
-  result: string;
+  result: T;
   cost: {
     totalCost: number;
   };

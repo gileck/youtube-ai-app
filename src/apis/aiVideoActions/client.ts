@@ -17,8 +17,8 @@ import { ApiOptions } from '../../client/utils/apiClient';
 export const processAIVideoAction = async (
   request: AIVideoActionRequest,
   options?: ApiOptions
-): Promise<CacheResult<AIVideoActionResponse>> => {
-  return apiClient.call<CacheResult<AIVideoActionResponse>, AIVideoActionRequest>(
+): Promise<CacheResult<AIVideoActionResponse<unknown>>> => {
+  return apiClient.call<CacheResult<AIVideoActionResponse<unknown>>, AIVideoActionRequest>(
     name,
     request,
     options

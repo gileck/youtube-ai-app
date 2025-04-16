@@ -55,12 +55,14 @@ export function splitTranscriptToChapters(
   videoId: string, 
   options: { 
     overlapOffsetSeconds: number;
+    chapterDurationSeconds?: number;
     segmentsPerChapter?: number;
     totalChapters?: number;
   } = { 
     overlapOffsetSeconds: 5,
+    chapterDurationSeconds: 600, // 10 minutes per chapter
     segmentsPerChapter: 30,
-    totalChapters: 0, // 0 means auto-calculate based on segmentsPerChapter
+    totalChapters: 0, // 0 means auto-calculate based on segmentsPerChapter or chapterDurationSeconds
   }
 ): CombinedTranscriptChapters {
   if (!transcript || transcript.length === 0) {
@@ -85,32 +87,18 @@ export function splitTranscriptToChapters(
   const lastItem = sortedTranscript[sortedTranscript.length - 1];
   const totalDuration = lastItem.end_seconds;
   
-  // Determine number of chapters based on options
-  const segmentsPerChapter = options.segmentsPerChapter || 30;
-  let totalChapters = options.totalChapters || 0;
+  // Create chapters based on fixed duration (10 minutes = 600 seconds)
+  const chapterDuration = options.chapterDurationSeconds || 600; // Default to 10 minutes
   
-  if (totalChapters <= 0) {
-    // Auto-calculate number of chapters based on segmentsPerChapter
-    totalChapters = Math.ceil(sortedTranscript.length / segmentsPerChapter);
-    // Ensure we have at least 3 chapters and at most 10 for reasonable navigation
-    totalChapters = Math.max(3, Math.min(10, totalChapters));
-  }
-  
-  // Calculate segments per chapter based on total transcript length and desired chapter count
-  const actualSegmentsPerChapter = Math.ceil(sortedTranscript.length / totalChapters);
+  // Calculate total number of chapters based on video duration
+  const totalChapters = Math.ceil(totalDuration / chapterDuration);
   
   // Create artificial chapters
   const artificialChapters: Chapter[] = [];
   
   for (let i = 0; i < totalChapters; i++) {
-    const startIndex = i * actualSegmentsPerChapter;
-    const endIndex = Math.min((i + 1) * actualSegmentsPerChapter - 1, sortedTranscript.length - 1);
-    
-    // Use the start and end timestamps from the transcript segments
-    const startTime = sortedTranscript[startIndex].start_seconds;
-    const endTime = i === totalChapters - 1 
-      ? totalDuration 
-      : sortedTranscript[endIndex].end_seconds;
+    const startTime = i * chapterDuration;
+    const endTime = Math.min((i + 1) * chapterDuration, totalDuration);
     
     // Generate a title based on the chapter number and timestamp
     const startMinutes = Math.floor(startTime / 60);

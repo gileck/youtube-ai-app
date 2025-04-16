@@ -5,13 +5,14 @@ import {
 } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import { ActionRendererProps } from '@/services/AiActions/types';
+import { SummaryResult } from '.';
 
 /**
  * Renders a summary with proper markdown formatting
  * 
  * @param result The summary text in markdown format
  */
-export const SummaryRenderer: React.FC<ActionRendererProps> = ({ result }) => {
+export const SummaryRenderer: React.FC<ActionRendererProps<SummaryResult>> = ({ result }) => {
   return (
     <Paper 
       elevation={0} 
@@ -61,7 +62,7 @@ export const SummaryRenderer: React.FC<ActionRendererProps> = ({ result }) => {
         }
       }}>
         <ReactMarkdown>
-          {result}
+          {result.summary}
         </ReactMarkdown>
       </Box>
     </Paper>

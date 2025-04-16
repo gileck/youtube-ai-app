@@ -22,6 +22,7 @@ export const routes = createRoutes({
   '/search': Search,
   '/channel/:id': Channel,
   '/video/:id': Video,
+  '/video/:id/:tab': Video,
   '/video-chapters': VideoChapters,
   '/bookmarks': Bookmarks,
   '/video-feed': VideoFeed,

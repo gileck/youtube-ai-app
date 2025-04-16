@@ -1,19 +1,41 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, CircularProgress, Paper, Avatar, Button } from '@mui/material';
+import { 
+  Box, 
+  Typography, 
+  CircularProgress, 
+  Paper, 
+  Avatar, 
+  Button
+} from '@mui/material';
 import { useRouter } from '../../router';
 import { getYouTubeVideoDetails } from '../../../apis/youtube/client';
 import { YouTubeVideoDetails } from '../../../shared/types/youtube';
 import { formatViewCount, formatDate } from '../../components/youtube/search/utils';
 import { AIVideoActions } from '@/client/components/AiActions/AIVideoActions';
+import { VideoTranscript } from './VideoTranscript';
+
+// Define valid tab types
+type TabType = 'summary' | 'transcript' | 'keypoints' | 'more';
 
 export const Video = () => {
-  const { routeParams, navigate } = useRouter();
+  const { routeParams, navigate, currentPath } = useRouter();
   const videoId = routeParams.id;
+  const tabParam = routeParams.tab as TabType | undefined;
   const [video, setVideo] = useState<YouTubeVideoDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const [tab, setTab] = useState<'summary' | 'transcript' | 'keypoints' | 'more'>('summary');
+  const [tab, setTab] = useState<TabType>('summary');
+
+  // Determine the active tab from the URL path parameter
+  useEffect(() => {
+    if (tabParam && ['summary', 'transcript', 'keypoints', 'more'].includes(tabParam)) {
+      setTab(tabParam as TabType);
+    } else if (!currentPath.includes('/video/' + videoId + '/')) {
+      // If we're on the base video URL without a tab, default to summary
+      setTab('summary');
+    }
+  }, [tabParam, videoId, currentPath]);
 
   useEffect(() => {
     const fetchVideoDetails = async () => {
@@ -56,6 +78,17 @@ export const Video = () => {
   const getTruncatedDescription = (description: string): string => {
     if (!description) return '';
     return description.slice(0, 300) + '...';
+  };
+
+  // Update the URL when changing tabs using the generic tab parameter
+  const handleTabChange = (newTab: TabType) => {
+    setTab(newTab);
+    if (newTab === 'summary' && !tabParam) {
+      // If we're already on the base video URL and switching to summary,
+      // no need to change the URL
+      return;
+    }
+    navigate(`/video/${videoId}/${newTab}`, { replace: true });
   };
 
   if (loading) {
@@ -151,10 +184,34 @@ export const Video = () => {
 
       {/* Tabs */}
       <Box sx={{ display: 'flex', gap: 1, mb: 2, px: 1 }}>
-        <Button variant={tab === 'summary' ? 'contained' : 'outlined'} onClick={() => setTab('summary')} sx={{ borderRadius: 2, minWidth: 100 }}>Summary</Button>
-        <Button variant={tab === 'transcript' ? 'contained' : 'outlined'} onClick={() => setTab('transcript')} sx={{ borderRadius: 2, minWidth: 100 }}>Transcript</Button>
-        <Button variant={tab === 'keypoints' ? 'contained' : 'outlined'} onClick={() => setTab('keypoints')} sx={{ borderRadius: 2, minWidth: 100 }}>Key Points</Button>
-        <Button variant={tab === 'more' ? 'contained' : 'outlined'} onClick={() => setTab('more')} sx={{ borderRadius: 2, minWidth: 60 }}>...</Button>
+        <Button 
+          variant={tab === 'summary' ? 'contained' : 'outlined'} 
+          onClick={() => handleTabChange('summary')} 
+          sx={{ borderRadius: 2, minWidth: 100 }}
+        >
+          Summary
+        </Button>
+        <Button 
+          variant={tab === 'transcript' ? 'contained' : 'outlined'} 
+          onClick={() => handleTabChange('transcript')} 
+          sx={{ borderRadius: 2, minWidth: 100 }}
+        >
+          Transcript
+        </Button>
+        <Button 
+          variant={tab === 'keypoints' ? 'contained' : 'outlined'} 
+          onClick={() => handleTabChange('keypoints')} 
+          sx={{ borderRadius: 2, minWidth: 100 }}
+        >
+          Key Points
+        </Button>
+        <Button 
+          variant={tab === 'more' ? 'contained' : 'outlined'} 
+          onClick={() => handleTabChange('more')} 
+          sx={{ borderRadius: 2, minWidth: 60 }}
+        >
+          ...
+        </Button>
       </Box>
 
       {/* Main Content Area */}
@@ -163,7 +220,7 @@ export const Video = () => {
           <AIVideoActions videoId={videoId} />
         )}
         {tab === 'transcript' && (
-          <Typography variant="body2" color="text.secondary">Transcript coming soon...</Typography>
+          <VideoTranscript videoId={videoId} />
         )}
         {tab === 'keypoints' && (
           <Typography variant="body2" color="text.secondary">Key Points coming soon...</Typography>

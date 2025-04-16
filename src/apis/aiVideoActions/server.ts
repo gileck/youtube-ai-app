@@ -15,7 +15,7 @@ import { processAiAction } from '@/server/ai/video-actions/aiAction';
  */
 export const process = async (
   request: AIVideoActionRequest
-): Promise<AIVideoActionResponse> => {
+): Promise<AIVideoActionResponse<unknown>> => {
   try {
     const { videoId, actionType, modelId } = request;
     
