@@ -1,4 +1,4 @@
-import { YouTubeVideoDetails } from "@/apis/youtube";
+import { YouTubeVideoDetails } from "@/shared/types/youtube";
 import { Summarize } from "@mui/icons-material";
 import { ChapterWithContent } from "@/server/youtube/types";
 

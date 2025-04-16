@@ -42,7 +42,7 @@ export const searchYouTubeVideos = async (
     }
     
     // Call the YouTube adapter with all parameters including filters for videos
-    const videoResponse = await youtubeAdapter.searchVideos({
+    const { videos, filteredVideos, continuation, estimatedResults } = await youtubeAdapter.searchVideos({
       query,
       sortBy: request.filters?.sort_by,
       upload_date: request.filters?.upload_date,
@@ -53,26 +53,17 @@ export const searchYouTubeVideos = async (
       pageNumber
     });
     
-    // Only search for channels on the first page (not during pagination)
-    let channelResponse;
-    if (!pageNumber || pageNumber === 1) {
-      // Also search for channels with the same query
-      channelResponse = await youtubeAdapter.searchChannels({
-        query,
-      });
-    } else {
-      // Empty channel response for pagination requests
-      channelResponse = { data: [] };
-    }
+    const { channels } = await youtubeAdapter.searchChannels({
+      query,
+    });
     
     // Return the combined response with consistent structure
     return {
-      videos: videoResponse.data,
-      filteredVideos: videoResponse.filteredVideos,
-      channels: channelResponse.data,
-      continuation: videoResponse.continuation,
-      estimatedResults: videoResponse.estimatedResults,
-      error: videoResponse.error || channelResponse.error,
+      videos,
+      filteredVideos,
+      channels,
+      continuation,
+      estimatedResults,
     };
   } catch (error) {
     console.error('Error in searchYouTubeVideos:', error);
@@ -107,14 +98,13 @@ export const searchYouTubeChannels = async (
     }
     
     // Call the YouTube adapter
-    const response = await youtubeAdapter.searchChannels({
+    const { channels } = await youtubeAdapter.searchChannels({
       query,
     });
     
     // Return the response with consistent structure
     return {
-      channels: response.data,
-      error: response.error,
+      channels,
     };
   } catch (error) {
     console.error('Error in searchYouTubeChannels:', error);

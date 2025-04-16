@@ -12,7 +12,7 @@ import {
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
-import { YouTubeChannelSearchResult } from '../../../../server/youtube/types';
+import { YouTubeChannelSearchResult } from '@/shared/types/youtube';
 import { useRouter } from '../../../router';
 import { 
   bookmarkChannel, 

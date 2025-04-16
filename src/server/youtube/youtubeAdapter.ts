@@ -6,14 +6,17 @@ import {
   YouTubeSearchParams,
   YouTubeVideoParams,
   YouTubeChannelParams,
-  YouTubeApiResponse,
-  YouTubeVideoSearchResult,
-  YouTubeVideoDetails,
   YouTubeChannelSearchParams,
-  YouTubeChannelSearchResult,
-  YouTubeChannelInfo
 } from './types';
-import { YouTubeChannelResponse } from '@/shared/types/youtube';
+import { 
+  YouTubeVideoDetails, 
+  YouTubeVideoSearchResult, 
+  YouTubeChannelSearchResult, 
+  YouTubeChannelInfo, 
+  YouTubeChannelResponse,
+  YouTubeSearchVideosResponse,
+  YouTubeSearchChannelsResponse
+} from '@/shared/types/youtube';
 
 /**
  * YouTube API adapter implementation using youtubei.js
@@ -119,8 +122,7 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
   return {
     async searchVideos(
       params: YouTubeSearchParams
-    ): Promise<YouTubeApiResponse<YouTubeVideoSearchResult[]>> {
-      try {
+    ): Promise<YouTubeSearchVideosResponse<YouTubeVideoSearchResult[]>> {
         // console.log('Search parameters:', params);
         const { query, minViews = 0, pageNumber = 1 } = params;
         
@@ -193,30 +195,19 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
         // Check if there are more pages available
         const hasMorePages = typeof searchResults.getContinuation === 'function';
           
-        const response: YouTubeApiResponse<YouTubeVideoSearchResult[]> = {
-          data: videos,
+        return {
+          videos,
           filteredVideos,
           continuation: hasMorePages ? true : false,
           estimatedResults: searchResults.estimated_results
         };
-          
-        return response;
-      } catch (error) {
-        console.error('Error searching YouTube videos:', error);
-        return {
-          error: {
-            message: error instanceof Error ? error.message : 'Unknown error occurred',
-            code: 'YOUTUBE_SEARCH_ERROR',
-          },
-        };
-      }
+      
     },
       
     async searchChannels(
       params: YouTubeChannelSearchParams
-    ): Promise<YouTubeApiResponse<YouTubeChannelSearchResult[]>> {
-      try {
-        const { query } = params;
+    ): Promise<YouTubeSearchChannelsResponse<YouTubeChannelSearchResult[]>> {
+      const { query } = params;
         
         const youtube = await getInnertube();
         
@@ -237,30 +228,29 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
           }
         }
         
-        const response: YouTubeApiResponse<YouTubeChannelSearchResult[]> = {
-          data: channels,
-        };
-        
-        return response;
-      } catch (error) {
-        console.error('Error searching YouTube channels:', error);
         return {
-          error: {
-            message: error instanceof Error ? error.message : 'Unknown error occurred',
-            code: 'YOUTUBE_CHANNEL_SEARCH_ERROR',
-          },
-        };
-      }
+          channels
+        }
     },
       
     async getVideoDetails(
       params: YouTubeVideoParams
     ): Promise<YouTubeVideoDetails | null> {
-      try {
         const { videoId } = params;
         
         const youtube = await getInnertube();
         const videoInfo = await youtube.getInfo(videoId);
+
+        // Fetch channel info for avatar image
+        let channelImage: string | undefined = undefined;
+        if (videoInfo.basic_info.channel?.id) {
+          try {
+            const channelInfo = await youtube.getChannel(videoInfo.basic_info.channel.id);
+            channelImage = channelInfo?.metadata?.avatar?.[0]?.url || undefined;
+          } catch {
+            // If channel fetch fails, ignore and leave channelImage undefined
+          }
+        }
         
         // Transform to our format
         const videoDetails: YouTubeVideoDetails = {
@@ -279,12 +269,10 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
           category: videoInfo.basic_info.category || '',
           likeCount: String(videoInfo.basic_info.like_count || '0'),
           commentCount: '0', // Default to 0 if comment count is not available
+          channelImage,
         };
         
         return videoDetails;
-      } catch {
-        return null
-      }
     },
 
     async getChannelVideos(

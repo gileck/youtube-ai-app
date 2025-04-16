@@ -18,6 +18,6 @@ ALWAYS use the app guidelines when creating a new page or api:
 
 Guidelines for performing tasks:
 * Always follow the App Guidelines in app-guildelines directory.
-* Always run typescript and lint (`yarn checks`) checks before completing the task.
+* Always run typescript and lint (`yarn checks`) checks before completing the task and fix all the issues that are reported.
 * Always verify that the code you added comply with all the rules and guidelines in the app-guildelines.
 

@@ -4,25 +4,16 @@
 
 import { 
   YouTubeVideoSearchResult, 
-  YouTubeVideoDetails, 
-  YouTubeSortOption as ServerYouTubeSortOption,
+  YouTubeVideoDetails,
   YouTubeChannelSearchResult,
-  YouTubeApiError,
-  YouTubeChannelInfo
-} from '../../server/youtube/types';
+  YouTubeSortOption,
+  YouTubeApiError
+} from '@/shared/types/youtube';
 import type { Types } from 'youtubei.js';
 import type { CombinedTranscriptChapters } from '../../server/youtube/chaptersTranscriptService';
 
-// Re-export common types
-export type { 
-  YouTubeVideoSearchResult,
-  YouTubeVideoDetails,
-  YouTubeChannelSearchResult,
-  YouTubeChannelInfo
-};
-
 // Sort options - matching the server-side type
-export type YouTubeSortOption = ServerYouTubeSortOption;
+export type ServerYouTubeSortOption = YouTubeSortOption;
 
 // Search filters type
 export interface YouTubeSearchFilters {

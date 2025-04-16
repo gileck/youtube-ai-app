@@ -3,7 +3,6 @@ import { Box, Container, CircularProgress, Button, Tooltip, Typography, Paginati
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { getYouTubeChannelVideos } from '../../../apis/youtube/client';
 import { 
-  YouTubeVideoSearchResult, 
   YouTubeSearchFilters 
 } from '../../../apis/youtube/types';
 import { 
@@ -14,6 +13,7 @@ import {
   getBookmarkedChannels, 
   BookmarkedChannel 
 } from '../../utils/bookmarksStorage';
+import { YouTubeVideoSearchResult } from '@/shared/types/youtube';
 
 // Local storage key for filters
 const FILTERS_STORAGE_KEY = 'youtube_feed_filters';

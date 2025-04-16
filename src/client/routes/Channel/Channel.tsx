@@ -3,12 +3,13 @@ import { Box, Container, CircularProgress, Button, Tooltip, Typography, Avatar }
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { useRouter } from '../../router';
 import { getYouTubeChannelVideos } from '../../../apis/youtube/client';
-import { YouTubeVideoSearchResult, YouTubeChannelInfo } from '../../../apis/youtube/types';
+import { YouTubeChannelInfo, YouTubeVideoSearchResult } from '@/shared/types/youtube';
+
 import { 
   SearchResults, 
   FilterDialog
 } from '../../components/youtube/search';
-import { YouTubeSearchFilters } from '../../../apis/youtube/types';
+import { YouTubeSearchFilters } from '@/shared/types/youtube';
 
 // Local storage key for filters
 const FILTERS_STORAGE_KEY = 'youtube_channel_filters';

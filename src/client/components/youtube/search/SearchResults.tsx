@@ -11,7 +11,7 @@ import {
   CardContent,
   CircularProgress
 } from '@mui/material';
-import { YouTubeVideoSearchResult, YouTubeChannelSearchResult } from '../../../../server/youtube/types';
+import { YouTubeVideoSearchResult, YouTubeChannelSearchResult } from '@/shared/types/youtube';
 import { VideoCard } from './VideoCard';
 import { ChannelCard } from './ChannelCard';
 import { useState } from 'react';

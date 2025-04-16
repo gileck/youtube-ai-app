@@ -3,7 +3,7 @@ import { Box, Container, CircularProgress, Button, Tooltip } from '@mui/material
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { useRouter } from '../../router';
 import { searchYouTubeVideos } from '../../../apis/youtube/client';
-import { YouTubeVideoSearchResult, YouTubeChannelSearchResult } from '../../../server/youtube/types';
+import { YouTubeVideoSearchResult, YouTubeChannelSearchResult } from '@/shared/types/youtube';
 import { 
   SearchForm, 
   SearchResults,

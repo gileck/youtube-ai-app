@@ -2,54 +2,9 @@
  * Types for the YouTube API adapter
  */
 
-// Import SortBy type directly from youtubei.js
-import { YouTubeChannelResponse, YouTubeSearchFilters } from '@/shared/types/youtube';
+// Import all YouTube types from shared/types/youtube
+import { YouTubeVideoDetails, YouTubeChannelSearchResult, YouTubeChannelInfo, YouTubeSearchFilters, YouTubeChannelResponse, YouTubeVideoSearchResult, YouTubeSearchVideosResponse, YouTubeSearchChannelsResponse } from '@/shared/types/youtube';
 import type { Types } from 'youtubei.js';
-import type { YouTubeVideoSearchResult } from '@/shared/types/youtube'
-export type { YouTubeVideoSearchResult }
-// Search results type
-// export interface YouTubeVideoSearchResult {
-//   id: string;
-//   title: string;
-//   description: string;
-//   thumbnailUrl: string;
-//   channelTitle: string;
-//   channelId: string;
-//   publishedAt: string;
-//   viewCount: string;
-//   duration: string; // in ISO 8601 format (PT1H2M3S)
-// }
-
-// Channel info type
-export interface YouTubeChannelInfo {
-  id: string;
-  title: string;
-  description?: string;
-  thumbnailUrl?: string;
-  subscriberCount?: string;
-  videoCount?: string;
-  isVerified?: boolean;
-}
-
-// Channel search result type
-export interface YouTubeChannelSearchResult {
-  id: string;
-  channelShortId: string;
-  title: string;
-  description: string;
-  thumbnailUrl: string;
-  subscriberCount: string;
-  videoCount: string;
-  isVerified: boolean;
-}
-
-// Video details type
-export interface YouTubeVideoDetails extends YouTubeVideoSearchResult {
-  tags: string[];
-  category: string;
-  likeCount: string;
-  commentCount: string;
-}
 
 // Define our own YouTubeSortOption type matching the YouTube API's sort options
 // These values match the SortBy type from youtubei.js
@@ -111,14 +66,14 @@ export interface YouTubeApiAdapter {
    * @param params Search parameters
    * @returns Promise with search results or error
    */
-  searchVideos(params: YouTubeSearchParams): Promise<YouTubeApiResponse<YouTubeVideoSearchResult[]>>;
+  searchVideos(params: YouTubeSearchParams): Promise<YouTubeSearchVideosResponse<YouTubeVideoSearchResult[]>>;
   
   /**
    * Search for channels by query
    * @param params Search parameters
    * @returns Promise with search results or error
    */
-  searchChannels(params: YouTubeChannelSearchParams): Promise<YouTubeApiResponse<YouTubeChannelSearchResult[]>>;
+  searchChannels(params: YouTubeChannelSearchParams): Promise<YouTubeSearchChannelsResponse<YouTubeChannelSearchResult[]>>;
   
   /**
    * Get video details by ID

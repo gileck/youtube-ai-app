@@ -4,9 +4,8 @@
  * used across both server and client code.
  */
 
-import { YouTubeChannelInfo } from '@/apis/youtube';
 import { YouTubeChannelParams } from '@/server/youtube';
-import type { Types } from 'youtubei.js';
+import { Types } from 'youtubei.js';
 
 // ==========================================
 // Common Result Types
@@ -25,6 +24,19 @@ export interface YouTubeVideoSearchResult {
   publishedAt: string;
   viewCount: string;
   duration: string; 
+}
+
+/**
+ * Channel info type
+ */
+export interface YouTubeChannelInfo {
+  id: string;
+  title: string;
+  description?: string;
+  thumbnailUrl?: string;
+  subscriberCount?: string;
+  videoCount?: string;
+  isVerified?: boolean;
 }
 
 /**
@@ -50,6 +62,7 @@ export interface YouTubeVideoDetails extends YouTubeVideoSearchResult {
   category: string;
   likeCount: string;
   commentCount: string;
+  channelImage?: string; // URL to the channel avatar image
 }
 
 /**
@@ -105,13 +118,24 @@ export interface YouTubeVideoParams {
 /**
  * Response wrapper type with error handling (server-side)
  */
-export interface YouTubeApiResponse<T> {
-  data?: T;
+
+export type YouTubeSearchVideosResponse<T> = {
+  videos?: T;
   filteredVideos?: T;
-  error?: YouTubeApiError;
   continuation?: boolean;
   estimatedResults?: number;
 }
+
+export type YouTubeSearchChannelsResponse<T> = {
+  channels?: T;
+}
+
+// export interface YouTubeApiResponse<T> {
+//   data?: T;
+//   filteredVideos?: T;
+//   continuation?: boolean;
+//   estimatedResults?: number;
+// }
 
 // ==========================================
 // Client-Side Types
@@ -215,21 +239,21 @@ export interface YouTubeApiAdapter {
    * @param params Search parameters
    * @returns Promise with search results or error
    */
-  searchVideos(params: YouTubeSearchParams): Promise<YouTubeApiResponse<YouTubeVideoSearchResult[]>>;
+  searchVideos(params: YouTubeSearchParams): Promise<YouTubeSearchVideosResponse<YouTubeVideoSearchResult[]>>;
   
   /**
    * Search for channels by query
    * @param params Channel search parameters
    * @returns Promise with channel results or error
    */
-  searchChannels(params: YouTubeChannelSearchParams): Promise<YouTubeApiResponse<YouTubeChannelSearchResult[]>>;
+  searchChannels(params: YouTubeChannelSearchParams): Promise<YouTubeSearchChannelsResponse<YouTubeChannelSearchResult[]>>;
   
   /**
    * Get video details by ID
    * @param params Video parameters
    * @returns Promise with video details or error
    */
-  getVideoDetails(params: YouTubeVideoParams): Promise<YouTubeApiResponse<YouTubeVideoDetails>>;
+  getVideoDetails(params: YouTubeVideoParams): Promise<YouTubeVideoDetails>;
   
   /**
    * Get videos from a channel by ID

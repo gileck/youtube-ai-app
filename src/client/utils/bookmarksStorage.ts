@@ -1,4 +1,4 @@
-import { YouTubeVideoSearchResult, YouTubeChannelSearchResult } from '../../server/youtube/types';
+import { YouTubeVideoSearchResult, YouTubeChannelSearchResult } from '@/shared/types/youtube';
 
 // Types for bookmarks
 export interface BookmarkedVideo extends YouTubeVideoSearchResult {

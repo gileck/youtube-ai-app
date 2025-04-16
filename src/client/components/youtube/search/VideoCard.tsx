@@ -7,7 +7,7 @@ import {
   useMediaQuery,
   useTheme
 } from '@mui/material';
-import { YouTubeVideoSearchResult } from '../../../../server/youtube/types';
+import { YouTubeVideoSearchResult } from '@/shared/types/youtube';
 import { useRouter } from '../../../router';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
