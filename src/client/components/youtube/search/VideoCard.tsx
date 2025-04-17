@@ -98,7 +98,7 @@ export const VideoCard = ({ video, formatDuration, formatViewCount }: VideoCardP
                 bgcolor: 'rgba(0, 0, 0, 0.8)',
                 color: 'white',
                 fontWeight: 'bold',
-                fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
+                fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.95rem' },
                 padding: { xs: '1px 3px', sm: '2px 4px' },
                 borderRadius: '2px',
               }}
@@ -113,7 +113,7 @@ export const VideoCard = ({ video, formatDuration, formatViewCount }: VideoCardP
             variant={isExtraSmall ? "subtitle1" : "h6"} 
             component="div" 
             sx={{
-              fontSize: { xs: '0.85rem', sm: '0.95rem', md: '1.1rem' },
+              fontSize: { xs: '0.95rem', sm: '0.1rem', md: '1.1rem' },
               fontWeight: 'bold',
               mb: { xs: 0.25, sm: 0.5 },
               textAlign: 'left',
@@ -139,7 +139,7 @@ export const VideoCard = ({ video, formatDuration, formatViewCount }: VideoCardP
           <Typography 
             variant="body2" 
             sx={{ 
-              fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+              fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.95rem' },
               color: 'primary.main',
               textAlign: 'left',
               cursor: 'pointer',
@@ -154,7 +154,7 @@ export const VideoCard = ({ video, formatDuration, formatViewCount }: VideoCardP
           <Typography 
             variant="body2" 
             sx={{ 
-              fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+              fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.95rem' },
               color: 'text.secondary',
               textAlign: 'left',
               ml: 0.5

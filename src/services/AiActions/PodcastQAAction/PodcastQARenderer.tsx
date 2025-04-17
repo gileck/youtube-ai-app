@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { 
-  Box, 
+import {
+  Box,
   Paper,
   List,
   ListItem,
@@ -11,30 +11,30 @@ import {
   Divider
 } from '@mui/material';
 import { ExpandMore, ExpandLess, QuestionAnswer } from '@mui/icons-material';
-import { ActionRendererProps } from '@/services/AiActions/types';
+import { AiActionChaptersOnly } from '@/services/AiActions/types';
 import { PodcastQAResult } from '.';
 import ReactMarkdown from 'react-markdown';
 
 /**
- * Renders a list of podcast questions and answers with expandable answers
- * 
- * @param result The podcast Q&A pairs
+ * Renders podcast Q&A pairs grouped by chapter (with title/time), then by subject (with emoji), then Q&A pairs.
  */
-export const PodcastQARenderer: React.FC<ActionRendererProps<PodcastQAResult>> = ({ result }) => {
-  const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>({});
+export const PodcastQARenderer: AiActionChaptersOnly<PodcastQAResult>['rendeder'] = ({ result }) => {
+  // Each expanded state is keyed by chapter, subject, and qa index: `${chapterIdx}-${subjectIdx}-${qaIdx}`
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
-  const handleToggle = (index: number) => {
+  const handleToggle = (chapterIdx: number, subjectIdx: number, qaIdx: number) => {
+    const key = `${chapterIdx}-${subjectIdx}-${qaIdx}`;
     setExpandedItems(prev => ({
       ...prev,
-      [index]: !prev[index]
+      [key]: !prev[key]
     }));
   };
 
   return (
-    <Paper 
-      elevation={0} 
-      sx={{ 
-        p: 3, 
+    <Paper
+      elevation={0}
+      sx={{
+        p: 3,
         bgcolor: 'background.default',
         borderRadius: 2,
         overflow: 'auto'
@@ -46,50 +46,83 @@ export const PodcastQARenderer: React.FC<ActionRendererProps<PodcastQAResult>> =
           Podcast Questions & Answers
         </Typography>
       </Box>
-      
       <List sx={{ width: '100%' }}>
-        {result?.qaPairs?.length > 0 ? (
-          result.qaPairs.map((qaPair, index) => (
-            <React.Fragment key={index}>
-              <ListItem 
-                disablePadding
-                sx={{ 
-                  mb: 0.5,
-                  bgcolor: 'background.paper',
-                  borderRadius: 1,
-                  overflow: 'hidden'
-                }}
-              >
-                <ListItemButton onClick={() => handleToggle(index)}>
-                  <ListItemText 
-                    primary={
-                      <Typography fontWeight="medium" color="primary.main">
-                        {qaPair.question}
-                      </Typography>
-                    } 
-                  />
-                  {expandedItems[index] ? <ExpandLess /> : <ExpandMore />}
-                </ListItemButton>
-              </ListItem>
-              <Collapse in={expandedItems[index]} timeout="auto" unmountOnExit>
-                <Box 
-                  sx={{ 
-                    px: 3, 
-                    py: 2, 
-                    mb: 1.5,
-                    bgcolor: 'action.hover',
-                    borderRadius: 1
-                  }}
-                  className="markdown-content"
-                >
-                  <ReactMarkdown>
-                    {qaPair.answer}
-                  </ReactMarkdown>
-                </Box>
-              </Collapse>
-              {index < result.qaPairs.length - 1 && (
-                <Box sx={{ my: 1 }}>
-                  <Divider />
+        {result?.length > 0 ? (
+          result.map((chapter, chapterIdx) => (
+            <React.Fragment key={chapterIdx}>
+              {/* Chapter divider: title and time */}
+              <Box sx={{ mt: chapterIdx === 0 ? 0 : 3, mb: 1 }}>
+                <Divider>
+                  <Typography variant="subtitle1" fontWeight="bold" color="text.secondary">
+                    {chapter.title}
+                  </Typography>
+                </Divider>
+              </Box>
+              {chapter.result?.subjects && chapter.result.subjects.length > 0 ? (
+                chapter.result.subjects.map((subject, subjectIdx) => (
+                  <React.Fragment key={subjectIdx}>
+                    {/* Subject divider: emoji and subject name */}
+                    <Box sx={{ mt: 2, mb: 1 }}>
+                      <Divider>
+                        <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">
+                          {subject.emoji} {subject.subject}
+                        </Typography>
+                      </Divider>
+                    </Box>
+                    {subject.qaPairs && subject.qaPairs.length > 0 ? (
+                      subject.qaPairs.map((qa, qaIdx) => (
+                        <React.Fragment key={qaIdx}>
+                          <ListItem
+                            disablePadding
+                            sx={{
+                              mb: 0.5,
+                              bgcolor: 'background.paper',
+                              borderRadius: 1,
+                              overflow: 'hidden'
+                            }}
+                          >
+                            <ListItemButton onClick={() => handleToggle(chapterIdx, subjectIdx, qaIdx)}>
+                              <ListItemText
+                                primary={
+                                  <Typography fontWeight="medium" color="text.secondary">
+                                    {qa.question}
+                                  </Typography>
+                                }
+                              />
+                              {expandedItems[`${chapterIdx}-${subjectIdx}-${qaIdx}`] ? <ExpandLess /> : <ExpandMore />}
+                            </ListItemButton>
+                          </ListItem>
+                          <Collapse in={expandedItems[`${chapterIdx}-${subjectIdx}-${qaIdx}`]} timeout="auto" unmountOnExit>
+                            <Box
+                              sx={{
+                                px: 3,
+                                py: 2,
+                                mb: 1.5,
+                                borderRadius: 1
+                              }}
+                              className="markdown-content"
+                            >
+                              <ReactMarkdown>
+                                {qa.answer}
+                              </ReactMarkdown>
+                            </Box>
+                          </Collapse>
+                        </React.Fragment>
+                      ))
+                    ) : (
+                      <Box sx={{ p: 2, textAlign: 'center' }}>
+                        <Typography color="text.secondary">
+                          No questions and answers found for this subject.
+                        </Typography>
+                      </Box>
+                    )}
+                  </React.Fragment>
+                ))
+              ) : (
+                <Box sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography color="text.secondary">
+                    No subjects found for this chapter.
+                  </Typography>
                 </Box>
               )}
             </React.Fragment>

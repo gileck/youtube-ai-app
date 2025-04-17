@@ -1,7 +1,6 @@
 import { QuestionAnswer } from "@mui/icons-material";
-import { AiAction } from "..";
+import { AiActionChaptersOnly } from "..";
 import PodcastQARenderer from "./PodcastQARenderer";
-import { mainPrompt } from "./mainPrompt";
 import { chapterPrompt } from "./chaptersPrompt";
 
 export type QAPair = {
@@ -10,13 +9,17 @@ export type QAPair = {
 };
 
 export type PodcastQAResult = {
-  qaPairs: QAPair[];
+  subjects: Array<{
+    subject: string;
+    emoji: string;
+    qaPairs: QAPair[];
+  }>;
 };
 
-export const podcastQAAction: AiAction<PodcastQAResult> = {
+export const podcastQAAction: AiActionChaptersOnly<PodcastQAResult> = {
   icon: QuestionAnswer,
   label: 'Podcast Q&A',
   rendeder: PodcastQARenderer,
-  mainPrompt,
+  mainPrompt: false,
   chapterPrompt
 };

@@ -26,7 +26,10 @@ export type AIModelResponse<T> = {
 } 
 
 
-export type AIModelAdapterResponse<T> = AIModelResponse<T> & AIModelBaseResponse;
+export type AIModelAdapterResponse<T> = {
+  result: T;
+  usage?: Usage;
+} & AIModelBaseResponse;
 /**
  * AI model adapter interface
  * Defines the contract for all AI model adapters
@@ -59,5 +62,7 @@ export interface AIModelBaseAdapter {
 
 }
   
+
+
 
 

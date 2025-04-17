@@ -6,10 +6,48 @@
 import { AIModelAdapter } from '../baseModelAdapter';
 import { CombinedTranscriptChapters } from '../../youtube/chaptersTranscriptService';
 import { AIModelAdapterResponse } from '../types';
-import { aiActions } from '@/services/AiActions/index';
+import { AiAction, AiActionChaptersOnly, aiActions, ChaptersAiActionResult } from '@/services/AiActions/index';
 import { YouTubeVideoDetails } from '@/shared/types/youtube';
 import { VideoActionType } from '@/services/AiActions/index';
 
+
+export async function processAiAction<T>(
+  {
+
+    chaptersData,
+    modelId,
+    videoDetails,
+    actionType
+  }: 
+  {
+    chaptersData: CombinedTranscriptChapters,
+    modelId: string | undefined,
+    videoDetails: YouTubeVideoDetails | null,
+    actionType: VideoActionType
+  }
+): Promise<AIModelAdapterResponse<T> | AIModelAdapterResponse<ChaptersAiActionResult<T>>> {
+  const { mainPrompt } = aiActions[actionType] as AiAction<T> | AiActionChaptersOnly<T>
+  if (mainPrompt) {
+    return processAiActionChaptersAndMain({
+      chaptersData,
+      modelId,
+      videoDetails,
+      actionType
+    }) as Promise<AIModelAdapterResponse<T>>
+  } else {
+    return processAiActionChaptersOnly({
+      chaptersData,
+      modelId,
+      videoDetails,
+      actionType
+    }) as Promise<AIModelAdapterResponse<ChaptersAiActionResult<T>>>
+  }
+
+  
+
+}
+
+//
 /**
  * Generate a summary for each chapter and then summarize those summaries
  * @param chaptersData The combined chapters and transcript data
@@ -17,7 +55,7 @@ import { VideoActionType } from '@/services/AiActions/index';
  * @param videoTitle Optional video title to include in the summary
  * @returns Promise with the summary result and accumulated cost
  */
-async function processAiAction<T>(
+export async function processAiActionChaptersAndMain<T>(
     {
 
       chaptersData,
@@ -32,7 +70,7 @@ async function processAiAction<T>(
       actionType: VideoActionType
     }
   ): Promise<AIModelAdapterResponse<T>> {
-    const { chapterPrompt, mainPrompt } = aiActions[actionType]
+    const { chapterPrompt, mainPrompt } = aiActions[actionType] as AiAction<T>
     const modelAdapter = new AIModelAdapter(modelId);
 
     let totalCost = 0;
@@ -95,5 +133,65 @@ async function processAiAction<T>(
     };
   }
 
-// Export the action
-export { processAiAction };
+/**
+ * Generate a summary for each chapter and then summarize those summaries
+ * @param chaptersData The combined chapters and transcript data
+ * @param modelId Optional model ID to use for summarization
+ * @param videoTitle Optional video title to include in the summary
+ * @returns Promise with the summary result and accumulated cost
+ */
+export async function processAiActionChaptersOnly<T>(
+  {
+
+    chaptersData,
+    modelId,
+    videoDetails,
+    actionType
+  }: 
+  {
+    chaptersData: CombinedTranscriptChapters,
+    modelId: string | undefined,
+    videoDetails: YouTubeVideoDetails | null,
+    actionType: VideoActionType
+  }
+): Promise<AIModelAdapterResponse<ChaptersAiActionResult<T>>> {
+  const { chapterPrompt } = aiActions[actionType] as AiActionChaptersOnly<T>
+  const modelAdapter = new AIModelAdapter(modelId);
+
+  let totalCost = 0;
+
+  const chapterPromises = chaptersData.chapters.map(async (chapter) => {
+
+    const _chpaterPrompt = chapterPrompt({
+      videoDetails: videoDetails,
+      chapter: chapter
+    })
+  
+    try {
+      const response = await modelAdapter.processPromptToJSON<T>(_chpaterPrompt, actionType);
+      
+      totalCost += response.cost.totalCost;
+      
+      return {
+        title: chapter.title,
+        result: response.result
+      };
+    } catch (error) {
+      console.error(`Error summarizing chapter "${chapter.title}":`, error);
+      return {
+        title: chapter.title,
+        result: null
+      };
+    }
+  });
+  
+  const chapterResults = await Promise.all(chapterPromises);
+  
+  return {
+    result: chapterResults,
+    cost: {
+      totalCost: totalCost
+    }
+  };
+}
+

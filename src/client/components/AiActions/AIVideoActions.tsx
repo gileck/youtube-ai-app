@@ -29,7 +29,7 @@ import { aiActions, VideoActionType } from '../../../services/AiActions';
 export const AIVideoActions = ({videoId}: { videoId: string }) => {
   const [actionType, setActionType] = useState<VideoActionType>('summary');
   const [loading, setLoading] = useState<boolean>(false);
-  const [result, setResult] = useState<unknown | null>(null);
+  const [result, setResult] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
   const [cost, setCost] = useState<number>(0);
   const [isFromCache, setIsFromCache] = useState<boolean>(false);
@@ -47,7 +47,7 @@ export const AIVideoActions = ({videoId}: { videoId: string }) => {
 
     setLoading(true);
     setError(null);
-    setResult('');
+    setResult(null);
     setCost(0);
     setIsFromCache(false);
 
@@ -99,7 +99,8 @@ export const AIVideoActions = ({videoId}: { videoId: string }) => {
     const Renderer = aiActions[actionType].rendeder
     // Type assertion to tell TypeScript that we know what we're doing
     // Each renderer is responsible for handling its specific result type
-    return <Renderer result={result} />;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return <Renderer result={result as any} />;
   };
 
   return (
