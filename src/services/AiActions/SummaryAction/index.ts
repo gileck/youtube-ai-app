@@ -6,10 +6,11 @@ import { chapterPrompt } from "./chaptersPrompt";
 
 export const summaryAction: AiAction<SummaryResult> = {
     icon: Summarize,
-    label: 'Summarize Video',
+    label: 'Summary',
     rendeder: SummaryRenderer,
     mainPrompt,
-    chapterPrompt
+    chapterPrompt,
+    singleChapter: false
 }
 
 export type SummaryResult = {

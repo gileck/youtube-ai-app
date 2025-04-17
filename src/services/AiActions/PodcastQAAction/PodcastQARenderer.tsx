@@ -8,19 +8,35 @@ import {
   Collapse,
   Typography,
   ListItemButton,
-  Divider
+  Divider,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  CircularProgress,
+  DialogActions
 } from '@mui/material';
-import { ExpandMore, ExpandLess, QuestionAnswer } from '@mui/icons-material';
+import { ExpandMore, ExpandLess, QuestionAnswer, Close as CloseIcon, ZoomIn as ZoomInIcon } from '@mui/icons-material';
 import { AiActionChaptersOnly } from '@/services/AiActions/types';
 import { PodcastQAResult } from '.';
 import ReactMarkdown from 'react-markdown';
+import { processAIVideoAction } from '@/apis/aiVideoActions/client';
+import { QuestionDeepDiveRenderer } from '@/services/AiActions/questionDeepDiveAction/QuestionDeepDiveRenderer';
+import { SingleAnswerResult } from '@/services/AiActions/questionDeepDiveAction';
 
 /**
  * Renders podcast Q&A pairs grouped by chapter (with title/time), then by subject (with emoji), then Q&A pairs.
  */
-export const PodcastQARenderer: AiActionChaptersOnly<PodcastQAResult>['rendeder'] = ({ result }) => {
+export const PodcastQARenderer: AiActionChaptersOnly<PodcastQAResult>['rendeder'] = ({ result, videoId }) => {
   // Each expanded state is keyed by chapter, subject, and qa index: `${chapterIdx}-${subjectIdx}-${qaIdx}`
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedQuestion, setSelectedQuestion] = useState('');
+  const [selectedChapterTitle, setSelectedChapterTitle] = useState('');
+  const [deepDiveResult, setDeepDiveResult] = useState<SingleAnswerResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleToggle = (chapterIdx: number, subjectIdx: number, qaIdx: number) => {
     const key = `${chapterIdx}-${subjectIdx}-${qaIdx}`;
@@ -28,6 +44,43 @@ export const PodcastQARenderer: AiActionChaptersOnly<PodcastQAResult>['rendeder'
       ...prev,
       [key]: !prev[key]
     }));
+  };
+
+  const handleFullAnswerClick = async (question: string, chapterTitle: string) => {
+    setSelectedQuestion(question);
+    setSelectedChapterTitle(chapterTitle);
+    setDialogOpen(true);
+    setLoading(true);
+    setError(null);
+    setDeepDiveResult(null);
+
+    try {
+      const response = await processAIVideoAction({
+        videoId,
+        actionType: 'questionDeepDive',
+        actionParams: {
+          question,
+          chapterTitle
+        }
+      });
+
+      if (response.data?.error) {
+        setError(response.data.error);
+      } else if (response.data) {
+        setDeepDiveResult(response.data.result as SingleAnswerResult);
+      } else {
+        setError('Failed to process the deep dive question. Please try again.');
+      }
+    } catch (err) {
+      setError('An error occurred while processing the deep dive question');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
   };
 
   return (
@@ -105,6 +158,21 @@ export const PodcastQARenderer: AiActionChaptersOnly<PodcastQAResult>['rendeder'
                               <ReactMarkdown>
                                 {qa.answer}
                               </ReactMarkdown>
+                              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                                <Button 
+                                  variant="outlined" 
+                                  size="small" 
+                                  startIcon={<ZoomInIcon />}
+                                  onClick={() => handleFullAnswerClick(qa.question, chapter.title)}
+                                  sx={{ 
+                                    borderRadius: 2,
+                                    textTransform: 'none',
+                                    fontSize: '0.8rem'
+                                  }}
+                                >
+                                  Full Answer
+                                </Button>
+                              </Box>
                             </Box>
                           </Collapse>
                         </React.Fragment>
@@ -135,6 +203,76 @@ export const PodcastQARenderer: AiActionChaptersOnly<PodcastQAResult>['rendeder'
           </Box>
         )}
       </List>
+
+      {/* Deep Dive Dialog */}
+      <Dialog 
+        open={dialogOpen} 
+        onClose={handleCloseDialog} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            maxHeight: '90vh'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          pb: 1
+        }}>
+          <Box>
+            <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+              Deep Dive
+            </Typography>
+            <Typography variant="subtitle2" color="text.secondary">
+              {selectedQuestion}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              From chapter: {selectedChapterTitle}
+            </Typography>
+          </Box>
+          <IconButton 
+            edge="end" 
+            color="inherit" 
+            onClick={handleCloseDialog} 
+            aria-label="close"
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 0 }}>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Box sx={{ p: 3 }}>
+              <Typography color="error" gutterBottom>
+                Error
+              </Typography>
+              <Typography>{error}</Typography>
+            </Box>
+          ) : deepDiveResult ? (
+            <QuestionDeepDiveRenderer result={deepDiveResult} videoId={videoId} />
+          ) : (
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+              <Typography color="text.secondary">
+                No detailed answer available.
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };

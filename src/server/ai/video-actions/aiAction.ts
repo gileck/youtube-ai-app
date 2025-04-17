@@ -6,27 +6,37 @@
 import { AIModelAdapter } from '../baseModelAdapter';
 import { CombinedTranscriptChapters } from '../../youtube/chaptersTranscriptService';
 import { AIModelAdapterResponse } from '../types';
-import { AiAction, AiActionChaptersOnly, aiActions, ChaptersAiActionResult } from '@/services/AiActions/index';
+import { AiAction, AiActionChaptersOnly, aiActions, AiActionSingleChapter, ChaptersAiActionResult } from '@/services/AiActions/index';
 import { YouTubeVideoDetails } from '@/shared/types/youtube';
 import { VideoActionType } from '@/services/AiActions/index';
 
 
 export async function processAiAction<T>(
   {
-
     chaptersData,
     modelId,
     videoDetails,
-    actionType
+    actionType,
+    actionParams
   }: 
   {
     chaptersData: CombinedTranscriptChapters,
     modelId: string | undefined,
     videoDetails: YouTubeVideoDetails | null,
-    actionType: VideoActionType
+    actionType: VideoActionType,
+    actionParams?: Record<string, unknown>
   }
 ): Promise<AIModelAdapterResponse<T> | AIModelAdapterResponse<ChaptersAiActionResult<T>>> {
-  const { mainPrompt } = aiActions[actionType] as AiAction<T> | AiActionChaptersOnly<T>
+  const { mainPrompt, singleChapter } = aiActions[actionType] as AiAction<T> | AiActionChaptersOnly<T> | AiActionSingleChapter<T>
+  if (singleChapter) {
+    return processAiActionSingleChapter<T>({
+      chaptersData,
+      modelId,
+      videoDetails,
+      actionType,
+      actionParams: actionParams || {}
+    })
+  }
   if (mainPrompt) {
     return processAiActionChaptersAndMain({
       chaptersData,
@@ -57,7 +67,6 @@ export async function processAiAction<T>(
  */
 export async function processAiActionChaptersAndMain<T>(
     {
-
       chaptersData,
       modelId,
       videoDetails,
@@ -142,7 +151,6 @@ export async function processAiActionChaptersAndMain<T>(
  */
 export async function processAiActionChaptersOnly<T>(
   {
-
     chaptersData,
     modelId,
     videoDetails,
@@ -195,3 +203,38 @@ export async function processAiActionChaptersOnly<T>(
   };
 }
 
+export async function processAiActionSingleChapter<T>(
+  {
+    chaptersData,
+    modelId,
+    videoDetails,
+    actionType,
+    actionParams
+  }: 
+  {
+    chaptersData: CombinedTranscriptChapters,
+    modelId: string | undefined,
+    videoDetails: YouTubeVideoDetails | null,
+    actionType: VideoActionType,
+    actionParams: Record<string, unknown>
+  }
+): Promise<AIModelAdapterResponse<T>> {
+  const { chapterPrompt } = aiActions[actionType] as AiActionSingleChapter<T>
+  const modelAdapter = new AIModelAdapter(modelId);
+  const chapter = chaptersData.chapters.find(chapter => chapter.title === actionParams.chapterTitle)
+  const prompt = chapterPrompt({
+    videoDetails: videoDetails,
+    chapter,
+    params: actionParams
+  })
+
+  const response = await modelAdapter.processPromptToJSON<T>(prompt, actionType);
+
+  return {
+    result: response.result,
+    cost: {
+      totalCost: response.cost.totalCost
+    }
+  };
+}
+  

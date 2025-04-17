@@ -17,7 +17,7 @@ export const process = async (
   request: AIVideoActionRequest
 ): Promise<AIVideoActionResponse<unknown>> => {
   try {
-    const { videoId, actionType, modelId } = request;
+    const { videoId, actionType, modelId, actionParams } = request;
     
     // Validate input
     if (!videoId || typeof videoId !== 'string') {
@@ -42,7 +42,7 @@ export const process = async (
     
     const chaptersData = await getChaptersTranscripts(videoId);
     const videoDetails = await youtubeAdapter.getVideoDetails({ videoId })
-    const actionResult = await processAiAction({chaptersData, modelId, videoDetails, actionType});
+    const actionResult = await processAiAction({chaptersData, modelId, videoDetails, actionType, actionParams});
 
     return {
       videoId,

@@ -8,8 +8,9 @@ export type ChaptersData = Array<{
 }>;
 export interface ActionRendererProps<T> {
     result: T;
+    videoId: string;
   }
-export type VideoActionType = 'summary' | 'keyPoints' | 'podcastQA'
+export type VideoActionType = 'summary' | 'keyPoints' | 'podcastQA' | 'questionDeepDive'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AiAction<T = any> = {
     icon: typeof Summarize,
@@ -23,6 +24,7 @@ export type AiAction<T = any> = {
         chapters: ChaptersData;
     }) => string ;
     chapterPrompt: ({ videoDetails, chapter }: { videoDetails: YouTubeVideoDetails | null; chapter: ChapterWithContent }) => string;
+    singleChapter: false
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -32,9 +34,19 @@ export type AiActionChaptersOnly<T = any> = {
     rendeder: React.FC<ActionRendererProps<ChaptersAiActionResult<T>>>;
     chapterPrompt: ({ videoDetails, chapter }: { videoDetails: YouTubeVideoDetails | null; chapter: ChapterWithContent }) => string;
     mainPrompt: false
+    singleChapter: false
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AiActionSingleChapter<T = any, ActionParams = Record<string, unknown>> = {
+    icon: typeof Summarize,
+    label: string,
+    rendeder: React.FC<ActionRendererProps<T>>;
+    chapterPrompt({ videoDetails, chapter, params }: { videoDetails: YouTubeVideoDetails | null; chapter: ChapterWithContent | undefined, params: ActionParams }): string;
+    mainPrompt: false
+    singleChapter: true
 }
 export type AiActionsData = {
-    [key in VideoActionType]: AiAction | AiActionChaptersOnly
+    [key in VideoActionType]: AiAction | AiActionChaptersOnly | AiActionSingleChapter
 };
 
 export type ChaptersAiActionResult<T> = Array<{title: string, result: T | null}>

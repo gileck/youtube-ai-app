@@ -9,6 +9,7 @@ export interface AIVideoActionRequest {
   videoId: string;
   actionType: VideoActionType;
   modelId?: string;
+  actionParams?: Record<string, unknown>;
 }
 
 // Response type for AI video actions

@@ -19,5 +19,6 @@ export const keyPointsAction: AiAction<KeyPointsResult> = {
   label: 'Key Points',
   rendeder: KeyPointsRenderer,
   mainPrompt,
-  chapterPrompt
+  chapterPrompt,
+  singleChapter: false
 };

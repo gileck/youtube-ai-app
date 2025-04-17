@@ -21,5 +21,6 @@ export const podcastQAAction: AiActionChaptersOnly<PodcastQAResult> = {
   label: 'Podcast Q&A',
   rendeder: PodcastQARenderer,
   mainPrompt: false,
-  chapterPrompt
+  chapterPrompt,
+  singleChapter: false
 };
