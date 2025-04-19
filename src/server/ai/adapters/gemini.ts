@@ -81,7 +81,12 @@ export class GeminiAdapter implements AIModel {
         json = JSON.parse(responseText) as T;
       } catch (e) {
         console.error('Failed to parse JSON response:', e);
-        throw new Error('Failed to parse JSON response from Gemini API');
+        throw new Error(
+          `
+          Failed to parse JSON response from Gemini API.
+          input prompt length: ${prompt.length} characters
+          output response length: ${responseText.length} characters
+          `);
       }
       // Return the formatted response
       return {

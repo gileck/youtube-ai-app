@@ -3,12 +3,13 @@
  * Generates a summary of video content based on chapters and transcript
  */
 
-import { AIModelAdapter } from '../baseModelAdapter';
-import { CombinedTranscriptChapters } from '../../youtube/chaptersTranscriptService';
-import { AIModelAdapterResponse } from '../types';
+import { AIModelAdapter } from '@/server/ai/baseModelAdapter';
+import { CombinedTranscriptChapters } from '@/server/youtube/chaptersTranscriptService';
+import { AIModelAdapterResponse } from '@/server/ai/types';
 import { AiAction, AiActionChaptersOnly, aiActions, AiActionSingleChapter, ChaptersAiActionResult } from '@/services/AiActions/index';
 import { YouTubeVideoDetails } from '@/shared/types/youtube';
 import { VideoActionType } from '@/services/AiActions/index';
+import _ from 'lodash';
 
 
 export async function processAiAction<T>(
@@ -95,7 +96,9 @@ export async function processAiActionChaptersAndMain<T>(
 
       const _chpaterPrompt = chapterPrompt({
         videoDetails: videoDetails,
-        chapter: chapter
+        chapters: [chapter],
+        content: chapter.content,
+        params: {}
       })
     
       try {
@@ -142,6 +145,27 @@ export async function processAiActionChaptersAndMain<T>(
     };
   }
 
+  function combineChapters(chaptersData: CombinedTranscriptChapters, numberOfChapters: number) {
+    const chapterChunks = _.chunk(chaptersData.chapters, numberOfChapters).map(chaptersArray => ({
+      chapters: chaptersArray,
+      content: `
+      ${chaptersArray.map(chapter => `
+        ----------- START OF CHAPTER ---------------
+        Chapter Title: ${chapter.title}
+        Chapter Content: ${chapter.content}
+        ----------- END OF CHAPTER ----------------
+        `).join('\n')}
+      `
+    }))
+    
+    
+    
+
+    return {
+      chapters: chapterChunks,
+    }
+  }
+
 /**
  * Generate a summary for each chapter and then summarize those summaries
  * @param chaptersData The combined chapters and transcript data
@@ -154,7 +178,7 @@ export async function processAiActionChaptersOnly<T>(
     chaptersData,
     modelId,
     videoDetails,
-    actionType
+    actionType,
   }: 
   {
     chaptersData: CombinedTranscriptChapters,
@@ -168,11 +192,15 @@ export async function processAiActionChaptersOnly<T>(
 
   let totalCost = 0;
 
-  const chapterPromises = chaptersData.chapters.map(async (chapter) => {
+  const combinedChapters = combineChapters(chaptersData, 15)
+
+  const chapterPromises = combinedChapters.chapters.map(async (chaptersArray) => {
 
     const _chpaterPrompt = chapterPrompt({
       videoDetails: videoDetails,
-      chapter: chapter
+      chapters: chaptersArray.chapters,
+      content: chaptersArray.content,
+      params: {}
     })
   
     try {
@@ -181,13 +209,13 @@ export async function processAiActionChaptersOnly<T>(
       totalCost += response.cost.totalCost;
       
       return {
-        title: chapter.title,
+        title: chaptersArray.chapters.map(chapter => chapter.title).join(', '),
         result: response.result
       };
     } catch (error) {
-      console.error(`Error summarizing chapter "${chapter.title}":`, error);
+      console.error(`Error summarizing chapter "${chaptersArray.chapters.map(chapter => chapter.title).join(', ')}":`, error);
       return {
-        title: chapter.title,
+        title: chaptersArray.chapters.map(chapter => chapter.title).join(', '),
         result: null
       };
     }
@@ -222,9 +250,13 @@ export async function processAiActionSingleChapter<T>(
   const { chapterPrompt } = aiActions[actionType] as AiActionSingleChapter<T>
   const modelAdapter = new AIModelAdapter(modelId);
   const chapter = chaptersData.chapters.find(chapter => chapter.title === actionParams.chapterTitle)
+  if (!chapter) {
+    throw new Error(`Chapter not found: ${actionParams.chapterTitle}`);
+  }
   const prompt = chapterPrompt({
     videoDetails: videoDetails,
-    chapter,
+    chapters: [chapter],
+    content: chapter.content,
     params: actionParams
   })
 

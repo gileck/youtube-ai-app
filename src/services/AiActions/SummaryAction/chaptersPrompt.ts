@@ -1,8 +1,9 @@
 import { AiAction } from "..";
 
-export const chapterPrompt: AiAction['chapterPrompt'] = ({ videoDetails, chapter }) => {
+export const chapterPrompt: AiAction['chapterPrompt'] = ({ videoDetails, content }) => {
     return `
-    Summarize the chapter "${chapter.title}" from the video "${videoDetails?.title}".
-    Chapter Content: ${chapter.content}
+    Summarize the chapters of the video "${videoDetails?.title}".
+    Chapters Content: 
+    ${content}
     `
 }

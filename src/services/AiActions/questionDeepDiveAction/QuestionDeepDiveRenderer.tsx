@@ -29,11 +29,11 @@ export const QuestionDeepDiveRenderer: React.FC<ActionRendererProps<SingleAnswer
   const [expandedQuotes, setExpandedQuotes] = useState<boolean>(false);
   const [expandedDetails, setExpandedDetails] = useState<boolean>(true);
 
-  const toggleQuotes = () => {
+  const handleToggleQuotes = () => {
     setExpandedQuotes(!expandedQuotes);
   };
 
-  const toggleDetails = () => {
+  const handleToggleDetails = () => {
     setExpandedDetails(!expandedDetails);
   };
 
@@ -85,7 +85,7 @@ export const QuestionDeepDiveRenderer: React.FC<ActionRendererProps<SingleAnswer
             Detailed Points
           </Typography>
           <IconButton 
-            onClick={toggleDetails} 
+            onClick={handleToggleDetails} 
             size="small"
             aria-label={expandedDetails ? "collapse details" : "expand details"}
           >
@@ -129,7 +129,7 @@ export const QuestionDeepDiveRenderer: React.FC<ActionRendererProps<SingleAnswer
               </Typography>
             </Box>
             <IconButton 
-              onClick={toggleQuotes} 
+              onClick={handleToggleQuotes} 
               size="small"
               aria-label={expandedQuotes ? "collapse quotes" : "expand quotes"}
             >

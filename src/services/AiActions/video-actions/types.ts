@@ -1,8 +1,8 @@
 /**
  * Types for AI video actions
  */
-import { CombinedTranscriptChapters } from '../../youtube/chaptersTranscriptService';
-import { AIModelAdapterResponse } from '../types';
+import { CombinedTranscriptChapters } from '@/server/youtube/chaptersTranscriptService';
+import { AIModelAdapterResponse } from '@/server/ai/types';
 import { VideoActionType } from '@/services/AiActions/index';
 
 

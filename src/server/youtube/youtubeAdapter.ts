@@ -59,7 +59,7 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
       thumbnailUrl: video.thumbnails?.[0]?.url || '',
       channelTitle: video.author?.name || '',
       channelId: video.author?.id || '',
-      publishedAt: video.published?.text || new Date().toISOString(), // Fallback to current date if published date is not available
+      publishedAt: video.published?.text || '',
       viewCount: video.view_count?.text || '0',
       duration: video.duration?.text || 'PT0S',
     };
@@ -260,7 +260,7 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
           thumbnailUrl: videoInfo.basic_info.thumbnail?.[0]?.url || '',
           channelTitle: videoInfo.basic_info.channel?.name || '',
           channelId: videoInfo.basic_info.channel?.id || '',
-          publishedAt: new Date().toISOString(), // Fallback to current date if published date is not available
+          publishedAt: videoInfo.primary_info?.published?.text || '',
           viewCount: String(videoInfo.basic_info.view_count || '0'),
           duration: typeof videoInfo.basic_info.duration === 'number'
             ? formatDuration(videoInfo.basic_info.duration)

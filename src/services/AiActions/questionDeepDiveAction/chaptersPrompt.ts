@@ -1,16 +1,10 @@
 import { AiActionSingleChapter } from "..";
-import { YouTubeVideoDetails } from "@/shared/types/youtube";
-import { ChapterWithContent } from "@/server/youtube/types";
 import { QuestionDeepDiveParams } from "./index";
 
 export const chapterPrompt: AiActionSingleChapter<Record<string, unknown>, QuestionDeepDiveParams>['chapterPrompt'] = ({ 
     videoDetails, 
-    chapter,
+    content,
     params
- }: {
-    videoDetails: YouTubeVideoDetails | null;
-    chapter: ChapterWithContent | undefined;
-    params: QuestionDeepDiveParams
  }): string => {
 
     const { question, chapterTitle } = params
@@ -23,11 +17,10 @@ VIDEO TITLE: ${videoDetails?.title || 'Unknown'}
 CHAPTER TITLE: ${chapterTitle || 'Unknown'}
 
 TRANSCRIPT CONTENT:
-${chapter?.content || 'No transcript available'}
+${content}
 
 QUESTION: ${questionStr}
 
-${chapter ? '' : 'WARNING: The specified chapter was not found. Please indicate this in your response.'}
 
 IMPORTANT REQUIREMENTS:
 1. Start with a concise one-sentence answer that directly addresses the question

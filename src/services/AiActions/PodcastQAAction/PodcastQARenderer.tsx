@@ -12,12 +12,10 @@ import {
   Button,
   Dialog,
   DialogContent,
-  DialogTitle,
-  IconButton,
   CircularProgress,
   DialogActions
 } from '@mui/material';
-import { ExpandMore, ExpandLess, QuestionAnswer, Close as CloseIcon, ZoomIn as ZoomInIcon } from '@mui/icons-material';
+import { ExpandMore, ExpandLess, QuestionAnswer, ZoomIn as ZoomInIcon } from '@mui/icons-material';
 import { AiActionChaptersOnly } from '@/services/AiActions/types';
 import { PodcastQAResult } from '.';
 import ReactMarkdown from 'react-markdown';
@@ -32,11 +30,11 @@ export const PodcastQARenderer: AiActionChaptersOnly<PodcastQAResult>['rendeder'
   // Each expanded state is keyed by chapter, subject, and qa index: `${chapterIdx}-${subjectIdx}-${qaIdx}`
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedQuestion, setSelectedQuestion] = useState('');
-  const [selectedChapterTitle, setSelectedChapterTitle] = useState('');
   const [deepDiveResult, setDeepDiveResult] = useState<SingleAnswerResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentChapter, setCurrentChapter] = useState('');
+  const [currentQuestion, setCurrentQuestion] = useState('');
 
   const handleToggle = (chapterIdx: number, subjectIdx: number, qaIdx: number) => {
     const key = `${chapterIdx}-${subjectIdx}-${qaIdx}`;
@@ -47,8 +45,8 @@ export const PodcastQARenderer: AiActionChaptersOnly<PodcastQAResult>['rendeder'
   };
 
   const handleFullAnswerClick = async (question: string, chapterTitle: string) => {
-    setSelectedQuestion(question);
-    setSelectedChapterTitle(chapterTitle);
+    setCurrentQuestion(question);
+    setCurrentChapter(chapterTitle);
     setDialogOpen(true);
     setLoading(true);
     setError(null);
@@ -217,34 +215,26 @@ export const PodcastQARenderer: AiActionChaptersOnly<PodcastQAResult>['rendeder'
           }
         }}
       >
-        <DialogTitle sx={{ 
+        <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
           borderBottom: '1px solid',
           borderColor: 'divider',
-          pb: 1
+          p: 2
         }}>
           <Box>
             <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
               Deep Dive
             </Typography>
             <Typography variant="subtitle2" color="text.secondary">
-              {selectedQuestion}
+              {currentQuestion}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              From chapter: {selectedChapterTitle}
+              From chapter: {currentChapter}
             </Typography>
           </Box>
-          <IconButton 
-            edge="end" 
-            color="inherit" 
-            onClick={handleCloseDialog} 
-            aria-label="close"
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
+        </Box>
         <DialogContent dividers sx={{ p: 0 }}>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>

@@ -10,7 +10,19 @@ export interface ActionRendererProps<T> {
     result: T;
     videoId: string;
   }
-export type VideoActionType = 'summary' | 'keyPoints' | 'podcastQA' | 'questionDeepDive'
+
+  export type ChapterPromptFunction<ActionParams> = ({
+    videoDetails,
+    chapters,
+    content,
+    params
+  }: {
+    videoDetails: YouTubeVideoDetails | null;
+    chapters: Array<ChapterWithContent>;
+    content: string;
+    params: ActionParams
+  }) => string;
+export type VideoActionType = 'summary' | 'keyPoints' | 'podcastQA' | 'questionDeepDive' | 'protocolDeepDive'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AiAction<T = any> = {
     icon: typeof Summarize,
@@ -23,7 +35,8 @@ export type AiAction<T = any> = {
         videoDetails: YouTubeVideoDetails | null
         chapters: ChaptersData;
     }) => string ;
-    chapterPrompt: ({ videoDetails, chapter }: { videoDetails: YouTubeVideoDetails | null; chapter: ChapterWithContent }) => string;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+    chapterPrompt: ChapterPromptFunction<any>
     singleChapter: false
 };
 
@@ -32,16 +45,17 @@ export type AiActionChaptersOnly<T = any> = {
     icon: typeof Summarize,
     label: string,
     rendeder: React.FC<ActionRendererProps<ChaptersAiActionResult<T>>>;
-    chapterPrompt: ({ videoDetails, chapter }: { videoDetails: YouTubeVideoDetails | null; chapter: ChapterWithContent }) => string;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+    chapterPrompt: ChapterPromptFunction<any>
     mainPrompt: false
     singleChapter: false
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AiActionSingleChapter<T = any, ActionParams = Record<string, unknown>> = {
+export type AiActionSingleChapter<T = any, ActionParams = any> = {
     icon: typeof Summarize,
     label: string,
     rendeder: React.FC<ActionRendererProps<T>>;
-    chapterPrompt({ videoDetails, chapter, params }: { videoDetails: YouTubeVideoDetails | null; chapter: ChapterWithContent | undefined, params: ActionParams }): string;
+    chapterPrompt: ChapterPromptFunction<ActionParams>
     mainPrompt: false
     singleChapter: true
 }

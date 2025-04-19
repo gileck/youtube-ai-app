@@ -6,7 +6,7 @@ import { getChaptersTranscripts } from '../../server/youtube/chaptersTranscriptS
 import { AIVideoActionRequest, AIVideoActionResponse } from './types';
 import { name } from './index';
 import { youtubeAdapter } from '../../server/youtube';
-import { processAiAction } from '@/server/ai/video-actions/aiAction';
+import { processAiAction } from '@/services/AiActions/video-actions/aiAction';
 
 /**
  * Process an AI video action request
