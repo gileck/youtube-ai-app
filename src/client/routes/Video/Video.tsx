@@ -8,8 +8,10 @@ import {
   Button,
   Stack,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  IconButton,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { useRouter } from '../../router';
 import { getYouTubeVideoDetails } from '../../../apis/youtube/client';
 import { YouTubeVideoDetails } from '../../../shared/types/youtube';
@@ -17,6 +19,9 @@ import { formatViewCount, formatDate } from '../../components/youtube/search/uti
 import { AIVideoActions } from '@/client/components/AiActions/AIVideoActions';
 import { VideoTranscript } from './VideoTranscript';
 import { aiActions, VideoActionType } from '@/services/AiActions';
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
+import { bookmarkVideo, removeBookmarkedVideo, isVideoBookmarked } from '../../utils/bookmarksStorage';
 
 // Define valid tab types - now using VideoActionType
 type TabType = VideoActionType | 'transcript' | 'more';
@@ -29,7 +34,8 @@ export const Video = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const [tab, setTab] = useState<TabType>('summary');
+  const [actionTab, setActionTab] = useState<TabType>('summary');
+  const [isBookmarked, setIsBookmarked] = useState(false);
   
   // Theme and responsive design
   const theme = useTheme();
@@ -38,10 +44,10 @@ export const Video = () => {
   // Determine the active tab from the URL path parameter
   useEffect(() => {
     if (tabParam && ['summary', 'transcript', 'keyPoints', 'podcastQA', 'more'].includes(tabParam)) {
-      setTab(tabParam as TabType);
+      setActionTab(tabParam as TabType);
     } else if (!currentPath.includes('/video/' + videoId + '/')) {
       // If we're on the base video URL without a tab, default to summary
-      setTab('summary');
+      setActionTab('summary');
     }
   }, [tabParam, videoId, currentPath]);
 
@@ -72,6 +78,12 @@ export const Video = () => {
     fetchVideoDetails();
   }, [videoId]);
 
+  useEffect(() => {
+    if (videoId) {
+      setIsBookmarked(isVideoBookmarked(videoId));
+    }
+  }, [videoId]);
+
   const handleChannelClick = () => {
     if (video?.channelId) {
       navigate(`/channel/${video.channelId}`);
@@ -90,13 +102,78 @@ export const Video = () => {
 
   // Update the URL when changing tabs using the generic tab parameter
   const handleTabChange = (newTab: TabType) => {
-    setTab(newTab);
+    setActionTab(newTab);
     if (newTab === 'summary' && !tabParam) {
       // If we're already on the base video URL and switching to summary,
       // no need to change the URL
       return;
     }
     navigate(`/video/${videoId}/${newTab}`, { replace: true });
+  };
+
+  const handleBookmarkClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!video) return;
+    if (isBookmarked) {
+      removeBookmarkedVideo(video.id);
+      setIsBookmarked(false);
+    } else {
+      bookmarkVideo(video);
+      setIsBookmarked(true);
+    }
+  };
+
+  // Responsive AI action buttons layout
+  const renderActionButtons = () => {
+    // Only show summary, keyPoints, podcastQA, transcript
+    const aiActionButtons = Object.entries(aiActions)
+      .filter(([key]) => ['summary', 'keyPoints', 'podcastQA'].includes(key))
+      .map(([key, type]) => ({
+        key,
+        label: type.label,
+        Icon: type.icon as React.ElementType | undefined,
+      }));
+    aiActionButtons.push({ key: 'transcript', label: 'Transcript', Icon: undefined });
+
+    if (!isMobile) {
+      return (
+        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, overflowX: 'auto', mb: 2, px: 1 }}>
+          {aiActionButtons.map(({ key, label, Icon }) => (
+            <Button
+              key={key}
+              variant={actionTab === key ? 'contained' : 'outlined'}
+              color="primary"
+              startIcon={Icon ? <Icon /> : undefined}
+              size="medium"
+              sx={{ minWidth: 120, borderRadius: 2, fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap', textTransform: 'none', flex: '0 0 auto' }}
+              onClick={() => setActionTab(key as TabType)}
+            >
+              {label}
+            </Button>
+          ))}
+        </Box>
+      );
+    }
+    // Grid layout for mobile
+    return (
+      <Grid container spacing={1} sx={{ mb: 2, px: 1 }}>
+        {aiActionButtons.map(({ key, label, Icon }) => (
+          <Grid item xs={6} key={key}>
+            <Button
+              fullWidth
+              variant={actionTab === key ? 'contained' : 'outlined'}
+              color="primary"
+              startIcon={Icon ? <Icon /> : undefined}
+              size="small"
+              sx={{ borderRadius: 2, fontWeight: 600, fontSize: '0.8rem', whiteSpace: 'nowrap', textTransform: 'none' }}
+              onClick={() => setActionTab(key as TabType)}
+            >
+              {label}
+            </Button>
+          </Grid>
+        ))}
+      </Grid>
+    );
   };
 
   if (loading) {
@@ -119,11 +196,6 @@ export const Video = () => {
   }
 
   const hasLongDescription = video.description && video.description.length > 300;
-
-  // Filter to only show Summary, Key Points, and Q&A buttons
-  const visibleActions = Object.entries(aiActions).filter(
-    ([key]) => ['summary', 'keyPoints', 'podcastQA'].includes(key)
-  );
 
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 }, maxWidth: '600px', mx: 'auto' }}>
@@ -170,6 +242,13 @@ export const Video = () => {
         >
           {video.channelTitle}
         </Typography>
+        <IconButton
+          aria-label={isBookmarked ? 'Remove from bookmarks' : 'Save to bookmarks'}
+          onClick={handleBookmarkClick}
+          sx={{ ml: 1 }}
+        >
+          {isBookmarked ? <BookmarkIcon color="primary" /> : <BookmarkBorderIcon />}
+        </IconButton>
       </Box>
 
       {/* Description Box */}
@@ -195,70 +274,18 @@ export const Video = () => {
         </Paper>
       </Box>
 
-      {/* AI Action Buttons (replacing Tabs) */}
-      <Stack
-        direction={isMobile ? 'column' : 'row'}
-        spacing={1}
-        sx={{ 
-          mb: 2, 
-          px: 1, 
-          alignItems: isMobile ? 'stretch' : 'center', 
-          flexWrap: 'wrap', 
-          gap: 1 
-        }}
-        useFlexGap
-      >
-        {/* AI Action Buttons */}
-        {visibleActions.map(([key, type]) => (
-          <Button
-            key={key}
-            variant={tab === key ? 'contained' : 'outlined'}
-            color="primary"
-            startIcon={<type.icon />}
-            size={isMobile ? 'small' : 'medium'}
-            sx={{
-              flex: 1,
-              minWidth: isMobile ? 'auto' : 120,
-              borderRadius: 2,
-              fontWeight: 600,
-              fontSize: isMobile ? '0.8rem' : '0.875rem',
-              whiteSpace: 'nowrap',
-              textTransform: 'none'
-            }}
-            onClick={() => handleTabChange(key as TabType)}
-          >
-            {type.label}
-          </Button>
-        ))}
-        
-        {/* Transcript Button */}
-        <Button 
-          variant={tab === 'transcript' ? 'contained' : 'outlined'} 
-          onClick={() => handleTabChange('transcript')} 
-          sx={{ 
-            flex: 1,
-            minWidth: isMobile ? 'auto' : 120,
-            borderRadius: 2,
-            fontWeight: 600,
-            fontSize: isMobile ? '0.8rem' : '0.875rem',
-            whiteSpace: 'nowrap',
-            textTransform: 'none'
-          }}
-          size={isMobile ? 'small' : 'medium'}
-        >
-          Transcript
-        </Button>
-      </Stack>
+      {/* AI Action Buttons */}
+      {renderActionButtons()}
 
       {/* Main Content Area */}
       <Paper elevation={0} sx={{ p: 2, minHeight: 120, bgcolor: 'background.default', borderRadius: 2, mb: 2, px: 1 }}>
-        {(tab === 'summary' || tab === 'keyPoints' || tab === 'podcastQA') && (
-          <AIVideoActions videoId={videoId} initialActionType={tab as VideoActionType} />
+        {(actionTab === 'summary' || actionTab === 'keyPoints' || actionTab === 'podcastQA') && (
+          <AIVideoActions videoId={videoId} actionType={actionTab as VideoActionType} />
         )}
-        {tab === 'transcript' && (
+        {actionTab === 'transcript' && (
           <VideoTranscript videoId={videoId} />
         )}
-        {tab === 'more' && (
+        {actionTab === 'more' && (
           <Typography variant="body2" color="text.secondary">More features coming soon...</Typography>
         )}
       </Paper>
