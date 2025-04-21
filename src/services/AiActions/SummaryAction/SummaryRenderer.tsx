@@ -18,6 +18,7 @@ export const SummaryRenderer: React.FC<ActionRendererProps<SummaryResult>> = ({ 
       elevation={0} 
       sx={{ 
         p: 3, 
+        px: { xs: 0, sm: 3 },
         bgcolor: 'background.default',
         borderRadius: 2,
         overflow: 'auto'
