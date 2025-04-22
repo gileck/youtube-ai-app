@@ -1,6 +1,6 @@
 import { AiAction } from "..";
 
-export const chapterPrompt: AiAction['chapterPrompt'] = ({ videoDetails, chapter }) => {
+export const chapterPrompt: AiAction['chapterPrompt'] = ({ videoDetails, content }) => {
     return `
     You are analyzing a podcast transcript to identify questions and answers.
 
@@ -9,11 +9,11 @@ export const chapterPrompt: AiAction['chapterPrompt'] = ({ videoDetails, chapter
     The speaker name is usually in the video title: "${videoDetails?.title}".
     The interviewer name is usually in the channel name which is "${videoDetails?.channelTitle}"
     
-    Chapter title: "${chapter.title}" from the video "${videoDetails?.title}"
+    Chapters Content:
+
+    ${content}
     
-    Chapter Content: ${chapter.content}
-    
-    Identify all questions asked by the interviewer and the corresponding answers from the guest in this chapter.
+    Identify all questions asked by the interviewer and the corresponding answers from the guest.
     For each question, create a simplified, concise version that captures the essence of what was asked.
     For each answer, create a concise summary that captures the key points of the guest's response.
     

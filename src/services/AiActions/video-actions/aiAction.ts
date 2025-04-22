@@ -10,6 +10,7 @@ import { AiAction, AiActionChaptersOnly, aiActions, AiActionSingleChapter, Chapt
 import { YouTubeVideoDetails } from '@/shared/types/youtube';
 import { VideoActionType } from '@/services/AiActions/index';
 import _ from 'lodash';
+import { ChapterWithContent } from '@/server/youtube';
 
 
 export async function processAiAction<T>(
@@ -146,7 +147,7 @@ export async function processAiActionChaptersAndMain<T>(
   }
 
   function combineChapters(chaptersData: CombinedTranscriptChapters, numberOfChapters: number) {
-    const chapterChunks = _.chunk(chaptersData.chapters, numberOfChapters).map(chaptersArray => ({
+    const chapterChunks = _.chunk(chaptersData.chapters, numberOfChapters).map((chaptersArray: Array<ChapterWithContent>) => ({
       chapters: chaptersArray,
       content: `
       ${chaptersArray.map(chapter => `
@@ -156,11 +157,8 @@ export async function processAiActionChaptersAndMain<T>(
         ----------- END OF CHAPTER ----------------
         `).join('\n')}
       `
-    }))
+    })) as Array<{ chapters: Array<ChapterWithContent>, content: string }>;
     
-    
-    
-
     return {
       chapters: chapterChunks,
     }
@@ -224,7 +222,9 @@ export async function processAiActionChaptersOnly<T>(
   const chapterResults = await Promise.all(chapterPromises);
   
   return {
-    result: chapterResults,
+    result: {
+      chapters: chapterResults
+    },
     cost: {
       totalCost: totalCost
     }

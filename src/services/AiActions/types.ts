@@ -63,4 +63,6 @@ export type AiActionsData = {
     [key in VideoActionType]: AiAction | AiActionChaptersOnly | AiActionSingleChapter
 };
 
-export type ChaptersAiActionResult<T> = Array<{title: string, result: T | null}>
+export type ChaptersAiActionResult<T> = {
+    chapters: Array<{title: string, result: T | null}>
+}

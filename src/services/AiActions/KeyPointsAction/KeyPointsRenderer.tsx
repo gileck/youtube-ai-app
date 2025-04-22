@@ -33,6 +33,10 @@ export const KeyPointsRenderer: React.FC<ActionRendererProps<ChaptersAiActionRes
   const [protocolDetails, setProtocolDetails] = useState<Record<string, ProtocolDeepDiveResult | null>>({});
   const [loadingProtocols, setLoadingProtocols] = useState<Record<string, boolean>>({});
 
+  if (!result.chapters) {
+    return null;
+  }
+
   const handleToggle = (keyPointId: string) => {
     setExpandedItems(prev => ({
       ...prev,
@@ -81,7 +85,9 @@ export const KeyPointsRenderer: React.FC<ActionRendererProps<ChaptersAiActionRes
   };
 
   // Flatten all key points from all chapters into a single array
-  const allKeyPoints = result?.flatMap(chapter => chapter.result?.keyPoints || []) || [];
+  
+    
+  const allKeyPoints = result.chapters.flatMap(chapter => chapter.result?.keyPoints || []) || [];
 
   return (
     <Paper 

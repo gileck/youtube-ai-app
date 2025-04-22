@@ -99,8 +99,8 @@ export const PodcastQARenderer: AiActionChaptersOnly<PodcastQAResult>['rendeder'
         </Typography>
       </Box>
       <List sx={{ width: '100%' }}>
-        {result?.length > 0 ? (
-          result.map((chapter, chapterIdx) => (
+        {result?.chapters?.length > 0 ? (
+          result.chapters.map((chapter, chapterIdx) => (
             <React.Fragment key={chapterIdx}>
               {/* Chapter divider: title and time */}
               <Box sx={{ mt: chapterIdx === 0 ? 0 : 3, mb: 1 }}>

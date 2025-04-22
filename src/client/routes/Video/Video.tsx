@@ -6,12 +6,11 @@ import {
   Paper, 
   Avatar, 
   Button,
-  Stack,
   useTheme,
   useMediaQuery,
   IconButton,
+  Grid,
 } from '@mui/material';
-import Grid from '@mui/material/Grid';
 import { useRouter } from '../../router';
 import { getYouTubeVideoDetails } from '../../../apis/youtube/client';
 import { YouTubeVideoDetails } from '../../../shared/types/youtube';
@@ -100,17 +99,6 @@ export const Video = () => {
     return description.slice(0, 300) + '...';
   };
 
-  // Update the URL when changing tabs using the generic tab parameter
-  const handleTabChange = (newTab: TabType) => {
-    setActionTab(newTab);
-    if (newTab === 'summary' && !tabParam) {
-      // If we're already on the base video URL and switching to summary,
-      // no need to change the URL
-      return;
-    }
-    navigate(`/video/${videoId}/${newTab}`, { replace: true });
-  };
-
   const handleBookmarkClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!video) return;
@@ -158,7 +146,7 @@ export const Video = () => {
     return (
       <Grid container spacing={1} sx={{ mb: 2, px: 1 }}>
         {aiActionButtons.map(({ key, label, Icon }) => (
-          <Grid item xs={6} key={key}>
+          <Box key={key} sx={{ width: '50%', padding: '4px' }}>
             <Button
               fullWidth
               variant={actionTab === key ? 'contained' : 'outlined'}
@@ -170,7 +158,7 @@ export const Video = () => {
             >
               {label}
             </Button>
-          </Grid>
+          </Box>
         ))}
       </Grid>
     );

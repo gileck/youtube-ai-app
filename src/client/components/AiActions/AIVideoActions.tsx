@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, ReactNode, useCallback } from 'react';
 import { 
   Box, 
   Typography, 
@@ -27,7 +27,7 @@ export const AIVideoActions = ({ videoId, actionType }: AIVideoActionsProps) => 
   const [duration, setDuration] = useState<number | null>(null);
 
   // Process the AI action
-  const processAction = async (bypassCache = false, overrideActionType?: VideoActionType) => {
+  const processAction = useCallback(async (bypassCache = false, overrideActionType?: VideoActionType) => {
     if (!videoId) {
       setError('No video ID provided. Please access this page from a video.');
       return;
@@ -66,7 +66,7 @@ export const AIVideoActions = ({ videoId, actionType }: AIVideoActionsProps) => 
     } finally {
       setLoading(false);
     }
-  };
+  }, [videoId, setLoading, setError, setResult, setCost, setIsFromCache, setDuration]);
 
   // Regenerate the result without using cache
   const handleRegenerate = () => {
@@ -80,7 +80,6 @@ export const AIVideoActions = ({ videoId, actionType }: AIVideoActionsProps) => 
       return;
     }
     processAction(false, actionType);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId, actionType]);
 
   // Render the appropriate content based on the action type
