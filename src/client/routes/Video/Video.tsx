@@ -144,9 +144,9 @@ export const Video = () => {
     }
     // Grid layout for mobile
     return (
-      <Grid container spacing={1} sx={{ mb: 2, px: 1 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '5px', mb: 2, px: 1 }}>
         {aiActionButtons.map(({ key, label, Icon }) => (
-          <Box key={key} sx={{ width: '50%', padding: '4px' }}>
+          <Box key={key} sx={{ width: '30%', padding: '4px' }}>
             <Button
               fullWidth
               variant={actionTab === key ? 'contained' : 'outlined'}
@@ -160,7 +160,7 @@ export const Video = () => {
             </Button>
           </Box>
         ))}
-      </Grid>
+      </Box>
     );
   };
 
