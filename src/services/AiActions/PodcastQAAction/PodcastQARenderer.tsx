@@ -22,12 +22,13 @@ import { processAIVideoAction } from '@/apis/aiVideoActions/client';
 import { QuestionDeepDiveRenderer } from '@/services/AiActions/questionDeepDiveAction/QuestionDeepDiveRenderer';
 import { SingleAnswerResult } from '@/services/AiActions/questionDeepDiveAction';
 import { ActionRendererProps } from '@/services/AiActions/types';
-import { ChaptersAiActionResult } from '@/services/AiActions/types';
+import { ChaptersAiActionResult, SegmentResult } from '@/services/AiActions/types';
+import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 
 /**
  * Renders podcast Q&A pairs grouped by chapter (with title/time), then by subject (with emoji), then Q&A pairs.
  */
-export const PodcastQARenderer: React.FC<ActionRendererProps<ChaptersAiActionResult<PodcastQAResult>>> = ({ result, videoId }) => {
+export const PodcastQARenderer: React.FC<ActionRendererProps<ChaptersAiActionResult<PodcastQAResult>>> = ({ result, videoId, playerApi }) => {
   // Each expanded state is keyed by chapter, subject, and qa index: `${chapterIdx}-${subjectIdx}-${qaIdx}`
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -36,6 +37,8 @@ export const PodcastQARenderer: React.FC<ActionRendererProps<ChaptersAiActionRes
   const [error, setError] = useState<string | null>(null);
   const [currentChapter, setCurrentChapter] = useState('');
   const [currentQuestion, setCurrentQuestion] = useState('');
+  const [segmentResults, setSegmentResults] = useState<Record<string, SegmentResult | null>>({});
+  const [loadingSegments, setLoadingSegments] = useState<Record<string, boolean>>({});
 
   const handleToggle = (chapterIdx: number, subjectIdx: number, qaIdx: number) => {
     const key = `${chapterIdx}-${subjectIdx}-${qaIdx}`;
@@ -82,6 +85,58 @@ export const PodcastQARenderer: React.FC<ActionRendererProps<ChaptersAiActionRes
     setDialogOpen(false);
   };
 
+  // Format time function for displaying timestamps
+  const formatTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  const handleFindSegment = async (
+    chapterTitle: string,
+    question: string,
+    itemId: string,
+    bypassCache: boolean = false
+  ): Promise<SegmentResult | null> => {
+    setLoadingSegments(prev => ({ ...prev, [itemId]: true }));
+
+    try {
+      const response = await processAIVideoAction({
+        videoId,
+        actionType: 'findSegment',
+        actionParams: {
+          chapterTitle,
+          query: question
+        } as unknown as Record<string, unknown>
+      }, { bypassCache });
+
+      let result: SegmentResult | null = null;
+      if (response.data?.result) {
+        result = response.data?.result as SegmentResult;
+        setSegmentResults(prev => ({
+          ...prev,
+          [itemId]: result
+        }));
+      } else {
+        setSegmentResults(prev => ({ ...prev, [itemId]: null }));
+      }
+      return result;
+    } catch (error) {
+      console.error('Error finding segment:', error);
+      setSegmentResults(prev => ({ ...prev, [itemId]: null }));
+      return null;
+    } finally {
+      setLoadingSegments(prev => ({ ...prev, [itemId]: false }));
+    }
+  };
+
+  const handlePlayVideo = (seconds: number) => {
+    if (playerApi) {
+      playerApi.seekTo(seconds);
+      playerApi.play();
+    }
+  };
+
   return (
     <Paper
       elevation={0}
@@ -123,60 +178,96 @@ export const PodcastQARenderer: React.FC<ActionRendererProps<ChaptersAiActionRes
                       </Divider>
                     </Box>
                     {subject.qaPairs && subject.qaPairs.length > 0 ? (
-                      subject.qaPairs.map((qa, qaIdx) => (
-                        <React.Fragment key={qaIdx}>
-                          <ListItem
-                            disablePadding
-                            sx={{
-                              mb: 0.5,
-                              bgcolor: 'background.paper',
-                              borderRadius: 1,
-                              overflow: 'hidden'
-                            }}
-                          >
-                            <ListItemButton onClick={() => handleToggle(chapterIdx, subjectIdx, qaIdx)}>
-                              <ListItemText
-                                primary={
-                                  <Typography fontWeight="medium" color="text.secondary">
-                                    {qa.question}
-                                  </Typography>
-                                }
-                              />
-                              {expandedItems[`${chapterIdx}-${subjectIdx}-${qaIdx}`] ? <ExpandLess /> : <ExpandMore />}
-                            </ListItemButton>
-                          </ListItem>
-                          <Collapse in={expandedItems[`${chapterIdx}-${subjectIdx}-${qaIdx}`]} timeout="auto" unmountOnExit>
-                            <Box
+                      subject.qaPairs.map((qa, qaIdx) => {
+                        const itemId = `${chapterIdx}-${subjectIdx}-${qaIdx}`;
+                        return (
+                          <React.Fragment key={qaIdx}>
+                            <ListItem
+                              disablePadding
                               sx={{
-                                px: 3,
-                                py: 2,
-                                mb: 1.5,
-                                borderRadius: 1
+                                mb: 0.5,
+                                bgcolor: 'background.paper',
+                                borderRadius: 1,
+                                overflow: 'hidden'
                               }}
-                              className="markdown-content"
                             >
-                              <ReactMarkdown>
-                                {qa.answer}
-                              </ReactMarkdown>
-                              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                                <Button
-                                  variant="outlined"
-                                  size="small"
-                                  startIcon={<ZoomInIcon />}
-                                  onClick={() => handleFullAnswerClick(qa.question, chapter.title)}
-                                  sx={{
-                                    borderRadius: 2,
-                                    textTransform: 'none',
-                                    fontSize: '0.8rem'
-                                  }}
-                                >
-                                  Full Answer
-                                </Button>
+                              <ListItemButton onClick={() => handleToggle(chapterIdx, subjectIdx, qaIdx)}>
+                                <ListItemText
+                                  primary={
+                                    <Typography fontWeight="medium" color="text.secondary">
+                                      {qa.question}
+                                    </Typography>
+                                  }
+                                />
+                                {expandedItems[itemId] ? <ExpandLess /> : <ExpandMore />}
+                              </ListItemButton>
+                            </ListItem>
+                            <Collapse in={expandedItems[itemId]} timeout="auto" unmountOnExit>
+                              <Box
+                                sx={{
+                                  px: 3,
+                                  py: 2,
+                                  mb: 1.5,
+                                  borderRadius: 1
+                                }}
+                                className="markdown-content"
+                              >
+                                <ReactMarkdown>
+                                  {qa.answer}
+                                </ReactMarkdown>
+                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                                  <Button
+                                    variant="outlined"
+                                    size="small"
+                                    startIcon={<PlayCircleOutlineIcon />}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (!loadingSegments[itemId] && !segmentResults[itemId]) {
+                                        handleFindSegment(chapter.title, qa.question, itemId)
+                                          .then((result) => {
+                                            if (result) {
+                                              setTimeout(() => {
+                                                handlePlayVideo(result.conversation_start_seconds - 5);
+                                              }, 100);
+                                            }
+                                          });
+                                      } else if (segmentResults[itemId]) {
+                                        handlePlayVideo(segmentResults[itemId]!.conversation_start_seconds - 5);
+                                      }
+                                    }}
+                                    disabled={loadingSegments[itemId]}
+                                    sx={{
+                                      mr: 1,
+                                      borderRadius: 2,
+                                      textTransform: 'none',
+                                      fontSize: '0.8rem'
+                                    }}
+                                  >
+                                    {segmentResults[itemId] ? (
+                                      formatTime(segmentResults[itemId]!.conversation_start_seconds - 5)
+                                    ) : (
+                                      'Play'
+                                    )}
+                                  </Button>
+                                  <Button
+                                    variant="outlined"
+                                    size="small"
+                                    startIcon={<ZoomInIcon />}
+                                    onClick={() => handleFullAnswerClick(qa.question, chapter.title)}
+                                    sx={{
+                                      borderRadius: 2,
+                                      textTransform: 'none',
+                                      fontSize: '0.8rem'
+                                    }}
+                                  >
+                                    Full Answer
+                                  </Button>
+                                </Box>
                               </Box>
-                            </Box>
-                          </Collapse>
-                        </React.Fragment>
-                      ))
+                            </Collapse>
+                          </React.Fragment>
+                        );
+                      })
                     ) : (
                       <Box sx={{ p: 2, textAlign: 'center' }}>
                         <Typography color="text.secondary">
@@ -250,7 +341,7 @@ export const PodcastQARenderer: React.FC<ActionRendererProps<ChaptersAiActionRes
               <Typography>{error}</Typography>
             </Box>
           ) : deepDiveResult ? (
-            <QuestionDeepDiveRenderer result={deepDiveResult} videoId={videoId} />
+            <QuestionDeepDiveRenderer result={deepDiveResult} videoId={videoId} playerApi={playerApi} />
           ) : (
             <Box sx={{ p: 3, textAlign: 'center' }}>
               <Typography color="text.secondary">
