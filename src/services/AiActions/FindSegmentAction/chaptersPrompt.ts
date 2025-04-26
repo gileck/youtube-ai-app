@@ -33,9 +33,16 @@ export const chapterPrompt: ChapterPromptFunction<FindSegmentActionParams> = ({
     - If the exact question is asked in the transcript, find where the answer begins right after the question
     - The relevant segment should be the starting point of the answer, not the question itself
     - Make sure to find the specific answer to this particular question, not just general discussion about the topic
+    - Pay attention to direct responses to the question, often indicated by phrases like "the answer is", "to answer that", etc.
+    - Look for segments where the speaker directly addresses the specific concept mentioned in the question
+    - If multiple answers exist, choose the most complete and direct answer
+    - Prefer segments where the speaker gives a clear, concise explanation rather than tangential mentions
     ` : `
-    If the query is a question, then the relevant segment is the part where this exact question is being asked 
-    or where the answer to this question is being given in the transcript.
+    If the query is a topic or statement, find the segment where:
+    - The topic is introduced or explained in detail
+    - The concept is defined or elaborated upon
+    - Examples or applications of the topic are discussed
+    - The most comprehensive discussion of the topic occurs
     `}
 
     Return a JSON object with the following structure:
