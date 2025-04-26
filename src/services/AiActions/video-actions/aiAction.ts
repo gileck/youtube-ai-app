@@ -20,14 +20,14 @@ export async function processAiAction<T>(
     videoDetails,
     actionType,
     actionParams
-  }: 
-  {
-    chaptersData: CombinedTranscriptChapters,
-    modelId: string | undefined,
-    videoDetails: YouTubeVideoDetails | null,
-    actionType: VideoActionType,
-    actionParams?: Record<string, unknown>
-  }
+  }:
+    {
+      chaptersData: CombinedTranscriptChapters,
+      modelId: string | undefined,
+      videoDetails: YouTubeVideoDetails | null,
+      actionType: VideoActionType,
+      actionParams?: Record<string, unknown>
+    }
 ): Promise<AIModelAdapterResponse<T> | AIModelAdapterResponse<ChaptersAiActionResult<T>>> {
   const { mainPrompt, singleChapter } = aiActions[actionType] as AiAction<T> | AiActionChaptersOnly<T> | AiActionSingleChapter<T>
   if (singleChapter) {
@@ -55,7 +55,7 @@ export async function processAiAction<T>(
     }) as Promise<AIModelAdapterResponse<ChaptersAiActionResult<T>>>
   }
 
-  
+
 
 }
 
@@ -68,88 +68,88 @@ export async function processAiAction<T>(
  * @returns Promise with the summary result and accumulated cost
  */
 export async function processAiActionChaptersAndMain<T>(
-    {
-      chaptersData,
-      modelId,
-      videoDetails,
-      actionType
-    }: 
+  {
+    chaptersData,
+    modelId,
+    videoDetails,
+    actionType
+  }:
     {
       chaptersData: CombinedTranscriptChapters,
       modelId: string | undefined,
       videoDetails: YouTubeVideoDetails | null,
       actionType: VideoActionType
     }
-  ): Promise<AIModelAdapterResponse<T>> {
-    const { chapterPrompt, mainPrompt } = aiActions[actionType] as AiAction<T>
-    const modelAdapter = new AIModelAdapter(modelId);
+): Promise<AIModelAdapterResponse<T>> {
+  const { chapterPrompt, mainPrompt } = aiActions[actionType] as AiAction<T>
+  const modelAdapter = new AIModelAdapter(modelId);
 
-    let totalCost = 0;
+  let totalCost = 0;
 
-    if (chaptersData.chapters.length === 0) {
-      //defulat to full transcript
-      // const transcript = chaptersData.transcript.map(segment => segment.text).join(' ');
+  if (chaptersData.chapters.length === 0) {
+    //defulat to full transcript
+    // const transcript = chaptersData.transcript.map(segment => segment.text).join(' ');
 
-      
-    }
-    
-    const chapterPromises = chaptersData.chapters.map(async (chapter) => {
 
-      const _chpaterPrompt = chapterPrompt({
-        videoDetails: videoDetails,
-        chapters: [chapter],
-        content: chapter.content,
-        params: {}
-      })
-    
-      try {
-        const response = await modelAdapter.processPromptToText(_chpaterPrompt, actionType);
-        
-        totalCost += response.cost.totalCost;
-        
-        return {
-          title: chapter.title,
-          result: response.result
-        };
-      } catch (error) {
-        console.error(`Error summarizing chapter "${chapter.title}":`, error);
-        return {
-          title: chapter.title,
-          result: ''
-        };
-      }
-    });
-    
-    const chapterResults = await Promise.all(chapterPromises);
-    
-    const finalPrompt = mainPrompt({
-      videoDetails: videoDetails,
-      chapters: chapterResults.map(chapter => ({
-        title: chapter.title,
-        result: chapter.result || ''
-      }))
-    });
-
-    const finalResult = await modelAdapter.processPromptToJSON<T>(
-      finalPrompt,
-      actionType
-    );
-
-    totalCost += finalResult.cost.totalCost;
-
-    return {
-      result: finalResult.result,
-      usage: finalResult.usage,
-      cost: {
-        totalCost: totalCost
-      }
-    };
   }
 
-  function combineChapters(chaptersData: CombinedTranscriptChapters, numberOfChapters: number) {
-    const chapterChunks = _.chunk(chaptersData.chapters, numberOfChapters).map((chaptersArray: Array<ChapterWithContent>) => ({
-      chapters: chaptersArray,
-      content: `
+  const chapterPromises = chaptersData.chapters.map(async (chapter) => {
+
+    const _chpaterPrompt = chapterPrompt({
+      videoDetails: videoDetails,
+      chapters: [chapter],
+      content: chapter.content,
+      params: {}
+    })
+
+    try {
+      const response = await modelAdapter.processPromptToText(_chpaterPrompt, actionType);
+
+      totalCost += response.cost.totalCost;
+
+      return {
+        title: chapter.title,
+        result: response.result
+      };
+    } catch (error) {
+      console.error(`Error summarizing chapter "${chapter.title}":`, error);
+      return {
+        title: chapter.title,
+        result: ''
+      };
+    }
+  });
+
+  const chapterResults = await Promise.all(chapterPromises);
+
+  const finalPrompt = mainPrompt({
+    videoDetails: videoDetails,
+    chapters: chapterResults.map(chapter => ({
+      title: chapter.title,
+      result: chapter.result || ''
+    }))
+  });
+
+  const finalResult = await modelAdapter.processPromptToJSON<T>(
+    finalPrompt,
+    actionType
+  );
+
+  totalCost += finalResult.cost.totalCost;
+
+  return {
+    result: finalResult.result,
+    usage: finalResult.usage,
+    cost: {
+      totalCost: totalCost
+    }
+  };
+}
+
+function combineChapters(chaptersData: CombinedTranscriptChapters, numberOfChaptersToCombine: number) {
+  const chapterChunks = _.chunk(chaptersData.chapters, numberOfChaptersToCombine).map((chaptersArray: Array<ChapterWithContent>) => ({
+    chapters: chaptersArray,
+    content: `
       ${chaptersArray.map(chapter => `
         ----------- START OF CHAPTER ---------------
         Chapter Title: ${chapter.title}
@@ -157,12 +157,12 @@ export async function processAiActionChaptersAndMain<T>(
         ----------- END OF CHAPTER ----------------
         `).join('\n')}
       `
-    })) as Array<{ chapters: Array<ChapterWithContent>, content: string }>;
-    
-    return {
-      chapters: chapterChunks,
-    }
+  })) as Array<{ chapters: Array<ChapterWithContent>, content: string }>;
+
+  return {
+    chapters: chapterChunks,
   }
+}
 
 /**
  * Generate a summary for each chapter and then summarize those summaries
@@ -177,20 +177,26 @@ export async function processAiActionChaptersOnly<T>(
     modelId,
     videoDetails,
     actionType,
-  }: 
-  {
-    chaptersData: CombinedTranscriptChapters,
-    modelId: string | undefined,
-    videoDetails: YouTubeVideoDetails | null,
-    actionType: VideoActionType
-  }
+  }:
+    {
+      chaptersData: CombinedTranscriptChapters,
+      modelId: string | undefined,
+      videoDetails: YouTubeVideoDetails | null,
+      actionType: VideoActionType
+    }
 ): Promise<AIModelAdapterResponse<ChaptersAiActionResult<T>>> {
   const { chapterPrompt } = aiActions[actionType] as AiActionChaptersOnly<T>
   const modelAdapter = new AIModelAdapter(modelId);
 
   let totalCost = 0;
 
-  const combinedChapters = combineChapters(chaptersData, 15)
+  function calculateNumberOfChaptersChunks(numberOfChapters: number) {
+    return Math.min(Math.ceil(numberOfChapters / 15), 5);
+  }
+
+  const combinedChapters = combineChapters(chaptersData,
+    calculateNumberOfChaptersChunks(chaptersData.chapters.length)
+  )
 
   const chapterPromises = combinedChapters.chapters.map(async (chaptersArray) => {
 
@@ -200,12 +206,12 @@ export async function processAiActionChaptersOnly<T>(
       content: chaptersArray.content,
       params: {}
     })
-  
+
     try {
       const response = await modelAdapter.processPromptToJSON<T>(_chpaterPrompt, actionType);
-      
+
       totalCost += response.cost.totalCost;
-      
+
       return {
         title: chaptersArray.chapters.map(chapter => chapter.title).join(', '),
         result: response.result
@@ -218,9 +224,9 @@ export async function processAiActionChaptersOnly<T>(
       };
     }
   });
-  
+
   const chapterResults = await Promise.all(chapterPromises);
-  
+
   return {
     result: {
       chapters: chapterResults
@@ -238,18 +244,20 @@ export async function processAiActionSingleChapter<T>(
     videoDetails,
     actionType,
     actionParams
-  }: 
-  {
-    chaptersData: CombinedTranscriptChapters,
-    modelId: string | undefined,
-    videoDetails: YouTubeVideoDetails | null,
-    actionType: VideoActionType,
-    actionParams: Record<string, unknown>
-  }
+  }:
+    {
+      chaptersData: CombinedTranscriptChapters,
+      modelId: string | undefined,
+      videoDetails: YouTubeVideoDetails | null,
+      actionType: VideoActionType,
+      actionParams: Record<string, unknown>
+    }
 ): Promise<AIModelAdapterResponse<T>> {
   const { chapterPrompt } = aiActions[actionType] as AiActionSingleChapter<T>
   const modelAdapter = new AIModelAdapter(modelId);
-  const chapter = chaptersData.chapters.find(chapter => chapter.title === actionParams.chapterTitle)
+  const chapter = chaptersData.chapters.find(chapter =>
+    chapter.title.toLowerCase() === (actionParams.chapterTitle as string).toLowerCase()
+  )
   if (!chapter) {
     throw new Error(`Chapter not found: ${actionParams.chapterTitle}`);
   }
@@ -257,7 +265,8 @@ export async function processAiActionSingleChapter<T>(
     videoDetails: videoDetails,
     chapters: [chapter],
     content: chapter.content,
-    params: actionParams
+    params: actionParams,
+    chapterSegmants: chapter.segments
   })
 
   const response = await modelAdapter.processPromptToJSON<T>(prompt, actionType);
@@ -269,4 +278,4 @@ export async function processAiActionSingleChapter<T>(
     }
   };
 }
-  
+

@@ -17,9 +17,10 @@ export type ProtocolDeepDiveParams = {
 }
 
 export const protocolDeepDiveAction: AiActionSingleChapter<ProtocolDeepDiveResult, ProtocolDeepDiveParams> = {
+  isMainAction: false,
   icon: InfoOutlined,
   label: 'Protocol Deep Dive',
-  rendeder: ProtocolDeepDiveRenderer,
+  renderer: ProtocolDeepDiveRenderer,
   mainPrompt: false,
   chapterPrompt,
   singleChapter: true

@@ -5,6 +5,7 @@
 // Import all YouTube types from shared/types/youtube
 import { YouTubeVideoDetails, YouTubeChannelSearchResult, YouTubeChannelInfo, YouTubeSearchFilters, YouTubeChannelResponse, YouTubeVideoSearchResult, YouTubeSearchVideosResponse, YouTubeSearchChannelsResponse } from '@/shared/types/youtube';
 import type { Types } from 'youtubei.js';
+import { TranscriptResponse } from './transcript/youtubeTranscriptService';
 
 // Define our own YouTubeSortOption type matching the YouTube API's sort options
 // These values match the SortBy type from youtubei.js
@@ -14,14 +15,14 @@ export type YouTubeSortOption = Types.SortBy;
 export interface YouTubeSearchParams {
   query: string;
   sortBy?: YouTubeSortOption;
-  
+
   // Filter options
   upload_date?: Types.UploadDate;
   type?: Types.SearchType;
   duration?: Types.Duration;
   features?: Types.Feature[];
   minViews?: number; // Minimum view count filter
-  
+
   // Pagination
   pageNumber?: number; // Page number for pagination
 }
@@ -67,14 +68,14 @@ export interface YouTubeApiAdapter {
    * @returns Promise with search results or error
    */
   searchVideos(params: YouTubeSearchParams): Promise<YouTubeSearchVideosResponse<YouTubeVideoSearchResult[]>>;
-  
+
   /**
    * Search for channels by query
    * @param params Search parameters
    * @returns Promise with search results or error
    */
   searchChannels(params: YouTubeChannelSearchParams): Promise<YouTubeSearchChannelsResponse<YouTubeChannelSearchResult[]>>;
-  
+
   /**
    * Get video details by ID
    * @param params Video parameters
@@ -102,5 +103,5 @@ export interface ChapterWithContent {
   startTime: number;
   endTime: number;
   content: string;
-  segments: TranscriptSegment[];
+  segments: TranscriptResponse['segments']
 }

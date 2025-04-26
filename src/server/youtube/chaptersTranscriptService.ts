@@ -1,6 +1,6 @@
-  import { fetchTranscript, TranscriptResponse } from '../youtube/transcript/youtubeTranscriptService';
+import { fetchTranscript, TranscriptResponse } from '../youtube/transcript/youtubeTranscriptService';
 import { Chapter, fetchChapters } from '../youtube/chapters/chaptersService';
-import { ChapterWithContent, TranscriptSegment } from '../youtube/types';
+import { ChapterWithContent } from '../youtube/types';
 
 /**
  * Configuration for filtering out chapters and transcript items based on their content
@@ -51,19 +51,19 @@ export interface CombinedTranscriptChapters {
  * @returns Combined transcript and chapters data
  */
 export function splitTranscriptToChapters(
-  transcript: TranscriptResponse['segments'], 
-  videoId: string, 
-  options: { 
+  transcript: TranscriptResponse['segments'],
+  videoId: string,
+  options: {
     overlapOffsetSeconds: number;
     chapterDurationSeconds?: number;
     segmentsPerChapter?: number;
     totalChapters?: number;
-  } = { 
-    overlapOffsetSeconds: 5,
-    chapterDurationSeconds: 600, // 10 minutes per chapter
-    segmentsPerChapter: 30,
-    totalChapters: 0, // 0 means auto-calculate based on segmentsPerChapter or chapterDurationSeconds
-  }
+  } = {
+      overlapOffsetSeconds: 5,
+      chapterDurationSeconds: 600, // 10 minutes per chapter
+      segmentsPerChapter: 30,
+      totalChapters: 0, // 0 means auto-calculate based on segmentsPerChapter or chapterDurationSeconds
+    }
 ): CombinedTranscriptChapters {
   if (!transcript || transcript.length === 0) {
     return {
@@ -82,66 +82,66 @@ export function splitTranscriptToChapters(
 
   // Sort transcript by start time to ensure chronological order
   const sortedTranscript = [...transcript].sort((a, b) => a.start_seconds - b.start_seconds);
-  
+
   // Determine the total duration from the last transcript item
   const lastItem = sortedTranscript[sortedTranscript.length - 1];
   const totalDuration = lastItem.end_seconds;
-  
+
   // Create chapters based on fixed duration (10 minutes = 600 seconds)
   const chapterDuration = options.chapterDurationSeconds || 600; // Default to 10 minutes
-  
+
   // Calculate total number of chapters based on video duration
   const totalChapters = Math.ceil(totalDuration / chapterDuration);
-  
+
   // Create artificial chapters
   const artificialChapters: Chapter[] = [];
-  
+
   for (let i = 0; i < totalChapters; i++) {
     const startTime = i * chapterDuration;
     const endTime = Math.min((i + 1) * chapterDuration, totalDuration);
-    
+
     // Generate a title based on the chapter number and timestamp
     const startMinutes = Math.floor(startTime / 60);
     const startSeconds = Math.floor(startTime % 60);
     const formattedTime = `${startMinutes}:${startSeconds.toString().padStart(2, '0')}`;
-    
+
     artificialChapters.push({
       title: `Chapter ${i + 1} (${formattedTime})`,
       startTime,
       endTime
     });
   }
-  
+
   // Apply overlap to chapters
   const chaptersWithOverlap = applyChapterOverlap(artificialChapters, options.overlapOffsetSeconds);
-  
+
   // Initialize chapters with content containers
   const chaptersWithContent = initializeChaptersWithContent(chaptersWithOverlap);
-  
+
   // Assign transcript segments to chapters
   for (const segment of sortedTranscript) {
     // Skip filtered transcript items
     if (shouldFilterTranscriptItem(segment.text)) {
       continue;
     }
-    
+
     // Find all chapters that contain this segment's timestamp
     for (const chapter of chaptersWithContent) {
       if (segment.start_seconds >= chapter.startTime && segment.start_seconds <= chapter.endTime) {
         // Calculate relative position within the chapter (0-1)
-        const relativePosition = calculateRelativePosition(segment.start_seconds, chapter);
-        
+        // const relativePosition = calculateRelativePosition(segment.start_seconds, chapter);
+
         // Convert YouTube transcript segment to TranscriptSegment format
-        const transcriptSegment: TranscriptSegment = {
+        const transcriptSegment = {
           text: segment.text,
-          offset: segment.start_seconds,
-          duration: segment.end_seconds - segment.start_seconds,
-          relativeOffset: relativePosition
+          start_seconds: segment.start_seconds,
+          end_seconds: segment.end_seconds,
+          start_time_text: segment.start_time_text,
         };
-        
+
         // Add segment to this chapter
         chapter.segments.push(transcriptSegment);
-        
+
         // Add to content (will be rebuilt in finalizeOutput)
         if (!chapter.content) {
           chapter.content = segment.text;
@@ -151,7 +151,7 @@ export function splitTranscriptToChapters(
       }
     }
   }
-  
+
   // Finalize the output using the existing finalizeOutput function
   return finalizeOutput(chaptersWithContent, transcript, videoId, {
     overlapOffsetSeconds: options.overlapOffsetSeconds
@@ -210,14 +210,14 @@ function initializeChaptersWithContent(chapters: Chapter[]): ChapterWithContent[
  * @param chapter Chapter object
  * @returns Relative position (0-1)
  */
-function calculateRelativePosition(timestamp: number, chapter: ChapterWithContent): number {
-  const chapterDuration = chapter.endTime === Number.MAX_SAFE_INTEGER
-    ? 300 // Assume 5 minutes for last chapter
-    : chapter.endTime - chapter.startTime;
+// function calculateRelativePosition(timestamp: number, chapter: ChapterWithContent): number {
+//   const chapterDuration = chapter.endTime === Number.MAX_SAFE_INTEGER
+//     ? 300 // Assume 5 minutes for last chapter
+//     : chapter.endTime - chapter.startTime;
 
-  const relativePosition = (timestamp - chapter.startTime) / chapterDuration;
-  return Math.max(0, Math.min(1, relativePosition)); // Clamp between 0-1
-}
+//   const relativePosition = (timestamp - chapter.startTime) / chapterDuration;
+//   return Math.max(0, Math.min(1, relativePosition)); // Clamp between 0-1
+// }
 
 /**
  * Check if a chapter should be filtered out based on its title
@@ -227,8 +227,8 @@ function calculateRelativePosition(timestamp: number, chapter: ChapterWithConten
  */
 function shouldFilterChapter(chapterTitle: string): boolean {
   const normalizedTitle = chapterTitle.toLowerCase();
-  
-  return chapterFilterConfig.filteredPhrases.some(phrase => 
+
+  return chapterFilterConfig.filteredPhrases.some(phrase =>
     normalizedTitle.includes(phrase.toLowerCase())
   );
 }
@@ -241,8 +241,8 @@ function shouldFilterChapter(chapterTitle: string): boolean {
  */
 function shouldFilterTranscriptItem(transcriptText: string): boolean {
   const normalizedText = transcriptText.toLowerCase();
-  
-  return chapterFilterConfig.filteredTranscriptPhrases.some(phrase => 
+
+  return chapterFilterConfig.filteredTranscriptPhrases.some(phrase =>
     normalizedText.includes(phrase.toLowerCase())
   );
 }
@@ -260,7 +260,7 @@ function finalizeOutput(
   chaptersWithContent: ChapterWithContent[],
   transcript: TranscriptResponse['segments'],
   videoId: string,
-  options: { 
+  options: {
     overlapOffsetSeconds: number;
   }
 ): CombinedTranscriptChapters {
@@ -273,7 +273,7 @@ function finalizeOutput(
   // Sort segments in each chapter by offset and rebuild content
   const processedChapters = chaptersWithContent.map(chapter => {
     // Sort segments by offset
-    const sortedSegments = [...chapter.segments].sort((a, b) => a.offset - b.offset);
+    const sortedSegments = [...chapter.segments].sort((a, b) => a.start_seconds - b.start_seconds);
 
     // Rebuild content from sorted segments
     const content = sortedSegments.map(segment => segment.text).join(' ');
@@ -350,7 +350,7 @@ function combineTranscriptAndChapters(
       // Check if this segment belongs in this chapter
       if (segmentTimeSeconds >= chapter.startTime && segmentTimeSeconds < chapter.endTime) {
         const chapterContent = chaptersWithContent[i];
-        const relativePosition = calculateRelativePosition(segmentTimeSeconds, chapterContent);
+        // const relativePosition = calculateRelativePosition(segmentTimeSeconds, chapterContent);
 
         // Add text to chapter content
         chapterContent.content += ' ' + item.text;
@@ -358,9 +358,9 @@ function combineTranscriptAndChapters(
         // Add segment to chapter's segments array
         chapterContent.segments.push({
           text: item.text,
-          offset: item.start_seconds,
-          duration: item.end_seconds - item.start_seconds,
-          relativeOffset: relativePosition
+          start_seconds: item.start_seconds,
+          end_seconds: item.end_seconds,
+          start_time_text: item.start_time_text,
         });
       }
     }
@@ -383,11 +383,11 @@ export async function getChaptersTranscripts(
     overlapOffsetSeconds: number;
     segmentsPerChapter?: number;
     totalChapters?: number;
-  } = { 
-    overlapOffsetSeconds: 5,
-    segmentsPerChapter: 30,
-    totalChapters: 0
-  }
+  } = {
+      overlapOffsetSeconds: 5,
+      segmentsPerChapter: 30,
+      totalChapters: 0
+    }
 ): Promise<CombinedTranscriptChapters> {
   try {
     // Fetch transcript and chapters in parallel

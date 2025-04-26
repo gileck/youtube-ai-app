@@ -1,15 +1,14 @@
-import { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  CircularProgress, 
-  Paper, 
-  Avatar, 
+import { useState, useEffect, useRef, useMemo } from 'react';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Paper,
+  Avatar,
   Button,
   useTheme,
   useMediaQuery,
   IconButton,
-  Grid,
 } from '@mui/material';
 import { useRouter } from '../../router';
 import { getYouTubeVideoDetails } from '../../../apis/youtube/client';
@@ -21,6 +20,15 @@ import { aiActions, VideoActionType } from '@/services/AiActions';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { bookmarkVideo, removeBookmarkedVideo, isVideoBookmarked } from '../../utils/bookmarksStorage';
+import { mediaEvents } from '../../utils/mediaEvents';
+import { MiniPlayer } from './MiniPlayer';
+
+export type PlayerAPI = {
+  play: () => void;
+  pause: () => void;
+  seekTo: (time: number) => void;
+  getCurrentTime: () => number;
+};
 
 // Define valid tab types - now using VideoActionType
 type TabType = VideoActionType | 'transcript' | 'more';
@@ -33,12 +41,31 @@ export const Video = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const [actionTab, setActionTab] = useState<TabType>('summary');
+  const [actionTab, setActionTab] = useState<TabType>(tabParam || 'summary');
   const [isBookmarked, setIsBookmarked] = useState(false);
-  
+
+  // Remove main player references and keep only mini player related states
+  const [miniPlayerVisible, setMiniPlayerVisible] = useState(false);
+  const [miniPlayerClosed, setMiniPlayerClosed] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const miniPlayerRef = useRef<React.ElementRef<typeof MiniPlayer>>(null);
+
   // Theme and responsive design
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  // Update the useEffect that listens for events
+  useEffect(() => {
+    // Subscribe to timestamp jump events from other components
+    const unsubscribe = mediaEvents.onTimestampJump((timestamp) => {
+      // Only control the mini player - show it if it was previously closed
+      setMiniPlayerVisible(true);
+      setMiniPlayerClosed(false);
+      setCurrentTime(timestamp);
+    });
+
+    return unsubscribe;
+  }, []);
 
   // Determine the active tab from the URL path parameter
   useEffect(() => {
@@ -83,6 +110,30 @@ export const Video = () => {
     }
   }, [videoId]);
 
+  // PlayerAPI now only controls the mini player
+  const playerApi = useMemo(() => ({
+    play: () => {
+      if (miniPlayerRef.current) {
+        setMiniPlayerVisible(true);
+        miniPlayerRef.current.play();
+      }
+    },
+    pause: () => {
+      if (miniPlayerRef.current) {
+        miniPlayerRef.current.pause();
+      }
+    },
+    seekTo: (time: number) => {
+      if (miniPlayerRef.current) {
+        setMiniPlayerVisible(true);
+        miniPlayerRef.current.seekTo(time);
+      }
+    },
+    getCurrentTime: () => {
+      return miniPlayerRef.current ? miniPlayerRef.current.getCurrentTime() : currentTime;
+    }
+  }), [currentTime]);
+
   const handleChannelClick = () => {
     if (video?.channelId) {
       navigate(`/channel/${video.channelId}`);
@@ -111,17 +162,42 @@ export const Video = () => {
     }
   };
 
+  // Handle closing the mini player
+  const handleCloseMiniPlayer = (event?: { reopenForSeek?: boolean; time?: number }) => {
+    // If this is a special reopenForSeek request, don't close the player
+    if (event?.reopenForSeek) {
+      console.log("Reopening mini player for seek to:", event.time);
+      setMiniPlayerVisible(true);
+      setMiniPlayerClosed(false);
+      if (typeof event.time === 'number') {
+        setCurrentTime(event.time);
+      }
+      return;
+    }
+
+    // Normal close behavior
+    setMiniPlayerVisible(false);
+    setMiniPlayerClosed(true);
+  };
+
+  // Handle tab click with URL updates
+  const handleTabClick = (tab: TabType) => {
+    setActionTab(tab);
+    // Update the URL with the selected tab
+    navigate(`/video/${videoId}/${tab}`);
+  };
+
   // Responsive AI action buttons layout
   const renderActionButtons = () => {
-    // Only show summary, keyPoints, podcastQA, transcript
     const aiActionButtons = Object.entries(aiActions)
-      .filter(([key]) => ['summary', 'keyPoints', 'podcastQA'].includes(key))
+      .filter(([, value]) => value.isMainAction)
       .map(([key, type]) => ({
         key,
         label: type.label,
         Icon: type.icon as React.ElementType | undefined,
       }));
     aiActionButtons.push({ key: 'transcript', label: 'Transcript', Icon: undefined });
+
 
     if (!isMobile) {
       return (
@@ -133,8 +209,10 @@ export const Video = () => {
               color="primary"
               startIcon={Icon ? <Icon /> : undefined}
               size="medium"
-              sx={{ minWidth: 120, borderRadius: 2, fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap', textTransform: 'none', flex: '0 0 auto' }}
-              onClick={() => setActionTab(key as TabType)}
+              sx={{
+                minWidth: 120, borderRadius: 2, fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap', textTransform: 'none', flex: '0 0 auto'
+              }}
+              onClick={() => handleTabClick(key as TabType)}
             >
               {label}
             </Button>
@@ -146,7 +224,7 @@ export const Video = () => {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '5px', mb: 2, px: 1 }}>
         {aiActionButtons.map(({ key, label, Icon }) => (
-          <Box key={key} sx={{ width: '30%', padding: '4px' }}>
+          <Box key={key} sx={{ padding: '4px' }}>
             <Button
               fullWidth
               variant={actionTab === key ? 'contained' : 'outlined'}
@@ -154,7 +232,7 @@ export const Video = () => {
               startIcon={Icon ? <Icon /> : undefined}
               size="small"
               sx={{ borderRadius: 2, fontWeight: 600, fontSize: '0.8rem', whiteSpace: 'nowrap', textTransform: 'none' }}
-              onClick={() => setActionTab(key as TabType)}
+              onClick={() => handleTabClick(key as TabType)}
             >
               {label}
             </Button>
@@ -187,18 +265,44 @@ export const Video = () => {
 
   return (
     <Box sx={{ p: { xs: 1, sm: 2, md: 3 }, maxWidth: '600px', mx: 'auto' }}>
-      {/* Video Player */}
-      <Paper elevation={2} sx={{ borderRadius: 2, overflow: 'hidden', mb: 2 }}>
-        <Box sx={{ position: 'relative', paddingTop: '56.25%', bgcolor: 'black' }}>
+      {/* Video Player - Simple iframe embed */}
+      <Paper
+        elevation={2}
+        sx={{ borderRadius: 2, overflow: 'hidden', mb: 2 }}
+      >
+        <Box
+          sx={{
+            position: 'relative',
+            paddingTop: '56.25%', // 16:9 aspect ratio
+            bgcolor: 'black',
+            cursor: 'pointer',
+          }}
+        >
           <iframe
-            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-            src={`https://www.youtube.com/embed/${videoId}`}
-            title={video.title}
+            src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0`}
+            frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+            }}
+            title={video.title}
           />
         </Box>
       </Paper>
+
+      {/* Mini Player */}
+      <MiniPlayer
+        ref={miniPlayerRef}
+        videoId={videoId}
+        visible={miniPlayerVisible && !miniPlayerClosed}
+        onClose={handleCloseMiniPlayer}
+        currentTime={currentTime}
+      />
 
       {/* Metadata Row */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, px: 1 }}>
@@ -241,24 +345,76 @@ export const Video = () => {
 
       {/* Description Box */}
       <Box sx={{ mb: 2, px: 1 }}>
-        <Paper elevation={0} sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 2, whiteSpace: 'pre-wrap', minHeight: 60 }}>
-          <Typography variant="body2" component="div">
-            {video.description ? (
-              expanded ? video.description : getTruncatedDescription(video.description)
-            ) : (
-              'No description available.'
-            )}
-            {hasLongDescription && !expanded && (
-              <Button onClick={toggleDescription} size="small" sx={{ ml: 1, textTransform: 'none' }}>
-                ... more
-              </Button>
-            )}
-            {hasLongDescription && expanded && (
-              <Button onClick={toggleDescription} size="small" sx={{ ml: 1, textTransform: 'none' }}>
-                Show less
-              </Button>
-            )}
-          </Typography>
+        <Paper
+          elevation={0}
+          sx={{
+            position: 'relative',
+            p: 2,
+            pt: 1.5,
+            pb: expanded ? 2.5 : 1.5,
+            bgcolor: 'background.paper',
+            borderRadius: 2,
+            whiteSpace: 'pre-wrap',
+            minHeight: 60,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            border: '1px solid',
+            borderColor: 'divider',
+            transition: 'all 0.2s ease-in-out'
+          }}
+        >
+          {video.description ? (
+            <>
+              <Typography
+                variant="body2"
+                sx={{
+                  lineHeight: 1.6,
+                  color: 'text.primary',
+                  fontWeight: 400,
+                  letterSpacing: '0.01em',
+                  mb: expanded ? 1 : 0
+                }}
+              >
+                {expanded ? video.description : getTruncatedDescription(video.description)}
+              </Typography>
+
+              {hasLongDescription && (
+                <Button
+                  onClick={toggleDescription}
+                  size="small"
+                  color="primary"
+                  variant="text"
+                  sx={{
+                    mt: 0.5,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    fontSize: '0.8rem',
+                    minWidth: 'auto',
+                    p: 0.5,
+                    opacity: 0.9,
+                    position: expanded ? 'relative' : 'absolute',
+                    right: expanded ? 'auto' : 16,
+                    bottom: expanded ? 'auto' : 8,
+                    '&:hover': {
+                      opacity: 1,
+                      bgcolor: 'background.paper'
+                    }
+                  }}
+                >
+                  {expanded ? 'Show less' : 'Read more'}
+                </Button>
+              )}
+            </>
+          ) : (
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'text.secondary',
+                fontStyle: 'italic'
+              }}
+            >
+              No description available.
+            </Typography>
+          )}
         </Paper>
       </Box>
 
@@ -267,15 +423,16 @@ export const Video = () => {
 
       {/* Main Content Area */}
       <Paper elevation={0} sx={{ p: 2, minHeight: 120, bgcolor: 'background.default', borderRadius: 2, mb: 2, px: 1 }}>
-        {(actionTab === 'summary' || actionTab === 'keyPoints' || actionTab === 'podcastQA') && (
-          <AIVideoActions videoId={videoId} actionType={actionTab as VideoActionType} />
-        )}
         {actionTab === 'transcript' && (
-          <VideoTranscript videoId={videoId} />
+          <VideoTranscript videoId={videoId} playerApi={playerApi} />
         )}
-        {actionTab === 'more' && (
-          <Typography variant="body2" color="text.secondary">More features coming soon...</Typography>
+        {actionTab !== 'transcript' && (
+          <AIVideoActions
+            playerApi={playerApi}
+            videoId={videoId}
+            actionType={actionTab as VideoActionType} />
         )}
+
       </Paper>
     </Box>
   );

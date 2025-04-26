@@ -5,9 +5,10 @@ import { mainPrompt } from "./mainPrompt";
 import { chapterPrompt } from "./chaptersPrompt";
 
 export const summaryAction: AiAction<SummaryResult> = {
+    isMainAction: true,
     icon: Summarize,
     label: 'Summary',
-    rendeder: SummaryRenderer,
+    renderer: SummaryRenderer,
     mainPrompt,
     chapterPrompt,
     singleChapter: false

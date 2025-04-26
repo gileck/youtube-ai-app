@@ -1,8 +1,8 @@
 import { useState, useEffect, ReactNode, useCallback } from 'react';
-import { 
-  Box, 
-  Typography, 
-  CircularProgress, 
+import {
+  Box,
+  Typography,
+  CircularProgress,
   Alert,
   Chip,
   Button,
@@ -12,13 +12,15 @@ import CachedIcon from '@mui/icons-material/Cached';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { processAIVideoAction } from '../../../apis/aiVideoActions/client';
 import { aiActions, VideoActionType } from '../../../services/AiActions';
+import type { PlayerAPI } from '@/client/routes/Video/Video';
 
 interface AIVideoActionsProps {
   videoId: string;
   actionType: VideoActionType;
+  playerApi?: PlayerAPI;
 }
 
-export const AIVideoActions = ({ videoId, actionType }: AIVideoActionsProps) => {
+export const AIVideoActions = ({ videoId, actionType, playerApi }: AIVideoActionsProps) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -85,16 +87,17 @@ export const AIVideoActions = ({ videoId, actionType }: AIVideoActionsProps) => 
   // Render the appropriate content based on the action type
   const renderActionResult = (): ReactNode => {
     if (!result) return null;
-    const Renderer = aiActions[actionType].rendeder;
-    // Type assertion to tell TypeScript that we know what we're doing
-    // Each renderer is responsible for handling its specific result type
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return <Renderer result={result as any} videoId={videoId} />;
+    const Renderer = aiActions[actionType].renderer;
+    return <Renderer
+      result={result as Parameters<typeof Renderer>[0]['result']}
+      videoId={videoId}
+      playerApi={playerApi}
+    />;
   };
 
   return (
-    <Box sx={{ 
-      maxWidth: '100%', 
+    <Box sx={{
+      maxWidth: '100%',
       mx: 'auto',
       overflow: 'hidden'
     }}>
@@ -102,10 +105,10 @@ export const AIVideoActions = ({ videoId, actionType }: AIVideoActionsProps) => 
       <Box sx={{ mb: 3 }}>
         {/* Loading State */}
         {loading && (
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             flexDirection: 'column',
             py: 4
           }}>
@@ -117,7 +120,17 @@ export const AIVideoActions = ({ videoId, actionType }: AIVideoActionsProps) => 
         )}
         {/* Error State */}
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<RefreshIcon fontSize="small" />}
+              onClick={handleRegenerate}
+              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+            >
+            </Button>
+          </Alert>
         )}
         {/* Status Bar */}
         {!loading && !error && (isFromCache || cost > 0 || duration !== null) && (

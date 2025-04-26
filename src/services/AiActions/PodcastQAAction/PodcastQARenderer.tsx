@@ -16,17 +16,18 @@ import {
   DialogActions
 } from '@mui/material';
 import { ExpandMore, ExpandLess, QuestionAnswer, ZoomIn as ZoomInIcon } from '@mui/icons-material';
-import { AiActionChaptersOnly } from '@/services/AiActions/types';
 import { PodcastQAResult } from '.';
 import ReactMarkdown from 'react-markdown';
 import { processAIVideoAction } from '@/apis/aiVideoActions/client';
 import { QuestionDeepDiveRenderer } from '@/services/AiActions/questionDeepDiveAction/QuestionDeepDiveRenderer';
 import { SingleAnswerResult } from '@/services/AiActions/questionDeepDiveAction';
+import { ActionRendererProps } from '@/services/AiActions/types';
+import { ChaptersAiActionResult } from '@/services/AiActions/types';
 
 /**
  * Renders podcast Q&A pairs grouped by chapter (with title/time), then by subject (with emoji), then Q&A pairs.
  */
-export const PodcastQARenderer: AiActionChaptersOnly<PodcastQAResult>['rendeder'] = ({ result, videoId }) => {
+export const PodcastQARenderer: React.FC<ActionRendererProps<ChaptersAiActionResult<PodcastQAResult>>> = ({ result, videoId }) => {
   // Each expanded state is keyed by chapter, subject, and qa index: `${chapterIdx}-${subjectIdx}-${qaIdx}`
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -158,12 +159,12 @@ export const PodcastQARenderer: AiActionChaptersOnly<PodcastQAResult>['rendeder'
                                 {qa.answer}
                               </ReactMarkdown>
                               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                                <Button 
-                                  variant="outlined" 
-                                  size="small" 
+                                <Button
+                                  variant="outlined"
+                                  size="small"
                                   startIcon={<ZoomInIcon />}
                                   onClick={() => handleFullAnswerClick(qa.question, chapter.title)}
-                                  sx={{ 
+                                  sx={{
                                     borderRadius: 2,
                                     textTransform: 'none',
                                     fontSize: '0.8rem'
@@ -204,10 +205,10 @@ export const PodcastQARenderer: AiActionChaptersOnly<PodcastQAResult>['rendeder'
       </List>
 
       {/* Deep Dive Dialog */}
-      <Dialog 
-        open={dialogOpen} 
-        onClose={handleCloseDialog} 
-        maxWidth="md" 
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="md"
         fullWidth
         PaperProps={{
           sx: {
@@ -216,9 +217,9 @@ export const PodcastQARenderer: AiActionChaptersOnly<PodcastQAResult>['rendeder'
           }
         }}
       >
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           borderBottom: '1px solid',
           borderColor: 'divider',

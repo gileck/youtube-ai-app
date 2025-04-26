@@ -16,9 +16,10 @@ export type KeyPointsResult = {
 };
 
 export const keyPointsAction: AiActionChaptersOnly<KeyPointsResult> = {
+  isMainAction: true,
   icon: FormatListBulleted,
   label: 'Key Points',
-  rendeder: KeyPointsRenderer,
+  renderer: KeyPointsRenderer,
   chapterPrompt,
   mainPrompt: false,
   singleChapter: false

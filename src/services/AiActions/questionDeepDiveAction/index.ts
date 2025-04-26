@@ -19,22 +19,23 @@ import QuestionDeepDiveRenderer from "./QuestionDeepDiveRenderer";
   "additionalContext": "Optional additional context about the question if needed"
  */
 export type SingleAnswerResult = {
-    shortAnswer: string,
-    question: string,
-    detailedPoints: string[],
-    quotes: string[],
-    additionalContext: string
+  shortAnswer: string,
+  question: string,
+  detailedPoints: string[],
+  quotes: string[],
+  additionalContext: string
 }
 
 export type QuestionDeepDiveParams = {
-    question: string,
-    chapterTitle: string
+  question: string,
+  chapterTitle: string
 }
 
 export const questionDeepDiveAction: AiActionSingleChapter<SingleAnswerResult, QuestionDeepDiveParams> = {
+  isMainAction: false,
   icon: QuestionAnswer,
   label: 'Question Deep Dive',
-  rendeder: QuestionDeepDiveRenderer,
+  renderer: QuestionDeepDiveRenderer,
   mainPrompt: false,
   chapterPrompt,
   singleChapter: true

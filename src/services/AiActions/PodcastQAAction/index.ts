@@ -17,9 +17,10 @@ export type PodcastQAResult = {
 };
 
 export const podcastQAAction: AiActionChaptersOnly<PodcastQAResult> = {
+  isMainAction: true,
   icon: QuestionAnswer,
   label: 'Podcast Q&A',
-  rendeder: PodcastQARenderer,
+  renderer: PodcastQARenderer,
   mainPrompt: false,
   chapterPrompt,
   singleChapter: false

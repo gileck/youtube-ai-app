@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  CircularProgress, 
-  Paper, 
-  Divider, 
-  Accordion, 
-  AccordionSummary, 
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Paper,
+  Divider,
+  Accordion,
+  AccordionSummary,
   AccordionDetails,
   Chip,
   useTheme
@@ -42,11 +42,11 @@ export const VideoChapters = () => {
 
       try {
         setLoading(true);
-        const result = await getYouTubeChaptersTranscript({ 
+        const result = await getYouTubeChaptersTranscript({
           videoId,
           overlapOffsetSeconds: 5
         });
-        
+
         if (result.data?.error) {
           setError(result.data.error.message);
         } else if (result.data?.data) {
@@ -88,9 +88,9 @@ export const VideoChapters = () => {
         <Typography>{error || 'Data not found'}</Typography>
         {videoId && (
           <Box sx={{ mt: 2 }}>
-            <Typography 
-              variant="body2" 
-              color="primary" 
+            <Typography
+              variant="body2"
+              color="primary"
               sx={{ cursor: 'pointer', textDecoration: 'underline' }}
               onClick={handleViewVideo}
             >
@@ -108,16 +108,16 @@ export const VideoChapters = () => {
         <Typography variant="h4" gutterBottom>
           Video Chapters & Transcript
         </Typography>
-        
+
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
             Video ID:
           </Typography>
-          <Chip 
-            label={videoId} 
-            size="small" 
-            color="primary" 
-            variant="outlined" 
+          <Chip
+            label={videoId}
+            size="small"
+            color="primary"
+            variant="outlined"
             onClick={handleViewVideo}
           />
         </Box>
@@ -127,22 +127,22 @@ export const VideoChapters = () => {
             Metadata
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-            <Chip 
-              icon={<AccessTimeIcon />} 
-              label={`Duration: ${formatTime(chaptersData.metadata.totalDuration)}`} 
-              variant="outlined" 
+            <Chip
+              icon={<AccessTimeIcon />}
+              label={`Duration: ${formatTime(chaptersData.metadata.totalDuration)}`}
+              variant="outlined"
             />
-            <Chip 
-              label={`Chapters: ${chaptersData.metadata.chapterCount}`} 
-              variant="outlined" 
+            <Chip
+              label={`Chapters: ${chaptersData.metadata.chapterCount}`}
+              variant="outlined"
             />
-            <Chip 
-              label={`Transcript Items: ${chaptersData.metadata.transcriptItemCount}`} 
-              variant="outlined" 
+            <Chip
+              label={`Transcript Items: ${chaptersData.metadata.transcriptItemCount}`}
+              variant="outlined"
             />
-            <Chip 
-              label={`Overlap: ${chaptersData.metadata.overlapOffsetSeconds}s`} 
-              variant="outlined" 
+            <Chip
+              label={`Overlap: ${chaptersData.metadata.overlapOffsetSeconds}s`}
+              variant="outlined"
             />
           </Box>
         </Box>
@@ -159,7 +159,7 @@ export const VideoChapters = () => {
           <Box sx={{ mt: 2 }}>
             {chaptersData.chapters.map((chapter, index) => (
               <Accordion key={index} sx={{ mb: 1 }}>
-                <AccordionSummary 
+                <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
                   aria-controls={`chapter-${index}-content`}
                   id={`chapter-${index}-header`}
@@ -169,8 +169,8 @@ export const VideoChapters = () => {
                       {chapter.title}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-                      {formatTime(chapter.startTime)} - {chapter.endTime === Number.MAX_SAFE_INTEGER 
-                        ? 'End' 
+                      {formatTime(chapter.startTime)} - {chapter.endTime === Number.MAX_SAFE_INTEGER
+                        ? 'End'
                         : formatTime(chapter.endTime)
                       }
                     </Typography>
@@ -180,10 +180,10 @@ export const VideoChapters = () => {
                   <Typography variant="body2" gutterBottom>
                     <strong>Content:</strong>
                   </Typography>
-                  <Paper 
-                    variant="outlined" 
-                    sx={{ 
-                      p: 2, 
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 2,
                       backgroundColor: theme.palette.background.default,
                       maxHeight: '300px',
                       overflow: 'auto'
@@ -193,14 +193,14 @@ export const VideoChapters = () => {
                       {chapter.content || 'No content available for this chapter.'}
                     </Typography>
                   </Paper>
-                  
+
                   <Box sx={{ mt: 2 }}>
                     <Typography variant="body2" gutterBottom>
                       <strong>Segments ({chapter.segments.length}):</strong>
                     </Typography>
-                    <Box 
-                      sx={{ 
-                        maxHeight: '200px', 
+                    <Box
+                      sx={{
+                        maxHeight: '200px',
                         overflow: 'auto',
                         border: `1px solid ${theme.palette.divider}`,
                         borderRadius: 1,
@@ -211,24 +211,24 @@ export const VideoChapters = () => {
                         <Typography variant="body2">No segments available.</Typography>
                       ) : (
                         chapter.segments.map((segment, segIndex) => (
-                          <Box 
-                            key={segIndex} 
-                            sx={{ 
-                              mb: 1, 
+                          <Box
+                            key={segIndex}
+                            sx={{
+                              mb: 1,
                               p: 1,
-                              backgroundColor: segIndex % 2 === 0 
-                                ? 'rgba(0, 0, 0, 0.03)' 
+                              backgroundColor: segIndex % 2 === 0
+                                ? 'rgba(0, 0, 0, 0.03)'
                                 : 'transparent',
                               borderRadius: 1
                             }}
                           >
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                               <Typography variant="caption" color="text.secondary">
-                                {formatTime(segment.offset)} ({segment.duration.toFixed(1)}s)
+                                {formatTime(segment.start_seconds)} ({segment.end_seconds - segment.start_seconds}s)
                               </Typography>
-                              <Typography variant="caption" color="text.secondary">
+                              {/* <Typography variant="caption" color="text.secondary">
                                 Position: {(segment.relativeOffset * 100).toFixed(0)}%
-                              </Typography>
+                              </Typography> */}
                             </Box>
                             <Typography variant="body2">{segment.text}</Typography>
                           </Box>

@@ -4,6 +4,9 @@ import { keyPointsAction } from "./KeyPointsAction";
 import { podcastQAAction } from "./PodcastQAAction";
 import { questionDeepDiveAction } from "./questionDeepDiveAction";
 import { protocolDeepDiveAction } from "./protocolDeepDiveAction";
+import { recommendationsAction } from "./RecommendationsAction";
+import { findSegmentAction } from "./FindSegmentAction";
+// import { findSegmentAction } from "./FindSegmentAction";
 
 
 export const aiActions: AiActionsData = {
@@ -11,7 +14,9 @@ export const aiActions: AiActionsData = {
     'keyPoints': keyPointsAction,
     'podcastQA': podcastQAAction,
     'questionDeepDive': questionDeepDiveAction,
-    'protocolDeepDive': protocolDeepDiveAction
+    'protocolDeepDive': protocolDeepDiveAction,
+    'recommendations': recommendationsAction,
+    'findSegment': findSegmentAction
 }
 
 
