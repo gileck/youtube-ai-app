@@ -17,6 +17,7 @@ import {
   YouTubeSearchVideosResponse,
   YouTubeSearchChannelsResponse
 } from '@/shared/types/youtube';
+import { uploadFile } from '../s3/sdk';
 
 /**
  * YouTube API adapter implementation using youtubei.js
@@ -241,7 +242,16 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
       const youtube = await getInnertube();
       const videoInfo = await youtube.getInfo(videoId);
 
-      console.log('videoInfo:', videoInfo);
+      // console.log('videoInfo:', videoInfo);
+      // const fs = require('fs');
+      // fs.writeFileSync('videoInfo.json', JSON.stringify(videoInfo, null, 2));
+
+      //uploadFile videoInfo with the sdk
+      await uploadFile({
+        fileName: `videoInfo-${videoId}.json`,
+        content: JSON.stringify(videoInfo, null, 2),
+        contentType: 'application/json'
+      });
 
       // Fetch channel info for avatar image
       let channelImage: string | undefined = undefined;
