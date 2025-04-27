@@ -44,7 +44,6 @@ export const DrawerMenu = ({ navItems, mobileOpen, onDrawerToggle }: DrawerMenuP
         keepMounted: true, // Better open performance on mobile
       }}
       sx={{
-        display: { xs: 'block', sm: 'none' },
         '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 240 },
       }}
     >

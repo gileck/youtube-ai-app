@@ -34,7 +34,7 @@ export const TopNavBar = ({ navItems, isStandalone, onDrawerToggle }: TopNavBarP
           aria-label="open drawer"
           edge="start"
           onClick={onDrawerToggle}
-          sx={{ mr: 2, display: { sm: 'none' } }}
+          sx={{ mr: 2 }}
         >
           <MenuIcon />
         </IconButton>
