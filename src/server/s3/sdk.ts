@@ -13,6 +13,7 @@ import { appConfig } from '../../app.config';
 
 const AWS_BUCKET_NAME = "app-template-1252343"
 // Constants
+// const APP_FOLDER_PREFIX = appConfig.appName.replace(/\s/g, '_') + '/'
 const APP_FOLDER_PREFIX = appConfig.appName.replace(/\s/g, '_') + '/'
 
 // S3 Configuration
@@ -31,9 +32,9 @@ const defaultConfig: S3Config = {
   bucketName: AWS_BUCKET_NAME,
   credentials: process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
     ? {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      }
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    }
     : undefined,
 };
 
@@ -86,12 +87,12 @@ export const uploadFile = async (
   bucketName: string = getDefaultBucketName()
 ): Promise<string> => {
   // Ensure the fileName doesn't already have the APP_FOLDER_PREFIX
-  const fileName = params.fileName.startsWith(APP_FOLDER_PREFIX) 
-    ? params.fileName 
+  const fileName = params.fileName.startsWith(APP_FOLDER_PREFIX)
+    ? params.fileName
     : `${APP_FOLDER_PREFIX}${params.fileName}`;
-  
+
   console.log('Uploading file with key:', fileName);
-  
+
   const command = new PutObjectCommand({
     Bucket: bucketName,
     Key: fileName,
@@ -111,12 +112,12 @@ export const getFile = async (
   bucketName: string = getDefaultBucketName()
 ): Promise<GetObjectCommandOutput> => {
   // Ensure the fileName has the APP_FOLDER_PREFIX
-  const key = fileName.startsWith(APP_FOLDER_PREFIX) 
-    ? fileName 
+  const key = fileName.startsWith(APP_FOLDER_PREFIX)
+    ? fileName
     : `${APP_FOLDER_PREFIX}${fileName}`;
-  
+
   console.log('Getting file with key:', key);
-  
+
   const command = new GetObjectCommand({
     Bucket: bucketName,
     Key: key,
@@ -132,11 +133,11 @@ export const getFileAsString = async (
   bucketName: string = getDefaultBucketName()
 ): Promise<string> => {
   const response = await getFile(fileName, client, bucketName);
-  
+
   if (!response.Body) {
     throw new Error('File body is empty');
   }
-  
+
   const streamReader = response.Body.transformToString();
   return streamReader;
 };
@@ -147,44 +148,44 @@ export const listFiles = async (
   client: S3Client = getS3Client(),
   bucketName: string = getDefaultBucketName()
 ): Promise<S3File[]> => {
-  const fullPrefix = prefix 
-    ? `${APP_FOLDER_PREFIX}${prefix}` 
+  const fullPrefix = prefix
+    ? `${APP_FOLDER_PREFIX}${prefix}`
     : APP_FOLDER_PREFIX;
-  
+
   // First, get all objects to count files in folders and calculate total sizes
   const allObjectsCommand = new ListObjectsV2Command({
     Bucket: bucketName,
     Prefix: fullPrefix,
   });
-  
+
   const allObjectsResponse = await client.send(allObjectsCommand);
-  
+
   // Create maps to track folder stats
   const folderCounts: Record<string, number> = {};
   const folderSizes: Record<string, number> = {};
-  
+
   if (allObjectsResponse.Contents) {
     for (const item of allObjectsResponse.Contents) {
       if (!item.Key) continue;
-      
+
       // Skip the current directory marker
       if (item.Key === fullPrefix) continue;
-      
+
       // Get the relative path from the current prefix
       const relativePath = item.Key.replace(fullPrefix, '');
-      
+
       // Skip empty paths
       if (!relativePath) continue;
-      
+
       // Count files in folders and sum up sizes
       const parts = relativePath.split('/');
-      
+
       // If we're at the root and this is a file (no trailing slash)
       if (parts.length === 1 && !item.Key.endsWith('/')) {
         // This is a file at the current level, not in a subfolder
         continue;
       }
-      
+
       // If this is a folder at the current level
       if (parts.length === 1 && item.Key.endsWith('/')) {
         // This is a folder at the current level
@@ -196,11 +197,11 @@ export const listFiles = async (
         }
         continue;
       }
-      
+
       // This is a file in a subfolder
       if (parts.length > 1 && parts[0]) {
         const folderName = parts[0];
-        
+
         // Only count actual files, not subfolder markers
         if (!relativePath.endsWith('/')) {
           folderCounts[folderName] = (folderCounts[folderName] || 0) + 1;
@@ -209,7 +210,7 @@ export const listFiles = async (
       }
     }
   }
-  
+
   // Now get the actual listing with delimiter for proper folder structure
   const command = new ListObjectsV2Command({
     Bucket: bucketName,
@@ -218,9 +219,9 @@ export const listFiles = async (
   });
 
   const response: ListObjectsV2CommandOutput = await client.send(command);
-  
+
   const result: S3File[] = [];
-  
+
   // Process common prefixes (folders)
   if (response.CommonPrefixes) {
     for (const prefix of response.CommonPrefixes) {
@@ -228,12 +229,12 @@ export const listFiles = async (
         const folderKey = prefix.Prefix.replace(APP_FOLDER_PREFIX, '');
         // Extract folder name from the path
         const folderName = folderKey.split('/').filter(p => p).pop() || folderKey;
-        
+
         // Get the simple folder name (without path)
-        const simpleFolderName = folderName.endsWith('/') 
-          ? folderName.slice(0, -1) 
+        const simpleFolderName = folderName.endsWith('/')
+          ? folderName.slice(0, -1)
           : folderName;
-        
+
         result.push({
           key: folderKey,
           size: folderSizes[simpleFolderName] || 0,
@@ -244,32 +245,32 @@ export const listFiles = async (
       }
     }
   }
-  
+
   // Process contents (files)
   if (response.Contents) {
     for (const item of response.Contents) {
       // Skip the directory marker itself
       if (item.Key === fullPrefix) continue;
-      
+
       // Check if this is a folder marker (ends with /)
       const isFolder = item.Key?.endsWith('/') || false;
-      
+
       // If it's a folder marker and we already added it via CommonPrefixes, skip it
       if (isFolder && result.some(f => f.isFolder && f.key === item.Key?.replace(APP_FOLDER_PREFIX, ''))) {
         continue;
       }
-      
+
       if (item.Key) {
         const key = item.Key.replace(APP_FOLDER_PREFIX, '');
-        
+
         // For folder markers that weren't in CommonPrefixes
         if (isFolder) {
           const folderName = key.split('/').filter(p => p).pop() || key;
           // Remove trailing slash for lookup
-          const simpleFolderName = folderName.endsWith('/') 
-            ? folderName.slice(0, -1) 
+          const simpleFolderName = folderName.endsWith('/')
+            ? folderName.slice(0, -1)
             : folderName;
-            
+
           result.push({
             key,
             size: folderSizes[simpleFolderName] || 0,
@@ -289,7 +290,7 @@ export const listFiles = async (
       }
     }
   }
-  
+
   return result;
 };
 
@@ -301,7 +302,7 @@ export const getSignedFileUrl = async (
   bucketName: string = getDefaultBucketName()
 ): Promise<string> => {
   const key = `${APP_FOLDER_PREFIX}${fileName}`;
-  
+
   const command = new GetObjectCommand({
     Bucket: bucketName,
     Key: key,
@@ -317,12 +318,12 @@ export const deleteFile = async (
   bucketName: string = getDefaultBucketName()
 ): Promise<void> => {
   // Ensure the fileName has the APP_FOLDER_PREFIX
-  const key = fileName.startsWith(APP_FOLDER_PREFIX) 
-    ? fileName 
+  const key = fileName.startsWith(APP_FOLDER_PREFIX)
+    ? fileName
     : `${APP_FOLDER_PREFIX}${fileName}`;
-  
-//   console.log('Deleting file with key:', key);
-  
+
+  //   console.log('Deleting file with key:', key);
+
   const command = new DeleteObjectCommand({
     Bucket: bucketName,
     Key: key,
@@ -339,7 +340,7 @@ export const listFilesWithUrls = async (
   bucketName: string = getDefaultBucketName()
 ): Promise<S3File[]> => {
   const files = await listFiles(prefix, client, bucketName);
-  
+
   // Generate signed URLs for each file
   const filesWithUrls = await Promise.all(
     files.map(async (file) => {
@@ -352,6 +353,6 @@ export const listFilesWithUrls = async (
       return { ...file, url };
     })
   );
-  
+
   return filesWithUrls;
 };

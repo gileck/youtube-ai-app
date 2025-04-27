@@ -66,7 +66,7 @@ export const useFileManager = () => {
 
   // Handle navigation to a folder
   const handleNavigateToFolder = useCallback((prefix: string, folderName: string) => {
-    const newPrefix = `${prefix}${folderName}/`;
+    const newPrefix = `${prefix}${folderName}`;
     setCurrentPrefix(newPrefix);
 
     // Update breadcrumbs

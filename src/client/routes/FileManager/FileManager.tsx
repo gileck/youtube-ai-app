@@ -10,7 +10,6 @@ import { useFileManager } from './hooks';
 import {
   FileList,
   Breadcrumbs,
-  FileToolbar,
   NewFileDialog,
   NewFolderDialog,
   EditFileDialog,
@@ -76,8 +75,8 @@ export const FileManager = () => {
   } = useFileManager();
 
   return (
-    <Container maxWidth="lg">
-      <Paper elevation={2} sx={{ p: 3, mt: 3, mb: 3 }}>
+    <Container maxWidth="lg" sx={{ p: 0 }}>
+      <Paper elevation={2} sx={{ p: 1, mt: 3, mb: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           File Manager
         </Typography>
@@ -88,18 +87,13 @@ export const FileManager = () => {
           </Alert>
         )}
 
-        <FileToolbar
+        <Breadcrumbs
+          breadcrumbs={breadcrumbs}
+          onNavigate={handleBreadcrumbNavigation}
           onNewFile={() => setShowNewFileDialog(true)}
           onNewFolder={() => setShowNewFolderDialog(true)}
           onRefresh={fetchFiles}
         />
-
-        <Breadcrumbs
-          breadcrumbs={breadcrumbs}
-          onNavigate={handleBreadcrumbNavigation}
-        />
-
-
 
         <Box sx={{ mt: 2 }}>
           <FileList
