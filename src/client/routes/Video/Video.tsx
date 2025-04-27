@@ -347,6 +347,7 @@ export const Video = () => {
       <Box sx={{ mb: 2, px: 1 }}>
         <Paper
           elevation={0}
+          onClick={hasLongDescription ? toggleDescription : undefined}
           sx={{
             position: 'relative',
             p: 2,
@@ -359,7 +360,8 @@ export const Video = () => {
             boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
             border: '1px solid',
             borderColor: 'divider',
-            transition: 'all 0.2s ease-in-out'
+            transition: 'all 0.2s ease-in-out',
+            cursor: hasLongDescription ? 'pointer' : 'default'
           }}
         >
           {video.description ? (
@@ -371,37 +373,24 @@ export const Video = () => {
                   color: 'text.primary',
                   fontWeight: 400,
                   letterSpacing: '0.01em',
-                  mb: expanded ? 1 : 0
+                  mb: 0
                 }}
               >
                 {expanded ? video.description : getTruncatedDescription(video.description)}
               </Typography>
 
-              {hasLongDescription && (
-                <Button
-                  onClick={toggleDescription}
-                  size="small"
-                  color="primary"
-                  variant="text"
+              {hasLongDescription && !expanded && (
+                <Typography
+                  variant="body2"
                   sx={{
-                    mt: 0.5,
-                    textTransform: 'none',
-                    fontWeight: 500,
+                    color: 'primary.main',
                     fontSize: '0.8rem',
-                    minWidth: 'auto',
-                    p: 0.5,
-                    opacity: 0.9,
-                    position: expanded ? 'relative' : 'absolute',
-                    right: expanded ? 'auto' : 16,
-                    bottom: expanded ? 'auto' : 8,
-                    '&:hover': {
-                      opacity: 1,
-                      bgcolor: 'background.paper'
-                    }
+                    mt: 0.5,
+                    fontWeight: 500,
                   }}
                 >
-                  {expanded ? 'Show less' : 'Read more'}
-                </Button>
+                  Click to read more
+                </Typography>
               )}
             </>
           ) : (

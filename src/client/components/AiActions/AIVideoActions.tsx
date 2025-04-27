@@ -137,35 +137,54 @@ export const AIVideoActions = ({ videoId, actionType, playerApi }: AIVideoAction
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between" sx={{ mb: 2, px: 0.5 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               {(isFromCache || cost > 0) && (
-                <Chip
-                  icon={isFromCache ? <CachedIcon fontSize="small" /> : <RefreshIcon fontSize="small" />}
-                  label={isFromCache ? 'From Cache' : `Cost: $${cost.toFixed(4)}`}
-                  size="small"
-                  color={isFromCache ? 'secondary' : 'default'}
+                <Button
+                  startIcon={isFromCache ? <CachedIcon fontSize="small" /> : <RefreshIcon fontSize="small" />}
                   variant="outlined"
-                />
+                  size="small"
+                  color={isFromCache ? "secondary" : "primary"}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontSize: '0.75rem',
+                    py: 0.5
+                  }}
+                >
+                  {isFromCache ? 'From Cache' : `Cost: $${cost.toFixed(4)}`}
+                </Button>
               )}
               {duration !== null && (
-                <Chip
-                  label={`Duration: ${duration.toFixed(2)}s`}
-                  size="small"
-                  color="default"
+                <Button
                   variant="outlined"
-                />
+                  size="small"
+                  color="primary"
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontSize: '0.75rem',
+                    py: 0.5
+                  }}
+                >
+                  {`Duration: ${duration.toFixed(2)}s`}
+                </Button>
+              )}
+              {/* Regenerate Button */}
+              {!!result && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<RefreshIcon fontSize="small" />}
+                  onClick={handleRegenerate}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontSize: '0.75rem',
+                    py: 0.5
+                  }}
+                >
+                  Regenerate
+                </Button>
               )}
             </Box>
-            {/* Regenerate Button */}
-            {!!result && (
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<RefreshIcon fontSize="small" />}
-                onClick={handleRegenerate}
-                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-              >
-                Regenerate
-              </Button>
-            )}
           </Stack>
         )}
       </Box>
