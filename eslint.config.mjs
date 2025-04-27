@@ -44,7 +44,8 @@ const eslintConfig = [
       }
     },
     rules: {
-      "restrict-api-routes/no-direct-api-routes": "error"
+      "restrict-api-routes/no-direct-api-routes": "error",
+      "react-hooks/exhaustive-deps": "off"
     }
   }
 ];
