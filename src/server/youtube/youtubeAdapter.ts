@@ -242,16 +242,12 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
       const youtube = await getInnertube();
       const videoInfo = await youtube.getInfo(videoId);
 
-      // console.log('videoInfo:', videoInfo);
-      // const fs = require('fs');
-      // fs.writeFileSync('videoInfo.json', JSON.stringify(videoInfo, null, 2));
-
-      //uploadFile videoInfo with the sdk
-      await uploadFile({
-        fileName: `videoInfo-${videoId}.json`,
-        content: JSON.stringify(videoInfo, null, 2),
-        contentType: 'application/json'
-      });
+      // Upload videoInfo with the sdk
+      // await uploadFile({
+      //   fileName: `videoInfo-${videoId}.json`,
+      //   content: JSON.stringify(videoInfo, null, 2),
+      //   contentType: 'application/json'
+      // });
 
       // Fetch channel info for avatar image
       let channelImage: string | undefined = undefined;
@@ -264,16 +260,26 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
         }
       }
 
+      // Extract title from primary_info if available
+      const title = videoInfo.primary_info?.title?.text || videoInfo.basic_info.title || '';
+
+      // Get view count from primary_info if available
+      const viewCount = videoInfo.primary_info?.view_count?.view_count?.text ||
+        String(videoInfo.basic_info.view_count || '0');
+
       // Transform to our format
       const videoDetails: YouTubeVideoDetails = {
-        id: videoInfo.basic_info.id || '',
-        title: videoInfo.basic_info.title || '',
-        description: String(videoInfo.basic_info.short_description || ''),
+        id: videoInfo.basic_info.id || videoId,
+        title,
+        description: videoInfo.secondary_info?.description?.text ||
+          String(videoInfo.basic_info.short_description || ''),
         thumbnailUrl: videoInfo.basic_info.thumbnail?.[0]?.url || '',
-        channelTitle: videoInfo.basic_info.channel?.name || '',
-        channelId: videoInfo.basic_info.channel?.id || '',
+        channelTitle: videoInfo.secondary_info?.owner?.author?.name ||
+          videoInfo.basic_info.channel?.name || '',
+        channelId: videoInfo.secondary_info?.owner?.author?.id ||
+          videoInfo.basic_info.channel?.id || '',
         publishedAt: videoInfo.primary_info?.published?.text || '',
-        viewCount: String(videoInfo.basic_info.view_count || '0'),
+        viewCount,
         duration: typeof videoInfo.basic_info.duration === 'number'
           ? formatDuration(videoInfo.basic_info.duration)
           : 'PT0S',
