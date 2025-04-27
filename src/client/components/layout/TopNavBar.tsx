@@ -17,8 +17,8 @@ export const TopNavBar = ({ navItems, isStandalone, onDrawerToggle }: TopNavBarP
   };
 
   return (
-    <AppBar 
-      position="sticky" 
+    <AppBar
+      position="sticky"
       component="nav"
       sx={{
         // Improve iOS standalone experience
@@ -38,18 +38,12 @@ export const TopNavBar = ({ navItems, isStandalone, onDrawerToggle }: TopNavBarP
         >
           <MenuIcon />
         </IconButton>
-        <Typography
-          variant="h6"
-          component="div"
-          sx={{ flexGrow: 1, display: { xs: 'none', sm: 'block' } }}
-        >
-          SPA Router
-        </Typography>
+
         <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
           {navItems.map((item) => (
-            <Button 
-              key={item.path} 
-              sx={{ 
+            <Button
+              key={item.path}
+              sx={{
                 color: '#fff',
                 backgroundColor: currentPath === item.path ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
                 '&:hover': {

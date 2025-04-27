@@ -10,3 +10,7 @@ export default async function handler(
   // console.log('API response:', response);
   return res.status(200).json(response);
 }
+
+export const config = {
+  maxDuration: 60,
+};
