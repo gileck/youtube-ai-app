@@ -13,7 +13,6 @@ import { appConfig } from '../../app.config';
 
 const AWS_BUCKET_NAME = "app-template-1252343"
 // Constants
-// const APP_FOLDER_PREFIX = appConfig.appName.replace(/\s/g, '_') + '/'
 const APP_FOLDER_PREFIX = appConfig.appName.replace(/\s/g, '_') + '/'
 
 // S3 Configuration
@@ -91,7 +90,7 @@ export const uploadFile = async (
     ? params.fileName
     : `${APP_FOLDER_PREFIX}${params.fileName}`;
 
-  console.log('Uploading file with key:', fileName);
+  // console.log('Uploading file with key:', fileName);
 
   const command = new PutObjectCommand({
     Bucket: bucketName,
@@ -116,7 +115,7 @@ export const getFile = async (
     ? fileName
     : `${APP_FOLDER_PREFIX}${fileName}`;
 
-  console.log('Getting file with key:', key);
+  // console.log('Getting file with key:', key);
 
   const command = new GetObjectCommand({
     Bucket: bucketName,
