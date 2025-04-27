@@ -80,7 +80,6 @@ export const RouterProvider = ({ children, routes }: {
 
   // Find matching route pattern and parse route parameters
   const { RouteComponent, routeParams } = useMemo(() => {
-
     const pathWithoutQuery = currentPath.split('?')[0];
     // First check for exact matches
     if (routes[pathWithoutQuery]) {
@@ -132,7 +131,7 @@ export const RouterProvider = ({ children, routes }: {
   }, []);
 
   // Provide router context and render current route
-  // console.log('currentPath', currentPath);
+  console.log('currentPath', currentPath);
   
   // Provide router context and render current route
   return (
