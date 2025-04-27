@@ -255,9 +255,20 @@ export async function processAiActionSingleChapter<T>(
 ): Promise<AIModelAdapterResponse<T>> {
   const { chapterPrompt } = aiActions[actionType] as AiActionSingleChapter<T>
   const modelAdapter = new AIModelAdapter(modelId);
-  const chapter = chaptersData.chapters.find(chapter =>
-    chapter.title.toLowerCase() === (actionParams.chapterTitle as string).toLowerCase()
-  )
+
+  // console.log('chapters', {
+  //   chapters: chaptersData.chapters.map(chapter => chapter.title.toLowerCase()),
+  //   chapterTitleLower: (actionParams.chapterTitle as string).toLowerCase()
+  // });
+
+  const chapter = chaptersData.chapters.find(chapter => {
+    if (!chapter.title || !actionParams.chapterTitle) {
+      return false;
+    }
+    const lowerTitle = chapter.title.toLowerCase().trim();
+    const lowerChapterTitle = (actionParams.chapterTitle as string).toLowerCase().trim();
+    return lowerTitle === lowerChapterTitle || lowerTitle.includes(lowerChapterTitle) || lowerChapterTitle.includes(lowerTitle)
+  })
   if (!chapter) {
     throw new Error(`Chapter not found: ${actionParams.chapterTitle}`);
   }
