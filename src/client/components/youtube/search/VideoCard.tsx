@@ -66,7 +66,7 @@ export const VideoCard = ({ video, formatDuration, formatViewCount }: VideoCardP
         '&:hover': {
           bgcolor: 'action.hover',
         },
-        p: { xs: 0.5, sm: 0.75, md: 1 },
+        p: { xs: 1, sm: 1.5, md: 2 },
         borderRadius: 1
       }}
       onClick={handleVideoClick}

@@ -133,7 +133,7 @@ export const SearchResults = ({
       <Box sx={{ 
         display: 'flex', 
         flexWrap: 'wrap', 
-        margin: -1 // Negative margin to counteract padding of children
+        margin: 0
       }}>
         {searchResults.map((video) => (
           <Box 
@@ -145,8 +145,9 @@ export const SearchResults = ({
                 md: '33.333%', 
                 lg: '25%' 
               }, 
-              paddingLeft: 1,
-              paddingRight: 1
+              paddingLeft: 0,
+              paddingRight: 0,
+              paddingBottom: 2
             }}
           >
             <VideoCard 
@@ -234,7 +235,7 @@ export const SearchResults = ({
                 <Box sx={{ 
                   display: 'flex', 
                   flexWrap: 'wrap', 
-                  margin: -1
+                  margin: 0
                 }}>
                   {filteredVideos.map((video) => (
                     <Box 
@@ -246,8 +247,9 @@ export const SearchResults = ({
                           md: '33.333%', 
                           lg: '25%' 
                         }, 
-                        paddingLeft: 1,
-                        paddingRight: 1
+                        paddingLeft: 0,
+                        paddingRight: 0,
+                        paddingBottom: 2
                       }}
                     >
                       <VideoCard 

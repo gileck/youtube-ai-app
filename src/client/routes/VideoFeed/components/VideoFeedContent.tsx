@@ -24,7 +24,7 @@ export const VideoFeedContent = ({
   return (
     <>
       <SearchResults
-        title={`Videos From and Related to Your Bookmarked Channels (${feedVideos.length})`}
+        title={`${feedVideos.length} Videos`}
         isSearching={isLoading}
         searchResults={displayedVideos}
         filteredVideos={[]}
