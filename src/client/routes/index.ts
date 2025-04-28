@@ -14,7 +14,7 @@ import { createRoutes } from '../router';
 
 // Define routes
 export const routes = createRoutes({
-  '/': Home,
+  '/': Search,
   '/ai-chat': AIChat,
   '/settings': Settings,
   '/file-manager': FileManager,
