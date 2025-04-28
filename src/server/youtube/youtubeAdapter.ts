@@ -62,6 +62,7 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
       publishedAt: video.published?.text || '',
       viewCount: video.view_count?.text || '0',
       duration: video.duration?.text || 'PT0S',
+      channelThumbnailUrl: video.author?.thumbnails?.[0]?.url || '',
     };
   };
 
@@ -379,6 +380,7 @@ export const createYouTubeAdapter = (): YouTubeApiAdapter => {
             const videoResult = transformVideoResult(video as YTNodes.Video);
             videoResult.channelTitle = channelInfo.title;
             videoResult.channelId = channelId;
+            videoResult.channelThumbnailUrl = channelInfo.thumbnailUrl || '';
             if (applyFilters(videoResult, filters)) {
               videos.push(videoResult);
             }

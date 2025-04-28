@@ -253,7 +253,7 @@ export const SearchResults = ({
                       <VideoCard 
                         video={video} 
                         formatDuration={formatDuration} 
-                        formatViewCount={formatViewCount} 
+                        formatViewCount={formatViewCount}
                       />
                       <Divider sx={{ my: 1 }} />
                     </Box>

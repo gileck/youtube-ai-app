@@ -23,7 +23,8 @@ export interface YouTubeVideoSearchResult {
   channelTitle: string;
   publishedAt: string;
   viewCount: string;
-  duration: string; 
+  duration: string;
+  channelThumbnailUrl?: string;
 }
 
 /**

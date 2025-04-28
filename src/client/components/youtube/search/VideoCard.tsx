@@ -5,7 +5,9 @@ import {
   IconButton,
   Tooltip,
   useMediaQuery,
-  useTheme
+  useTheme,
+  Avatar,
+  Grid
 } from '@mui/material';
 import { YouTubeVideoSearchResult } from '@/shared/types/youtube';
 import { useRouter } from '../../../router';
@@ -74,17 +76,20 @@ export const VideoCard = ({ video, formatDuration, formatViewCount }: VideoCardP
         flexDirection: 'column',
         p: 0
       }}>
+        {/* Thumbnail with duration */}
         <Box sx={{ 
           position: 'relative',
           width: '100%',
-          mb: { xs: 0.5, sm: 0.75, md: 1 }
+          mb: { xs: 1, sm: 1.5, md: 2 },
+          borderRadius: { xs: 1, sm: 1.5, md: 2 },
+          overflow: 'hidden'
         }}>
           <CardMedia
             component="img"
             sx={{ 
               width: '100%',
               height: 'auto',
-              borderRadius: { xs: 1, sm: 1.5, md: 2 }
+              display: 'block'
             }}
             image={video.thumbnailUrl}
             alt={video.title}
@@ -93,14 +98,14 @@ export const VideoCard = ({ video, formatDuration, formatViewCount }: VideoCardP
             <Box
               sx={{
                 position: 'absolute',
-                bottom: { xs: 4, sm: 6, md: 8 },
-                right: { xs: 4, sm: 6, md: 8 },
+                bottom: 8,
+                right: 8,
                 bgcolor: 'rgba(0, 0, 0, 0.8)',
                 color: 'white',
-                fontWeight: 'bold',
-                fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.95rem' },
-                padding: { xs: '1px 3px', sm: '2px 4px' },
-                borderRadius: '2px',
+                fontWeight: 'medium',
+                fontSize: '0.75rem',
+                padding: '2px 4px',
+                borderRadius: '4px',
               }}
             >
               {formatDuration(video.duration)}
@@ -108,60 +113,85 @@ export const VideoCard = ({ video, formatDuration, formatViewCount }: VideoCardP
           )}
         </Box>
         
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Typography 
-            variant={isExtraSmall ? "subtitle1" : "h6"} 
-            component="div" 
-            sx={{
-              fontSize: { xs: '0.95rem', sm: '0.1rem', md: '1.1rem' },
-              fontWeight: 'bold',
-              mb: { xs: 0.25, sm: 0.5 },
-              textAlign: 'left',
-              flexGrow: 1,
-              lineHeight: 1.2
-            }}
-          >
-            {video.title}
-          </Typography>
-          
-          <Tooltip title={isBookmarked ? "Remove from bookmarks" : "Add to bookmarks"}>
-            <IconButton 
-              size={isSmallScreen ? "small" : "medium"} 
-              onClick={handleBookmarkClick}
-              sx={{ ml: 0.5 }}
+        {/* Video info section */}
+        <Box sx={{ display: 'flex', mt: 1 }}>
+          {/* Channel Avatar */}
+          <Box sx={{ mr: 1.5 }}>
+            <Avatar 
+              src={video.channelThumbnailUrl}
+              sx={{ 
+                width: { xs: 36, sm: 36, md: 40 }, 
+                height: { xs: 36, sm: 36, md: 40 },
+                bgcolor: 'primary.main'
+              }}
+              onClick={handleChannelClick}
             >
-              {isBookmarked ? <BookmarkIcon color="primary" /> : <BookmarkBorderIcon />}
-            </IconButton>
-          </Tooltip>
-        </Box>
-        
-        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.95rem' },
-              color: 'primary.main',
-              textAlign: 'left',
-              cursor: 'pointer',
-              '&:hover': {
-                textDecoration: 'underline'
-              }
-            }}
-            onClick={handleChannelClick}
-          >
-            {video.channelTitle}
-          </Typography>
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.95rem' },
-              color: 'text.secondary',
-              textAlign: 'left',
-              ml: 0.5
-            }}
-          >
-            | {formatViewCount(video.viewCount)} | {video.publishedAt}
-          </Typography>
+              {video.channelTitle ? video.channelTitle.charAt(0).toUpperCase() : '?'}
+            </Avatar>
+          </Box>
+          
+          {/* Content */}
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            {/* Title */}
+            <Box sx={{ display: 'flex', mb: 0.5 }}>
+              <Typography 
+                variant="subtitle1"
+                sx={{
+                  fontSize: { xs: '1.1rem', sm: '1.1rem', md: '1.3rem' },
+                  fontWeight: 'bold',
+                  lineHeight: 1.2,
+                  mb: 0.5,
+                  display: '-webkit-box',
+                  WebkitBoxOrient: 'vertical',
+                  WebkitLineClamp: 4,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  flex: 1
+                }}
+              >
+                {video.title}
+              </Typography>
+              
+              <Tooltip title={isBookmarked ? "Remove from bookmarks" : "Add to bookmarks"}>
+                <IconButton 
+                  size="small" 
+                  onClick={handleBookmarkClick}
+                  sx={{ ml: 0.5 }}
+                >
+                  {isBookmarked ? <BookmarkIcon color="primary" /> : <BookmarkBorderIcon />}
+                </IconButton>
+              </Tooltip>
+            </Box>
+            
+            {/* Channel name and video stats on same line */}
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  fontSize: '0.9rem',
+                  color: 'text.secondary',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    color: 'primary.main'
+                  }
+                }}
+                onClick={handleChannelClick}
+              >
+                {video.channelTitle}
+              </Typography>
+              
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  fontSize: '0.9rem',
+                  color: 'text.secondary',
+                  ml: 0.5
+                }}
+              >
+                • {formatViewCount(video.viewCount)} • {video.publishedAt}
+              </Typography>
+            </Box>
+          </Box>
         </Box>
       </Box>
     </Box>
