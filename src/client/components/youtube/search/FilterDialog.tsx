@@ -22,10 +22,10 @@ import { YouTubeSearchFilters } from '../../../../apis/youtube/types';
 const defaultFilters: YouTubeSearchFilters = {
   upload_date: 'all',
   type: 'video',
-  duration: 'all',
-  sort_by: 'view_count',
+  duration: 'long',
+  sort_by: 'upload_date',
   features: [],
-  minViews: 0
+  minViews: 1000
 };
 
 export interface FilterDialogProps {

@@ -1,4 +1,4 @@
-import { AppBar, Toolbar, IconButton, Typography, Box, Button } from '@mui/material';
+import { AppBar, Toolbar, IconButton, Box, Button } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useRouter } from '../../router';
 import { NavItem } from '../../components/layout/types';

@@ -17,7 +17,6 @@ import {
   YouTubeSearchVideosResponse,
   YouTubeSearchChannelsResponse
 } from '@/shared/types/youtube';
-import { uploadFile } from '../s3/sdk';
 
 /**
  * YouTube API adapter implementation using youtubei.js
