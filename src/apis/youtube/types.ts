@@ -2,8 +2,8 @@
  * Types for YouTube API
  */
 
-import { 
-  YouTubeVideoSearchResult, 
+import {
+  YouTubeVideoSearchResult,
   YouTubeVideoDetails,
   YouTubeChannelSearchResult,
   YouTubeSortOption,
@@ -61,6 +61,7 @@ export interface YouTubeVideoRequest {
 // Video details response type
 export interface YouTubeVideoResponse {
   video?: YouTubeVideoDetails;
+  questions?: string[];
   error?: YouTubeApiError;
 }
 

@@ -9,6 +9,9 @@ import {
   useTheme,
   useMediaQuery,
   IconButton,
+  Stack,
+  Divider,
+  Chip,
 } from '@mui/material';
 import { useRouter } from '../../router';
 import { getYouTubeVideoDetails } from '../../../apis/youtube/client';
@@ -22,6 +25,8 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { bookmarkVideo, removeBookmarkedVideo, isVideoBookmarked } from '../../utils/bookmarksStorage';
 import { mediaEvents } from '../../utils/mediaEvents';
 import { MiniPlayer } from './MiniPlayer';
+import { processAIVideoAction } from '../../../apis/aiVideoActions/client';
+import { CustomRenderer } from '@/services/AiActions/CustomAction/CustomRenderer';
 
 export type PlayerAPI = {
   play: () => void;
@@ -43,6 +48,10 @@ export const Video = () => {
   const [expanded, setExpanded] = useState(false);
   const [actionTab, setActionTab] = useState<TabType>(tabParam || 'summary');
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [questions, setQuestions] = useState<string[]>([]);
+  const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
+  const [questionResult, setQuestionResult] = useState<any>(null);
+  const [questionLoading, setQuestionLoading] = useState(false);
 
   // Remove main player references and keep only mini player related states
   const [miniPlayerVisible, setMiniPlayerVisible] = useState(false);
@@ -91,6 +100,9 @@ export const Video = () => {
           setError(result.data.error.message);
         } else if (result.data?.video) {
           setVideo(result.data.video);
+          if (result.data.questions) {
+            setQuestions(result.data.questions);
+          }
         } else {
           setError('Failed to load video details');
         }
@@ -150,96 +162,66 @@ export const Video = () => {
     return description.slice(0, 300) + '...';
   };
 
-  const handleBookmarkClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!video) return;
+  const handleBookmarkToggle = () => {
+    if (!video || !videoId) return;
+
     if (isBookmarked) {
-      removeBookmarkedVideo(video.id);
-      setIsBookmarked(false);
+      removeBookmarkedVideo(videoId);
     } else {
-      bookmarkVideo(video);
-      setIsBookmarked(true);
+      bookmarkVideo({
+        id: videoId,
+        title: video.title,
+        thumbnailUrl: video.thumbnailUrl || '',
+        channelId: video.channelId,
+        channelTitle: video.channelTitle,
+        publishedAt: video.publishedAt,
+        viewCount: video.viewCount,
+        duration: video.duration,
+        description: video.description || ''
+      });
     }
+
+    setIsBookmarked(!isBookmarked);
   };
 
-  // Handle closing the mini player
-  const handleCloseMiniPlayer = (event?: { reopenForSeek?: boolean; time?: number }) => {
-    // If this is a special reopenForSeek request, don't close the player
-    if (event?.reopenForSeek) {
-      console.log("Reopening mini player for seek to:", event.time);
-      setMiniPlayerVisible(true);
-      setMiniPlayerClosed(false);
-      if (typeof event.time === 'number') {
-        setCurrentTime(event.time);
-      }
-      return;
-    }
+  const handleTabChange = (newTab: TabType) => {
+    setActionTab(newTab);
+    navigate(`/video/${videoId}/${newTab}`);
+  };
 
-    // Normal close behavior
-    setMiniPlayerVisible(false);
+  const handleCloseMiniPlayer = () => {
     setMiniPlayerClosed(true);
   };
 
-  // Handle tab click with URL updates
-  const handleTabClick = (tab: TabType) => {
-    setActionTab(tab);
-    // Update the URL with the selected tab
-    navigate(`/video/${videoId}/${tab}`);
-  };
+  const handleQuestionClick = async (question: string) => {
+    setSelectedQuestion(question);
+    setQuestionLoading(true);
+    setQuestionResult(null);
 
-  // Responsive AI action buttons layout
-  const renderActionButtons = () => {
-    const aiActionButtons = Object.entries(aiActions)
-      .filter(([, value]) => value.isMainAction)
-      .map(([key, type]) => ({
-        key,
-        label: type.label,
-        Icon: type.icon as React.ElementType | undefined,
-      }));
-    aiActionButtons.push({ key: 'transcript', label: 'Transcript', Icon: undefined });
-
-
-    if (!isMobile) {
-      return (
-        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, overflowX: 'auto', mb: 2, px: 1 }}>
-          {aiActionButtons.map(({ key, label, Icon }) => (
-            <Button
-              key={key}
-              variant={actionTab === key ? 'contained' : 'outlined'}
-              color="primary"
-              startIcon={Icon ? <Icon /> : undefined}
-              size="medium"
-              sx={{
-                minWidth: 120, borderRadius: 2, fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap', textTransform: 'none', flex: '0 0 auto'
-              }}
-              onClick={() => handleTabClick(key as TabType)}
-            >
-              {label}
-            </Button>
-          ))}
-        </Box>
+    try {
+      const response = await processAIVideoAction({
+        videoId: videoId || '',
+        actionType: 'custom',
+        actionParams: {
+          query: question,
+          responseType: 'list',
+          actionType: 'chapters'
+        }
+      }, {
+        bypassCache: true
+      }
       );
+
+      if (response.data?.error) {
+        console.error('Error processing question:', response.data.error);
+      } else if (response.data?.result) {
+        setQuestionResult(response.data.result);
+      }
+    } catch (error) {
+      console.error('Error processing question:', error);
+    } finally {
+      setQuestionLoading(false);
     }
-    // Grid layout for mobile
-    return (
-      <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '5px', mb: 2, px: 1 }}>
-        {aiActionButtons.map(({ key, label, Icon }) => (
-          <Box key={key} sx={{ padding: '4px' }}>
-            <Button
-              fullWidth
-              variant={actionTab === key ? 'contained' : 'outlined'}
-              color="primary"
-              startIcon={Icon ? <Icon /> : undefined}
-              size="small"
-              sx={{ borderRadius: 2, fontWeight: 600, fontSize: '0.8rem', whiteSpace: 'nowrap', textTransform: 'none' }}
-              onClick={() => handleTabClick(key as TabType)}
-            >
-              {label}
-            </Button>
-          </Box>
-        ))}
-      </Box>
-    );
   };
 
   if (loading) {
@@ -305,112 +287,135 @@ export const Video = () => {
       />
 
       {/* Metadata Row */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, px: 1 }}>
-        <Typography variant="body2" color="text.secondary">
-          {formatDate(video.publishedAt)}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {formatViewCount(video.viewCount)}
-        </Typography>
-      </Box>
+      <Paper elevation={1} sx={{ p: 2, mb: 2, borderRadius: 2 }}>
+        <Typography variant="h6" gutterBottom>{video.title}</Typography>
 
-      {/* Title */}
-      <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold', mb: 1, px: 1, wordBreak: 'break-word' }}>
-        {video.title}
-      </Typography>
-
-      {/* Channel Info */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, px: 1 }}>
-        <Avatar
-          src={video.channelImage || ''}
-          alt={video.channelTitle}
-          sx={{ width: 28, height: 28, mr: 1, cursor: 'pointer' }}
-          onClick={handleChannelClick}
-        />
-        <Typography
-          variant="subtitle1"
-          sx={{ fontWeight: 'bold', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
-          onClick={handleChannelClick}
-        >
-          {video.channelTitle}
-        </Typography>
-        <IconButton
-          aria-label={isBookmarked ? 'Remove from bookmarks' : 'Save to bookmarks'}
-          onClick={handleBookmarkClick}
-          sx={{ ml: 1 }}
-        >
-          {isBookmarked ? <BookmarkIcon color="primary" /> : <BookmarkBorderIcon />}
-        </IconButton>
-      </Box>
-
-      {/* Description Box */}
-      <Box sx={{ mb: 2, px: 1 }}>
-        <Paper
-          elevation={0}
-          onClick={hasLongDescription ? toggleDescription : undefined}
-          sx={{
-            position: 'relative',
-            p: 2,
-            pt: 1.5,
-            pb: expanded ? 2.5 : 1.5,
-            bgcolor: 'background.paper',
-            borderRadius: 2,
-            whiteSpace: 'pre-wrap',
-            minHeight: 60,
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-            border: '1px solid',
-            borderColor: 'divider',
-            transition: 'all 0.2s ease-in-out',
-            cursor: hasLongDescription ? 'pointer' : 'default'
-          }}
-        >
-          {video.description ? (
-            <>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Avatar
+              src={video.channelThumbnailUrl}
+              alt={video.channelTitle}
+              sx={{ mr: 1, cursor: 'pointer' }}
+              onClick={handleChannelClick}
+            />
+            <Box>
               <Typography
-                variant="body2"
-                sx={{
-                  lineHeight: 1.6,
-                  color: 'text.primary',
-                  fontWeight: 400,
-                  letterSpacing: '0.01em',
-                  mb: 0
-                }}
+                variant="subtitle2"
+                sx={{ cursor: 'pointer' }}
+                onClick={handleChannelClick}
               >
-                {expanded ? video.description : getTruncatedDescription(video.description)}
+                {video.channelTitle}
               </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {formatViewCount(video.viewCount)} views • {formatDate(video.publishedAt)}
+              </Typography>
+            </Box>
+          </Box>
 
-              {hasLongDescription && !expanded && (
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'primary.main',
-                    fontSize: '0.8rem',
-                    mt: 0.5,
-                    fontWeight: 500,
-                  }}
-                >
-                  Click to read more
-                </Typography>
-              )}
-            </>
-          ) : (
+          <IconButton onClick={handleBookmarkToggle} sx={{ color: isBookmarked ? 'primary.main' : 'inherit' }}>
+            {isBookmarked ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+          </IconButton>
+        </Box>
+
+        {/* Description */}
+        {video.description && (
+          <Box sx={{ mt: 2 }}>
             <Typography
               variant="body2"
-              sx={{
-                color: 'text.secondary',
-                fontStyle: 'italic'
-              }}
+              sx={{ whiteSpace: 'pre-line' }}
             >
-              No description available.
+              {expanded ? video.description : getTruncatedDescription(video.description)}
             </Typography>
+
+            {hasLongDescription && (
+              <Button
+                size="small"
+                onClick={toggleDescription}
+                sx={{ mt: 1 }}
+              >
+                {expanded ? 'Show less' : 'Show more'}
+              </Button>
+            )}
+          </Box>
+        )}
+      </Paper>
+
+      {/* Questions Section */}
+      {questions.length > 0 && (
+        <Paper elevation={1} sx={{ p: 2, mb: 2, borderRadius: 2 }}>
+          <Typography variant="subtitle1" gutterBottom>Questions about this video</Typography>
+
+          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+            {questions.map((question, index) => (
+              <Chip
+                key={index}
+                label={question}
+                onClick={() => handleQuestionClick(question)}
+                color={selectedQuestion === question ? 'primary' : 'default'}
+                sx={{ my: 0.5 }}
+              />
+            ))}
+          </Stack>
+
+          {questionLoading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+              <CircularProgress size={24} />
+            </Box>
+          )}
+
+          {questionResult && !questionLoading && (
+            <Box sx={{ mt: 2 }}>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="subtitle2" gutterBottom>{selectedQuestion}</Typography>
+              <CustomRenderer
+                result={questionResult}
+                videoId={videoId || ''}
+                playerApi={playerApi}
+              />
+            </Box>
           )}
         </Paper>
+      )}
+
+      {/* Tabs for different AI actions */}
+      <Box sx={{ mb: 2, display: 'flex', overflowX: 'auto', pb: 1 }}>
+        <Button
+          variant={actionTab === 'summary' ? 'contained' : 'text'}
+          onClick={() => handleTabChange('summary')}
+          sx={{ mr: 1, whiteSpace: 'nowrap' }}
+        >
+          Summary
+        </Button>
+        <Button
+          variant={actionTab === 'transcript' ? 'contained' : 'text'}
+          onClick={() => handleTabChange('transcript')}
+          sx={{ mr: 1, whiteSpace: 'nowrap' }}
+        >
+          Transcript
+        </Button>
+        <Button
+          variant={actionTab === 'keyPoints' ? 'contained' : 'text'}
+          onClick={() => handleTabChange('keyPoints')}
+          sx={{ mr: 1, whiteSpace: 'nowrap' }}
+        >
+          Key Points
+        </Button>
+        <Button
+          variant={actionTab === 'podcastQA' ? 'contained' : 'text'}
+          onClick={() => handleTabChange('podcastQA')}
+          sx={{ mr: 1, whiteSpace: 'nowrap' }}
+        >
+          Q&A
+        </Button>
+        <Button
+          variant={actionTab === 'more' ? 'contained' : 'text'}
+          onClick={() => handleTabChange('more')}
+          sx={{ whiteSpace: 'nowrap' }}
+        >
+          More
+        </Button>
       </Box>
 
-      {/* AI Action Buttons */}
-      {renderActionButtons()}
-
-      {/* Main Content Area */}
       <Paper elevation={0} sx={{ p: 2, minHeight: 120, bgcolor: 'background.default', borderRadius: 2, mb: 2, px: 1 }}>
         {actionTab === 'transcript' && (
           <VideoTranscript videoId={videoId} playerApi={playerApi} />
@@ -421,7 +426,6 @@ export const Video = () => {
             videoId={videoId}
             actionType={actionTab as VideoActionType} />
         )}
-
       </Paper>
     </Box>
   );

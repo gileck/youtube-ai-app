@@ -14,12 +14,12 @@ import {
   YouTubeChaptersTranscriptRequest,
   YouTubeChaptersTranscriptResponse
 } from './types';
-import { 
-  searchApiName, 
-  videoApiName, 
-  channelApiName, 
-  channelSearchApiName, 
-  chaptersTranscriptApiName 
+import {
+  searchApiName,
+  videoApiName,
+  channelApiName,
+  channelSearchApiName,
+  chaptersTranscriptApiName
 } from './index';
 import { YouTubeChannelParams } from '@/server/youtube';
 import { YouTubeChannelResponse } from '@/shared/types/youtube';

@@ -16,9 +16,13 @@ import {
 } from './types';
 import { YouTubeChannelParams } from '@/server/youtube';
 import { getChaptersTranscripts } from '../../server/youtube/chaptersTranscriptService';
+import { AIModelAdapter } from '../../server/ai';
 
 // Create YouTube adapter
 const youtubeAdapter = createYouTubeAdapter();
+
+// Create AI adapter
+const aiAdapter = new AIModelAdapter();
 
 /**
  * Search for YouTube videos and channels
@@ -30,7 +34,7 @@ export const searchYouTubeVideos = async (
 ): Promise<YouTubeSearchResponse> => {
   try {
     const { query, pageNumber } = request;
-    
+
     // Validate input
     if (!query || typeof query !== 'string') {
       return {
@@ -40,7 +44,7 @@ export const searchYouTubeVideos = async (
         },
       };
     }
-    
+
     // Call the YouTube adapter with all parameters including filters for videos
     const { videos, filteredVideos, continuation, estimatedResults } = await youtubeAdapter.searchVideos({
       query,
@@ -52,11 +56,11 @@ export const searchYouTubeVideos = async (
       minViews: request.filters?.minViews,
       pageNumber
     });
-    
+
     const { channels } = await youtubeAdapter.searchChannels({
       query,
     });
-    
+
     // Return the combined response with consistent structure
     return {
       videos,
@@ -86,7 +90,7 @@ export const searchYouTubeChannels = async (
 ): Promise<YouTubeChannelSearchResponse> => {
   try {
     const { query } = request;
-    
+
     // Validate input
     if (!query || typeof query !== 'string') {
       return {
@@ -96,12 +100,12 @@ export const searchYouTubeChannels = async (
         },
       };
     }
-    
+
     // Call the YouTube adapter
     const { channels } = await youtubeAdapter.searchChannels({
       query,
     });
-    
+
     // Return the response with consistent structure
     return {
       channels,
@@ -127,7 +131,7 @@ export const getYouTubeVideoDetails = async (
 ): Promise<YouTubeVideoResponse> => {
   try {
     const { videoId } = request;
-    
+
     // Validate input
     if (!videoId || typeof videoId !== 'string') {
       return {
@@ -137,7 +141,7 @@ export const getYouTubeVideoDetails = async (
         },
       };
     }
-    
+
     // Call the YouTube adapter
     const response = await youtubeAdapter.getVideoDetails({
       videoId,
@@ -145,16 +149,33 @@ export const getYouTubeVideoDetails = async (
 
     if (!response) {
       return {
-        error: {    
+        error: {
           message: 'Video not found',
           code: 'VIDEO_NOT_FOUND',
         },
       };
     }
-    
-    // Return the response with consistent structure
+
+    // Generate questions using AI adapter
+    let videoQuestions: string[] = [];
+    if (response.title && response.description) {
+      try {
+        const prompt = `Generate 5 interesting questions that this video answers based on the title and description. Return only the questions as a JSON array of strings.
+Title: ${response.title}
+Description: ${response.description}`;
+
+        const questionsResponse = await aiAdapter.processPromptToJSON<string[]>(prompt, 'video-questions');
+        videoQuestions = questionsResponse.result;
+      } catch (error) {
+        console.error('Error generating questions:', error);
+        videoQuestions = [];
+      }
+    }
+
+    // Return the response with consistent structure and questions
     return {
       video: response,
+      questions: videoQuestions,
     }
   } catch (error) {
     console.error('Error in getYouTubeVideoDetails:', error);
@@ -177,7 +198,7 @@ export const getYouTubeChannelVideos = async (
 ): Promise<YouTubeChannelResponse> => {
   try {
     const { channelId } = request;
-    
+
     // Validate input
     if (!channelId || typeof channelId !== 'string') {
       return {
@@ -187,7 +208,7 @@ export const getYouTubeChannelVideos = async (
         },
       };
     }
-    
+
     // Call the YouTube adapter
     return youtubeAdapter.getChannelVideos(request);
   } catch (error) {
@@ -211,7 +232,7 @@ export const getYouTubeChaptersTranscript = async (
 ): Promise<YouTubeChaptersTranscriptResponse> => {
   try {
     const { videoId, overlapOffsetSeconds } = request;
-    
+
     // Validate input
     if (!videoId || typeof videoId !== 'string') {
       return {
@@ -221,12 +242,12 @@ export const getYouTubeChaptersTranscript = async (
         },
       };
     }
-    
+
     // Call the chapters transcript service
     const result = await getChaptersTranscripts(videoId, {
       overlapOffsetSeconds: overlapOffsetSeconds || 5
     });
-    
+
     return {
       data: result,
     };
