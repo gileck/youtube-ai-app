@@ -29,34 +29,35 @@ export async function processAiAction<T>(
       actionParams?: Record<string, unknown>
     }
 ): Promise<AIModelAdapterResponse<T> | AIModelAdapterResponse<ChaptersAiActionResult<T>>> {
-  const { mainPrompt, singleChapter } = aiActions[actionType] as AiAction<T> | AiActionChaptersOnly<T> | AiActionSingleChapter<T>
-  if (singleChapter) {
-    return processAiActionSingleChapter<T>({
-      chaptersData,
-      modelId,
-      videoDetails,
-      actionType,
-      actionParams: actionParams || {}
-    })
-  }
-  if (mainPrompt) {
-    return processAiActionChaptersAndMain({
-      chaptersData,
-      modelId,
-      videoDetails,
-      actionType
-    }) as Promise<AIModelAdapterResponse<T>>
+  // Common processing parameters
+  const processingParams = {
+    chaptersData,
+    modelId,
+    videoDetails,
+    actionType,
+    actionParams: actionParams || {}
+  };
+  
+  // Get the appropriate action configuration - either from custom action or standard action
+  let actionConfig: any;
+  
+  if (actionType === 'custom' && 'getActionForParams' in aiActions[actionType]) {
+    // For custom action type, get the configuration based on params
+    const customActionData = aiActions[actionType] as unknown as import('@/services/AiActions/CustomAction').CustomAiAction;
+    actionConfig = customActionData.getActionForParams(actionParams);
   } else {
-    return processAiActionChaptersOnly({
-      chaptersData,
-      modelId,
-      videoDetails,
-      actionType
-    }) as Promise<AIModelAdapterResponse<ChaptersAiActionResult<T>>>
+    // For standard action types, use the configuration directly
+    actionConfig = aiActions[actionType];
   }
-
-
-
+  
+  // Single unified flow based on action configuration
+  if (actionConfig.singleChapter) {
+    return processAiActionSingleChapter(processingParams) as unknown as AIModelAdapterResponse<T>;
+  } else if (actionConfig.mainPrompt) {
+    return processAiActionChaptersAndMain(processingParams) as unknown as AIModelAdapterResponse<T>;
+  } else {
+    return processAiActionChaptersOnly(processingParams) as unknown as AIModelAdapterResponse<ChaptersAiActionResult<T>>;
+  }
 }
 
 //
@@ -72,13 +73,15 @@ export async function processAiActionChaptersAndMain<T>(
     chaptersData,
     modelId,
     videoDetails,
-    actionType
+    actionType,
+    actionParams
   }:
     {
       chaptersData: CombinedTranscriptChapters,
       modelId: string | undefined,
       videoDetails: YouTubeVideoDetails | null,
-      actionType: VideoActionType
+      actionType: VideoActionType,
+      actionParams?: Record<string, unknown>
     }
 ): Promise<AIModelAdapterResponse<T>> {
   const { chapterPrompt, mainPrompt } = aiActions[actionType] as AiAction<T>
@@ -89,17 +92,14 @@ export async function processAiActionChaptersAndMain<T>(
   if (chaptersData.chapters.length === 0) {
     //defulat to full transcript
     // const transcript = chaptersData.transcript.map(segment => segment.text).join(' ');
-
-
   }
-
+  
   const chapterPromises = chaptersData.chapters.map(async (chapter) => {
-
     const _chpaterPrompt = chapterPrompt({
       videoDetails: videoDetails,
       chapters: [chapter],
       content: chapter.content,
-      params: {}
+      params: actionParams || {}
     })
 
     try {
@@ -123,10 +123,11 @@ export async function processAiActionChaptersAndMain<T>(
   const chapterResults = await Promise.all(chapterPromises);
 
   const finalPrompt = mainPrompt({
+    params: actionParams || {},
     videoDetails: videoDetails,
     chapters: chapterResults.map(chapter => ({
       title: chapter.title,
-      result: chapter.result || ''
+      result: chapter.result || '',
     }))
   });
 
@@ -177,12 +178,14 @@ export async function processAiActionChaptersOnly<T>(
     modelId,
     videoDetails,
     actionType,
+    actionParams
   }:
     {
       chaptersData: CombinedTranscriptChapters,
       modelId: string | undefined,
       videoDetails: YouTubeVideoDetails | null,
-      actionType: VideoActionType
+      actionType: VideoActionType,
+      actionParams?: Record<string, unknown>
     }
 ): Promise<AIModelAdapterResponse<ChaptersAiActionResult<T>>> {
   const { chapterPrompt } = aiActions[actionType] as AiActionChaptersOnly<T>
@@ -199,12 +202,11 @@ export async function processAiActionChaptersOnly<T>(
   )
 
   const chapterPromises = combinedChapters.chapters.map(async (chaptersArray) => {
-
     const _chpaterPrompt = chapterPrompt({
       videoDetails: videoDetails,
       chapters: chaptersArray.chapters,
       content: chaptersArray.content,
-      params: {}
+      params: actionParams || {}
     })
 
     try {

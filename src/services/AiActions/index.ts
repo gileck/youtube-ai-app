@@ -6,8 +6,12 @@ import { questionDeepDiveAction } from "./questionDeepDiveAction";
 import { protocolDeepDiveAction } from "./protocolDeepDiveAction";
 import { recommendationsAction } from "./RecommendationsAction";
 import { findSegmentAction } from "./FindSegmentAction";
+import { customAction } from "./CustomAction";
 // import { findSegmentAction } from "./FindSegmentAction";
 
+
+export * from './types';
+export * from './CustomAction';
 
 export const aiActions: AiActionsData = {
     'summary': summaryAction,
@@ -16,8 +20,6 @@ export const aiActions: AiActionsData = {
     'questionDeepDive': questionDeepDiveAction,
     'protocolDeepDive': protocolDeepDiveAction,
     'recommendations': recommendationsAction,
-    'findSegment': findSegmentAction
+    'findSegment': findSegmentAction,
+    'custom': customAction
 }
-
-
-export * from './types';

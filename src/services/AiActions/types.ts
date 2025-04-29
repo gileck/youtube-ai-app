@@ -34,16 +34,18 @@ export type ChapterPromptFunction<ActionParams> = ({
     params: ActionParams
     chapterSegmants?: ChapterWithContent['segments']
 }) => string;
-export type VideoActionType = 'summary' | 'keyPoints' | 'podcastQA' | 'questionDeepDive' | 'protocolDeepDive' | 'recommendations' | 'findSegment'
+export type VideoActionType = 'summary' | 'keyPoints' | 'podcastQA' | 'questionDeepDive' | 'protocolDeepDive' | 'recommendations' | 'findSegment' | 'custom'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AiAction<T = any> = AiActionBase & {
+export type AiAction<T = any, ActionParams = any> = AiActionBase & {
     renderer: React.FC<ActionRendererProps<T>>;
     mainPrompt: ({
         videoDetails,
         chapters,
+        params
     }: {
         videoDetails: YouTubeVideoDetails | null
         chapters: ChaptersData;
+        params: ActionParams
     }) => string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     chapterPrompt: ChapterPromptFunction<any>
@@ -87,4 +89,18 @@ export interface FindSegmentActionParams {
 export interface SegmentResult {
     conversation_start_seconds: number;
     relevant_segment_seconds: number;
+}
+
+// Add response type options for Custom AI action
+export type CustomResponseType = 'list' | 'text';
+
+// Add action type options for Custom AI action
+export type CustomActionType = 'chapters' | 'combined' | 'singleChapter';
+
+// Custom AI action params
+export type CustomAiActionParams = {
+    query: string;
+    responseType: CustomResponseType;
+    actionType: CustomActionType;
+    chapterTitle?: string; // Required for singleChapter mode
 }
