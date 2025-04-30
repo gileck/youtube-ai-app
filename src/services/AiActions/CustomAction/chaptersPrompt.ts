@@ -12,9 +12,13 @@ export const chapterPrompt: ChapterPromptFunction<CustomAiActionParams> = ({
 
   const videoTitle = videoDetails?.title || 'Untitled Video';
 
-  let promptText = `You are an AI assistant analyzing YouTube video content.
-  
+  return `You are an AI assistant analyzing YouTube video content.
+
+  You are given a question or a request for information about the content of a chapter.
+  You need to answer the question or provide the information requested from the content of the chapter.
+
 VIDEO TITLE: ${videoTitle}
+
 
 CONTENT:
 ${content}
@@ -25,32 +29,56 @@ Requirements:
 - Only provide information from the content.
 - DO NOT provide any information that is not specifically mentioned in the provided content.
 - Only provide information if the content answer the question or the request of the user query.
-- If the content does not answer the question or the request of the user query, return empty array.
 - Verify that your answer really answer the question or the request of the user query from the provided content.
 - If the query is a question, the answer should be a single sentence (in the tile).
 - Its very important that every item in the list will be an answer to the question or the request of the user query.
-`;
+- Respond with a list of answers to the question or the request of the user query.
+- Each item in the list is one answer to the question or the request of the user query.
+- If the content does not answer the question or the request of the user query, return empty array.
+- The answer should be very specific to the question or the request of the user query.
+- Dont answer with a general answer, the answer should be very specific to the question or the request of the user query.
+- The answer should be specific.
+- The answer should be a single sentence, not a title to the description.
 
-  if (responseType === 'list') {
-    promptText += `
+    Respond with a JSON array of objects representing the answers to the question or the request of the user query across this chapter.
     
-    Respond with a JSON array of objects representing the answer to the question or the request of the user query across this chapter.
-    
-    The result should be a type of Array<Item>
+    The result should be a type of Array<Item> - the list of answers to the question or the request of the user query.
     
     each Item is an answer to the question, and should include: 
     
-    "title": string - the short answer - if the query is a question, the title should be the answer to the question (or one of the answers). if the query is a request for information, the title should be the information requested.
+    "answer": string - the short answer - if the query is a question, the answer should be the answer to the question. The answer is a short sentence (a couple of words describing the answer).
     "description": string - the longer answer of the item. This will include explanation, context, examples, protocols, etc. use markdown format with headings, bullet points, bold, italic, etc.
     "emoji": string - the emoji of the item.
     "chapterTitle": string - the title of the chapter that the item belongs to or the most relevant chapter.
+    "answerScore": number - from 1-10 how likely is the answer of the item answers the question or the request of the user query? (1 means probably not answering the question, 10 means the title for sure answers the question or the request of the user query).   
 
-    Example format: [{"title": "short title", "description": "longer Description 1...", "emoji": "🔍", "chapterTitle": "Chapter 1"}, {"title": "Point 2", "description": "Description 2", "emoji": "🔥", "chapterTitle": "Chapter 2"}]
+    Example:
 
-`;
-  } else {
-    promptText += `Respond with a concise and informative text that answers the query based solely on the content of this chapter.`;
-  }
+    question: "What tools can I use to improve my productivity?"
 
-  return promptText;
+    RESPONSE (answers): 
+    
+    [
+        {
+            "answer": "Use Notion",
+            "description": "Notion is a productivity tool that can help you improve your productivity...",
+            "emoji": "🔍",
+            "chapterTitle": "Chapter 1",
+            "answerScore": 10
+        },
+        {
+            "answer": "Do 10 pushups",
+            "description": "Pushups are a great way to improve your productivity...",
+            "emoji": "🔍",
+            "chapterTitle": "Chapter 2",
+            "answerScore": 5
+        }
+]
+
+MAKE SURE THE items (especially the answer) really answer the question or the request of the user query.
+If the content specifically answers the question or the request of the user query, return [].
+
+
+
+`
 }; 
