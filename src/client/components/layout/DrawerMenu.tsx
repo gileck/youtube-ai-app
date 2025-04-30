@@ -1,4 +1,4 @@
-import { Drawer, Box, Typography, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
+import { Drawer, Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { useRouter } from '../../router';
 import { NavItem } from '../../components/layout/types';
 

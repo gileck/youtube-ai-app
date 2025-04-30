@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   List,
   ListItem,
-  ListItemText,
   ListItemIcon,
   IconButton,
   Tooltip,
@@ -11,9 +10,7 @@ import {
   useTheme,
   Typography,
   Button,
-  Box,
-  Stack,
-  Divider
+  Box
 } from '@mui/material';
 import {
   Folder as FolderIcon,

@@ -6,12 +6,10 @@ import {
   useMediaQuery,
   useTheme,
   IconButton,
-  Tooltip,
-  Divider
+  Tooltip
 } from '@mui/material';
 import {
   Home as HomeIcon,
-  Add as AddIcon,
   CreateNewFolder as CreateNewFolderIcon,
   Refresh as RefreshIcon,
   AddCircleOutlined
