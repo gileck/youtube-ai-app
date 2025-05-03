@@ -7,5 +7,9 @@
 // Export types for both client and server
 export * from './types';
 
-// Export the API name - must be unique across all APIs
-export const name = "monitoring/ai-usage";
+// Base namespace
+export const name = "aiUsage";
+
+// All API endpoint names MUST be defined here
+export const all = `${name}/all`;
+export const summary = `${name}/summary`;
