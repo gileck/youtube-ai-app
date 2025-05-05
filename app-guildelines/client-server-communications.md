@@ -78,8 +78,8 @@ This project uses a simplified client-server communication pattern with a single
      
      // Using the duplicated type
      // ...
-   };
-   ```
+     };
+     ```
 
 2. **Implement Server Logic** (`/src/apis/<domain>/server.ts`):
    - Create a `process` function that handles the request and returns a response

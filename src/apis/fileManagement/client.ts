@@ -1,5 +1,5 @@
-import { 
-  FileManagementRequest, 
+import {
+  FileManagementRequest,
   FileManagementResponse,
   ListFilesResponse,
   GetFileResponse,

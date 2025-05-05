@@ -12,6 +12,7 @@ import {
   GetAIUsageSummaryRequest,
   GetAIUsageSummaryResponse
 } from './types';
+// Import all API names from index.ts
 import { name, all, summary } from './index';
 
 // Re-export all API names from index.ts
@@ -57,6 +58,7 @@ export const getAllUsage = async (
  * Get AI usage summary
  */
 export const getSummary = async (
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   request: GetAIUsageSummaryRequest
 ): Promise<GetAIUsageSummaryResponse> => {
   try {

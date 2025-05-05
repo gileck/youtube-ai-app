@@ -1,5 +1,5 @@
-import { 
-  FileManagementRequest, 
+import {
+  FileManagementRequest,
   FileManagementResponse,
   ListFilesResponse,
   GetFileResponse,
@@ -35,22 +35,22 @@ export const process = async (request: FileManagementRequest): Promise<FileManag
     switch (request.action) {
       case 'list':
         return listFiles(request);
-        
+
       case 'getFile':
         return getFile(request);
-        
+
       case 'write':
         return writeFile(request);
-        
+
       case 'delete':
         return deleteFile(request);
-        
+
       case 'createFolder':
         return createFolder(request);
-        
+
       case 'deleteFolder':
         return deleteFolder(request);
-        
+
       default: {
         // In TypeScript's control flow analysis, by the time we reach this default case,
         // request.action is of type never, since we've exhausted all possible action types
@@ -63,7 +63,7 @@ export const process = async (request: FileManagementRequest): Promise<FileManag
     }
   } catch (error) {
     console.error('Error in file management API:', error);
-    
+
     // Return appropriate error response based on the action
     switch (request.action) {
       case 'list':
@@ -71,27 +71,27 @@ export const process = async (request: FileManagementRequest): Promise<FileManag
           files: [],
           error: error instanceof Error ? error.message : String(error)
         } as ListFilesResponse;
-      
+
       case 'getFile':
         return {
           content: "",
           error: error instanceof Error ? error.message : String(error)
         } as GetFileResponse;
-        
+
       case 'write':
       case 'createFolder':
         return {
           key: "",
           error: error instanceof Error ? error.message : String(error)
         } as WriteFileResponse | CreateFolderResponse;
-        
+
       case 'delete':
       case 'deleteFolder':
         return {
           success: false,
           error: error instanceof Error ? error.message : String(error)
         } as DeleteFileResponse | DeleteFolderResponse;
-        
+
       default: {
         // In TypeScript's control flow analysis, by the time we reach this default case,
         // request.action is of type never, since we've exhausted all possible action types

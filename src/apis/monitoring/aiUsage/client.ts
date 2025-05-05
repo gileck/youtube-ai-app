@@ -9,7 +9,7 @@ import {
   GetAIUsageSummaryResponse
 } from './types';
 import apiClient from '@/client/utils/apiClient';
-// IMPORTANT: Import API names from index.ts, NEVER from server.ts
+// Import API names from index.ts
 import { all, summary } from "./index";
 import type { CacheResult } from '@/server/cache/types';
 
