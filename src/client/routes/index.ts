@@ -5,7 +5,7 @@ import { Settings } from './Settings';
 import { FileManager } from './FileManager';
 import { AIMonitoring } from './AIMonitoring';
 import { createRoutes } from '../router';
-
+import { Profile } from './Profile/Profile';
 // Define routes
 export const routes = createRoutes({
   '/': Home,
@@ -14,4 +14,5 @@ export const routes = createRoutes({
   '/file-manager': FileManager,
   '/ai-monitoring': AIMonitoring,
   '/not-found': NotFound,
+  '/profile': Profile,
 });

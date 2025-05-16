@@ -1,12 +1,22 @@
 // Export API name for this actions module
 export const name = 'fileManagementActions';
 
-// Export all action handlers
-export { listFiles } from './listFiles';
-export { getFile } from './getFile';
-export { writeFile } from './writeFile';
-export { deleteFile } from './deleteFile';
-export { createFolder } from './createFolder';
-export { deleteFolder } from './deleteFolder';
+// Internal imports for server use only
+import { listFiles } from './listFiles';
+import { getFile } from './getFile';
+import { writeFile } from './writeFile';
+import { deleteFile } from './deleteFile';
+import { createFolder } from './createFolder';
+import { deleteFolder } from './deleteFolder';
+
+// Export for internal server-side use only
+export {
+    listFiles,
+    getFile,
+    writeFile,
+    deleteFile,
+    createFolder,
+    deleteFolder
+};
 
 

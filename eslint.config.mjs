@@ -49,14 +49,29 @@ const eslintConfig = [
       "restrict-api-routes/no-direct-api-routes": "error",
       "react-hooks/exhaustive-deps": "off",
       // Add API Guidelines rules
-      "api-guidelines/no-server-import-in-client": "warn",
-      "api-guidelines/api-names-from-index": "warn",
+      "api-guidelines/no-server-import-in-client": ["warn", {
+        // Import type imports from server are fine
+        allowedPaths: [
+          '@/server/cache/types'
+        ]
+      }],
+      "api-guidelines/api-names-from-index": ["warn", {
+        // Type imports from server are fine
+        allowedPaths: [
+          '@/server/cache/types'
+        ]
+      }],
       "api-guidelines/server-reexport-from-index": "warn",
       "api-guidelines/client-returns-cache-result": "warn",
       "api-guidelines/no-duplicate-api-types": "warn",
       "api-guidelines/no-direct-api-client-call": "warn",
       "api-guidelines/export-name-from-index": "warn",
-      "api-guidelines/no-export-process-from-index": "warn"
+      "api-guidelines/no-export-process-from-index": ["warn", {
+        // For actions we need to export these functions
+        ignorePatterns: [
+          '**/actions/index.ts'
+        ]
+      }]
     }
   }
 ];

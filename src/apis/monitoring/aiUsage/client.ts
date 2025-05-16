@@ -15,28 +15,28 @@ import type { CacheResult } from '@/server/cache/types';
 
 /**
  * Get all AI usage records
+ * @param params Request params
+ * @returns Promise with all AI usage data
  */
-export const getAllUsage = async (
-  request: GetAllAIUsageRequest = {}
+export const getAllAIUsage = (
+  params: GetAllAIUsageRequest
 ): Promise<CacheResult<GetAllAIUsageResponse>> => {
-  return apiClient.call<CacheResult<GetAllAIUsageResponse>, GetAllAIUsageRequest>(
+  return apiClient.call<GetAllAIUsageResponse, GetAllAIUsageRequest>(
     all,
-    request,
-    {
-      disableCache: true
-    }
+    params
   );
 };
 
 /**
  * Get AI usage summary
+ * @param params Request params
+ * @returns Promise with AI usage summary data
  */
-export const getSummary = async (): Promise<CacheResult<GetAIUsageSummaryResponse>> => {
-  return apiClient.call<CacheResult<GetAIUsageSummaryResponse>, GetAIUsageSummaryRequest>(
+export const getAIUsageSummary = (
+  params: GetAIUsageSummaryRequest
+): Promise<CacheResult<GetAIUsageSummaryResponse>> => {
+  return apiClient.call<GetAIUsageSummaryResponse, GetAIUsageSummaryRequest>(
     summary,
-    {},
-    {
-      disableCache: true
-    }
+    params
   );
 };

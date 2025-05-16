@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAllUsage } from '@/apis/monitoring/aiUsage/client';
+import { getAllAIUsage } from '@/apis/monitoring/aiUsage/client';
 import { AIUsageRecord, AIUsageSummary } from '@/server/ai-usage-monitoring/types';
 
 export const useAIMonitoring = () => {
@@ -44,20 +44,20 @@ export const useAIMonitoring = () => {
   // Data processing functions
   const getDailyUsageData = useCallback(() => {
     const dailyData: Record<string, number> = {};
-    
+
     usageData.forEach(record => {
       const date = new Date(record.timestamp).toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric'
       });
-      
+
       if (!dailyData[date]) {
         dailyData[date] = 0;
       }
-      
+
       dailyData[date] += record.cost;
     });
-    
+
     return Object.entries(dailyData)
       .map(([date, cost]) => ({ date, cost }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -65,15 +65,15 @@ export const useAIMonitoring = () => {
 
   const getModelDistributionData = useCallback(() => {
     const modelData: Record<string, number> = {};
-    
+
     usageData.forEach(record => {
       if (!modelData[record.modelId]) {
         modelData[record.modelId] = 0;
       }
-      
+
       modelData[record.modelId] += record.cost;
     });
-    
+
     return Object.entries(modelData)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
@@ -83,10 +83,10 @@ export const useAIMonitoring = () => {
   const fetchUsageData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await getAllUsage();
-      
+      const response = await getAllAIUsage({});
+
       if (response.data) {
         setUsageData(response.data.records || []);
         if (response.data.summary) {

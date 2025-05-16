@@ -4,13 +4,10 @@ import { name } from "./index";
 import type { CacheResult } from "@/server/cache/types";
 
 /**
- * Client-side function to call the chat API
+ * Send a chat message request to the API
  * @param request The chat request parameters
  * @returns Promise with the chat response
  */
-export const chatWithAI = async (request: ChatRequest): Promise<CacheResult<ChatResponse>> => {
-  return apiClient.call<CacheResult<ChatResponse>, ChatRequest>(
-    name,
-    request
-  )
+export const sendChatMessage = (request: ChatRequest): Promise<CacheResult<ChatResponse>> => {
+  return apiClient.call<ChatResponse, ChatRequest>(name, request);
 };

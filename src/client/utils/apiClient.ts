@@ -1,3 +1,4 @@
+import { CacheResult } from "@/server/cache/types";
 
 export const apiClient = {
   /**
@@ -11,28 +12,31 @@ export const apiClient = {
     name: string,
     params?: Params,
     options?: ApiOptions
-  ): Promise<ResponseType> => {
+  ): Promise<CacheResult<ResponseType>> => {
     const response = await fetch('/api/process', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
-        name, 
+      body: JSON.stringify({
+        name,
         params,
-        options
-       }),
+        options: {
+          ...options,
+          disableCache: location.href.includes('localhost') ? true : options?.disableCache
+        }
+      }),
     });
 
     if (!response.ok) {
       throw new Error(`Failed to call ${name}: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    if (data.error) {
-      throw new Error(`Failed to call ${name}: ${data.error}`);
+    const result = await response.json();
+    if (result.error) {
+      throw new Error(`Failed to call ${name}: ${result.error}`);
     }
-    return data;
+    return result;
   }
 };
 

@@ -15,7 +15,16 @@ module.exports = {
             recommended: true,
         },
         fixable: 'code',
-        schema: [],
+        schema: [{
+            type: 'object',
+            properties: {
+                ignorePatterns: {
+                    type: 'array',
+                    items: { type: 'string' }
+                }
+            },
+            additionalProperties: false
+        }],
         messages: {
             noProcessExport: 'Do not export process functions from index.ts',
             noClientFunctionsExport: 'Do not export client functions from index.ts',
@@ -24,9 +33,32 @@ module.exports = {
 
     create(context) {
         const filename = context.getFilename();
+        const options = context.options[0] || {};
+        const ignorePatterns = options.ignorePatterns || [];
+
+        // Skip if filename matches any of the ignore patterns
+        if (ignorePatterns.some(pattern => {
+            // Convert glob pattern to regex
+            const regexPattern = pattern
+                .replace(/\./g, '\\.')
+                .replace(/\*/g, '.*')
+                .replace(/\?/g, '.');
+            const regex = new RegExp(regexPattern);
+            return regex.test(filename);
+        })) {
+            return {};
+        }
 
         // Only check index.ts files in API directories
         if (!filename.includes('/apis/') || !filename.endsWith('index.ts')) {
+            return {};
+        }
+
+        //check that the index.ts file is a direct child of the api directory - meaning its path id exactly /apis/api-name/index.ts
+        const pathRegex = /\/apis\/[^\/]+\/index\.ts$/;
+        // Skip index.ts files that are in deeper subdirectories (like /apis/api-name/actions/index.ts)
+        const deeperPathRegex = /\/apis\/[^\/]+\/[^\/]+\/.*index\.ts$/;
+        if (!pathRegex.test(filename) || deeperPathRegex.test(filename)) {
             return {};
         }
 

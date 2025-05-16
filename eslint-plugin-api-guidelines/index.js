@@ -22,7 +22,13 @@ module.exports = {
         recommended: {
             plugins: ['api-guidelines'],
             rules: {
-                'api-guidelines/no-server-import-in-client': 'error',
+                'api-guidelines/no-server-import-in-client': ['error', {
+                    // Allow imports from server utils and types
+                    allowedPaths: [
+                        '@/server/cache/types',
+                        '@/server/types'
+                    ]
+                }],
                 'api-guidelines/api-names-from-index': 'error',
                 'api-guidelines/server-reexport-from-index': 'error',
                 'api-guidelines/client-returns-cache-result': 'error',

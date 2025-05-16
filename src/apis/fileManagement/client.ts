@@ -12,16 +12,17 @@ import apiClient from "@/client/utils/apiClient";
 import { name } from "./index";
 import type { CacheResult } from "@/server/cache/types";
 
-// Main function to manage files
-export const manageFiles = async (
+/**
+ * Manage files via the API
+ * @param request The file management request
+ * @returns Promise with the file management response
+ */
+export const manageFiles = (
   request: FileManagementRequest
 ): Promise<CacheResult<FileManagementResponse>> => {
-  return apiClient.call<CacheResult<FileManagementResponse>, FileManagementRequest>(
+  return apiClient.call<FileManagementResponse, FileManagementRequest>(
     name,
-    request,
-    {
-      disableCache: true
-    }
+    request
   );
 };
 

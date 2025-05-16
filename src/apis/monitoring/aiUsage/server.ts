@@ -15,7 +15,7 @@ import {
 // Import all API names from index.ts
 import { name, all, summary } from './index';
 
-// Re-export all API names from index.ts
+// Re-export all API names
 export { name, all, summary };
 
 /**

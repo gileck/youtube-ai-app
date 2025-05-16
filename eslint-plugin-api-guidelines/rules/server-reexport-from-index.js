@@ -1,8 +1,8 @@
 /**
- * Rule to ensure server.ts re-exports API names from index.ts
+ * Rule to ensure server.ts re-exports all API names from index.ts
  * 
- * This rule enforces that server.ts files re-export API names from their
- * corresponding index.ts file, not defining them directly.
+ * This rule enforces that server.ts files re-export the API names from their
+ * corresponding index.ts file, ensuring proper APIs architecture.
  */
 
 module.exports = {
@@ -14,95 +14,111 @@ module.exports = {
             recommended: true,
         },
         fixable: 'code',
-        schema: [],
+        schema: [{
+            type: 'object',
+            properties: {
+                ignorePatterns: {
+                    type: 'array',
+                    items: { type: 'string' }
+                }
+            },
+            additionalProperties: false
+        }],
         messages: {
-            namesMustBeReexported: 'API names must be re-exported from index.ts, not defined directly in server.ts',
-            suggestReexport: 'Re-export API names from index.ts instead',
+            reExportFromIndex: 'Re-export API names from index.ts instead',
+            noDirectApiName: 'API names must be re-exported from index.ts, not defined directly in server.ts',
         },
     },
 
     create(context) {
-        // Track found exports and imports
-        const exports = new Set();
-        const importsFromIndex = new Set();
-        let hasNameReexport = false;
+        const filename = context.getFilename();
+        const options = context.options[0] || {};
+        const ignorePatterns = options.ignorePatterns || [];
+
+        // Skip if filename matches any of the ignore patterns
+        if (ignorePatterns.some(pattern => {
+            // Convert glob pattern to regex
+            const regexPattern = pattern
+                .replace(/\./g, '\\.')
+                .replace(/\*/g, '.*')
+                .replace(/\?/g, '.');
+            const regex = new RegExp(regexPattern);
+            return regex.test(filename);
+        })) {
+            return {};
+        }
+
+        // Only check server.ts files in API directories
+        if (!filename.includes('/apis/') || !filename.endsWith('server.ts')) {
+            return {};
+        }
+
+        // Track imports from index.ts
+        let hasIndexImport = false;
+        let importedApiNames = [];
+        let hasNameExport = false;
 
         return {
-            // Track imports from index.ts
+            // Check for imports
             ImportDeclaration(node) {
                 const importSource = node.source.value;
 
+                // Check if importing from index.ts
                 if (importSource === './index' || importSource.endsWith('/index')) {
+                    hasIndexImport = true;
+
+                    // Track imported API names
                     node.specifiers.forEach(specifier => {
                         if (specifier.type === 'ImportSpecifier') {
-                            importsFromIndex.add(specifier.imported.name);
+                            importedApiNames.push(specifier.imported.name);
                         }
                     });
                 }
             },
 
-            // Track exports
+            // Check for exports
             ExportNamedDeclaration(node) {
-                const filename = context.getFilename();
+                // Check for exports of 'name' - a common API identifier
+                if (node.specifiers) {
+                    node.specifiers.forEach(specifier => {
+                        if (specifier.exported.name === 'name') {
+                            hasNameExport = true;
 
-                // Only apply to server.ts files
-                if (!filename.endsWith('server.ts') && !filename.endsWith('server.tsx')) {
-                    return;
-                }
-
-                // Check for re-exports from index
-                if (node.source && (node.source.value === './index' || node.source.value.endsWith('/index'))) {
-                    hasNameReexport = node.specifiers.some(s => s.exported.name === 'name');
-                    return;
-                }
-
-                // Check for direct exports
-                if (node.declaration) {
-                    if (node.declaration.type === 'VariableDeclaration') {
-                        node.declaration.declarations.forEach(decl => {
-                            if (decl.id.name === 'name' || decl.id.name.endsWith('ApiName')) {
-                                exports.add(decl.id.name);
+                            // Check if it's not re-exported from index.ts
+                            if (!importedApiNames.includes('name')) {
                                 context.report({
                                     node,
-                                    messageId: 'namesMustBeReexported',
+                                    messageId: 'noDirectApiName',
                                     fix: (fixer) => {
-                                        // Remove this export and suggest adding re-export
-                                        return fixer.remove(node);
+                                        // Add import from index.ts if not already present
+                                        if (!hasIndexImport) {
+                                            return fixer.insertTextBefore(
+                                                context.getSourceCode().ast.body[0],
+                                                "import { name } from './index';\n\n"
+                                            );
+                                        }
+                                        return null;
                                     }
                                 });
                             }
-                        });
-                    }
-                } else if (node.specifiers) {
-                    // Handle named exports
-                    node.specifiers.forEach(specifier => {
-                        if (specifier.exported.name === 'name' || specifier.exported.name.endsWith('ApiName')) {
-                            // Not re-exported from index
-                            if (!hasNameReexport && !node.source) {
-                                context.report({
-                                    node,
-                                    messageId: 'namesMustBeReexported'
-                                });
-                            }
                         }
                     });
                 }
             },
 
-            // At the end of the file, check if we have seen name export and import
+            // Check at the end of the program
             'Program:exit'() {
-                const filename = context.getFilename();
-
-                // Only apply to server.ts files
-                if (!filename.endsWith('server.ts') && !filename.endsWith('server.tsx')) {
-                    return;
-                }
-
-                // If we haven't seen a re-export of 'name', suggest it
-                if (!hasNameReexport && !exports.has('name')) {
+                // If no import from index.ts, report an error
+                if (!hasIndexImport) {
                     context.report({
                         loc: { line: 1, column: 0 },
-                        messageId: 'suggestReexport'
+                        messageId: 'reExportFromIndex',
+                        fix: (fixer) => {
+                            return fixer.insertTextBefore(
+                                context.getSourceCode().ast.body[0],
+                                "import { name } from './index';\n\n"
+                            );
+                        }
                     });
                 }
             }
