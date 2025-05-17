@@ -41,6 +41,21 @@ This project uses a simplified client-server communication pattern with a single
    - **MUST use the shared types for both input parameters and return values**
    - **NEVER import any client-side code or client.ts functions here**
    - **IMPORTANT: MUST re-export the API name from index.ts**
+   Example: 
+   ```export * from './index'```
+   - **Handling Authenticated User ID (`userId`)**:
+     - The `userId` of the authenticated user is automatically made available to your `process` function via the second `context` parameter (typically of type `ApiHandlerContext`).
+     - This `userId` is populated by the central `processApiCall.ts` middleware after successfully validating the user's JWT token from the request cookies.
+     - To access the user's ID within your handler, use `context.userId`.
+     - If your API endpoint needs to perform operations specific to the logged-in user (e.g., fetching their data, saving data against their profile), use `context.userId` to identify them.
+     - If the API endpoint does not require user-specific information, you can simply ignore the `context.userId`. It will be `undefined` if no user is authenticated or if the token is invalid/missing.
+     - **Example**: `const currentUserId = context.userId; if (currentUserId) { // proceed with user-specific logic }`
+   - **For domains with multiple API handlers**:
+     - Create a `handlers` subdirectory within the domain folder (e.g., `/src/apis/<domain>/handlers/`).
+     - Implement each API handler in its own file within this `handlers` directory (e.g., `getUser.ts`, `updateUser.ts`).
+     - The main `server.ts` file should then import and re-export these handlers.
+     - Any shared constants, utility functions, or types specific to the api handlers of that domain can also be placed inside the handlers folder in a seperate file and be imported and used in the handlers files.
+     - This pattern is recommended when a domain has more than one API handler to keep the `server.ts` file concise and focused on re-exporting handlers and shared utilities. If a domain has only one handler, it's acceptable to keep its implementation directly in `server.ts`.
 
 3. **Create Client Function** ([/src/apis/<domain>/client.ts](mdc:src/apis))
    - Implement a function that calls the API using the apiClient.call method

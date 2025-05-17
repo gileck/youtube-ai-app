@@ -14,10 +14,9 @@ import {
   Chip
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
-import { getAllModels } from '../../../server/ai/models';
-import { AIModelDefinition } from '../../../server/ai/models';
+import { AIModelDefinition, getAllModels } from '@/server/ai/models';
 import { sendChatMessage } from '@/apis/chat/client';
-import { useSettings } from '../../context/SettingsContext';
+import { useSettings } from '@/client/settings/SettingsContext';
 
 // Message type definition
 interface Message {

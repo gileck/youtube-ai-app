@@ -14,7 +14,8 @@ function runChecks() {
     }
 
     isRunning = true;
-    console.log('\n🔍 Running checks...');
+    console.clear();
+
 
     const process = spawn('yarn', ['checks'], {
         stdio: 'inherit',

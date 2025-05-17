@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '@/client/context/AuthContext';
-import LoginForm from './LoginForm';
+import { LoginForm } from './LoginForm';
 import { Box, CircularProgress, Modal, Paper, Typography } from '@mui/material';
 
 interface AuthWrapperProps {

@@ -8,74 +8,32 @@ import {
     Alert,
     Link
 } from '@mui/material';
+import { useLoginFormValidator } from './useLoginFormValidator';
+import { LoginFormState } from './types';
 
-const LoginForm: React.FC = () => {
+export const LoginForm = () => {
     const { login, register, isLoading, error } = useAuth();
     const [isRegistering, setIsRegistering] = useState(false);
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<LoginFormState>({
         username: '',
         email: '',
         password: '',
         confirmPassword: ''
     });
-    const [formErrors, setFormErrors] = useState({
-        username: '',
-        email: '',
-        password: '',
-        confirmPassword: ''
-    });
+
+    const { formErrors, validateForm, clearFieldError, resetFormErrors } = useLoginFormValidator(isRegistering, formData);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-
-        // Clear field error when user types
-        if (formErrors[name as keyof typeof formErrors]) {
-            setFormErrors(prev => ({ ...prev, [name]: '' }));
-        }
-    };
-
-    const validateForm = (): boolean => {
-        let isValid = true;
-        const errors = { ...formErrors };
-
-        if (isRegistering && !formData.username.trim()) {
-            errors.username = 'Username is required';
-            isValid = false;
-        }
-
-        if (!formData.email.trim()) {
-            errors.email = 'Email is required';
-            isValid = false;
-        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            errors.email = 'Email is invalid';
-            isValid = false;
-        }
-
-        if (!formData.password) {
-            errors.password = 'Password is required';
-            isValid = false;
-        } else if (formData.password.length < 6) {
-            errors.password = 'Password must be at least 6 characters';
-            isValid = false;
-        }
-
-        if (isRegistering && formData.password !== formData.confirmPassword) {
-            errors.confirmPassword = 'Passwords do not match';
-            isValid = false;
-        }
-
-        setFormErrors(errors);
-        return isValid;
+        clearFieldError(name as keyof LoginFormState); // Ensure name is a key of LoginFormErrors, which matches LoginFormState keys
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-
         if (!validateForm()) {
             return;
         }
-
         if (isRegistering) {
             await register({
                 username: formData.username,
@@ -92,12 +50,7 @@ const LoginForm: React.FC = () => {
 
     const toggleMode = () => {
         setIsRegistering(!isRegistering);
-        setFormErrors({
-            username: '',
-            email: '',
-            password: '',
-            confirmPassword: ''
-        });
+        resetFormErrors();
     };
 
     return (
@@ -205,6 +158,4 @@ const LoginForm: React.FC = () => {
             </Box>
         </Box>
     );
-};
-
-export default LoginForm; 
+}; 

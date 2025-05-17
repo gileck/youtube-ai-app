@@ -78,6 +78,17 @@ module.exports = {
 
             // Check for exports
             ExportNamedDeclaration(node) {
+                // If this export is a re-export from index.ts, set hasIndexImport
+                if (node.source && (node.source.value === './index' || node.source.value.endsWith('/index'))) {
+                    hasIndexImport = true;
+                    // Collect re-exported names if necessary for other checks (similar to ImportDeclaration)
+                    node.specifiers.forEach(specifier => {
+                        if (specifier.type === 'ExportSpecifier') {
+                            importedApiNames.push(specifier.local.name); // local.name is the original name in index.ts
+                        }
+                    });
+                }
+
                 // Check for exports of 'name' - a common API identifier
                 if (node.specifiers) {
                     node.specifiers.forEach(specifier => {
@@ -103,6 +114,13 @@ module.exports = {
                             }
                         }
                     });
+                }
+            },
+
+            // Check for wildcard re-exports from index.ts
+            ExportAllDeclaration(node) {
+                if (node.source && (node.source.value === './index' || node.source.value.endsWith('/index'))) {
+                    hasIndexImport = true;
                 }
             },
 

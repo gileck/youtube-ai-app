@@ -1,7 +1,7 @@
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
-import Layout from '../client/components/Layout';
+import { Layout } from '../client/components/Layout';
 import dynamic from 'next/dynamic';
-import { SettingsProvider } from '../client/context/SettingsContext';
+import { SettingsProvider } from '../client/settings/SettingsContext';
 import { routes } from '../client/routes';
 import { AuthProvider } from '../client/context/AuthContext';
 import AuthWrapper from '../client/components/auth/AuthWrapper';

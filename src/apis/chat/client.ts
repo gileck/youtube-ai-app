@@ -3,6 +3,8 @@ import apiClient from "@/client/utils/apiClient";
 import { name } from "./index";
 import type { CacheResult } from "@/server/cache/types";
 
+export { type ChatRequest, type ChatResponse };
+
 /**
  * Send a chat message request to the API
  * @param request The chat request parameters
