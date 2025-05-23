@@ -53,9 +53,9 @@ export const Video = () => {
   const [questionResult, setQuestionResult] = useState<any>(null);
   const [questionLoading, setQuestionLoading] = useState(false);
 
-  // Remove main player references and keep only mini player related states
-  const [miniPlayerVisible, setMiniPlayerVisible] = useState(false);
-  const [miniPlayerClosed, setMiniPlayerClosed] = useState(false);
+  // Mini player states - initialize the player on page load for better performance
+  const [miniPlayerVisible, setMiniPlayerVisible] = useState(true); // Always mounted for lazy init
+  const [miniPlayerClosed, setMiniPlayerClosed] = useState(true); // Start hidden but initialized
   const [currentTime, setCurrentTime] = useState(0);
   const miniPlayerRef = useRef<React.ElementRef<typeof MiniPlayer>>(null);
 
@@ -67,8 +67,7 @@ export const Video = () => {
   useEffect(() => {
     // Subscribe to timestamp jump events from other components
     const unsubscribe = mediaEvents.onTimestampJump((timestamp) => {
-      // Only control the mini player - show it if it was previously closed
-      setMiniPlayerVisible(true);
+      // Show the mini player and seek to timestamp
       setMiniPlayerClosed(false);
       setCurrentTime(timestamp);
     });
@@ -126,7 +125,7 @@ export const Video = () => {
   const playerApi = useMemo(() => ({
     play: () => {
       if (miniPlayerRef.current) {
-        setMiniPlayerVisible(true);
+        setMiniPlayerClosed(false); // Show the mini player
         miniPlayerRef.current.play();
       }
     },
@@ -136,15 +135,18 @@ export const Video = () => {
       }
     },
     seekTo: (time: number) => {
+      // Update the currentTime state so the mini player initializes at the correct time
+      setCurrentTime(time);
       if (miniPlayerRef.current) {
-        setMiniPlayerVisible(true);
+        setMiniPlayerClosed(false); // Show the mini player (but don't auto-play)
         miniPlayerRef.current.seekTo(time);
+        // Note: seekTo will handle pausing if not already playing
       }
     },
     getCurrentTime: () => {
       return miniPlayerRef.current ? miniPlayerRef.current.getCurrentTime() : currentTime;
     }
-  }), [currentTime]);
+  }), [currentTime, miniPlayerVisible, miniPlayerClosed]);
 
   const handleChannelClick = () => {
     if (video?.channelId) {
@@ -190,7 +192,7 @@ export const Video = () => {
   };
 
   const handleCloseMiniPlayer = () => {
-    setMiniPlayerClosed(true);
+    setMiniPlayerClosed(true); // Hide but keep initialized
   };
 
   const handleQuestionClick = async (question: string) => {
@@ -277,13 +279,15 @@ export const Video = () => {
         </Box>
       </Paper>
 
-      {/* Mini Player */}
+      {/* Mini Player - Always mounted for lazy initialization but hidden when closed */}
       <MiniPlayer
         ref={miniPlayerRef}
         videoId={videoId}
-        visible={miniPlayerVisible && !miniPlayerClosed}
+        visible={miniPlayerVisible}
+        hidden={miniPlayerClosed}
         onClose={handleCloseMiniPlayer}
         currentTime={currentTime}
+        initialMinimized={true}
       />
 
       {/* Metadata Row */}

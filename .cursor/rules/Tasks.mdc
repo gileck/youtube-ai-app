@@ -1,0 +1,8 @@
+---
+description: When implementing tasks from the tasks folder 
+globs: 
+alwaysApply: false
+---
+1. When finishgin a task - mark it as done.
+2. When finishing all tasks - run `yarn checks` to make sure it pass and fix all the issues 
+3. Suggest as a response other tasks that might be relevant to the task you implemented (do not add them to the file until I approve them).

@@ -1,0 +1,175 @@
+---
+description: When writing React components and Designing UI in the app
+globs: 
+alwaysApply: false
+---
+# Material UI Design Guidelines
+
+## Color Palette
+- Primary: `#007AFF` (iOS blue)
+- Secondary: `#FF2D55` (iOS pink)
+- Success: `#34C759` (iOS green)
+- Error: `#FF3B30` (iOS red)
+- Warning: `#FF9500` (iOS orange)
+- Info: `#5AC8FA` (iOS light blue)
+- Background: `#F2F2F7` (iOS light gray)
+- Surface: `#FFFFFF` (White)
+
+## Typography
+- Font Family: SF Pro or Roboto (as fallback)
+- Headers:
+  - H1: 34px, Semi-Bold
+  - H2: 28px, Semi-Bold
+  - H3: 22px, Semi-Bold
+- Body Text:
+  - Body1: 17px, Regular
+  - Body2: 15px, Regular
+- Button Text: 17px, Medium
+- Caption: 13px, Regular
+
+## Component Styling
+
+### Buttons
+- Use rounded corners (borderRadius: 8px)
+- Apply subtle elevation effects (iOS-like)
+- Use filled buttons for primary actions
+- Use outlined buttons for secondary actions
+- Text buttons for tertiary actions
+
+```jsx
+<Button 
+  variant="contained" 
+  sx={{ 
+    bgcolor: '#007AFF', 
+    borderRadius: '8px',
+    textTransform: 'none',
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    '&:hover': {
+      bgcolor: '#0062CC'
+    }
+  }}
+>
+  Primary Action
+</Button>
+```
+
+### Cards
+- Use subtle shadows
+- Rounded corners (borderRadius: 12px)
+- White background
+- Minimal borders
+
+```jsx
+<Card 
+  sx={{ 
+    borderRadius: '12px', 
+    boxShadow: '0px 2px 12px rgba(0, 0, 0, 0.08)',
+    overflow: 'hidden'
+  }}
+>
+  <CardContent>
+    {/* Card content */}
+  </CardContent>
+</Card>
+```
+
+### Text Fields
+- Use outlined variant with rounded corners
+- Implement clear button when needed
+- Use iOS-like focus effects
+
+```jsx
+<TextField
+  variant="outlined"
+  fullWidth
+  label="Email"
+  sx={{
+    '& .MuiOutlinedInput-root': {
+      borderRadius: '8px',
+      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+        borderColor: '#007AFF',
+        borderWidth: '2px'
+      }
+    }
+  }}
+/>
+```
+
+### Navigation
+- Use bottom tabs for main navigation (iOS-style)
+- Implement swipe gestures where appropriate
+- Use back buttons in headers
+
+```jsx
+<BottomNavigation
+  value={value}
+  onChange={handleChange}
+  sx={{
+    height: '64px',
+    boxShadow: '0px -2px 10px rgba(0, 0, 0, 0.05)'
+  }}
+>
+  <BottomNavigationAction label="Home" icon={<HomeIcon />} />
+  <BottomNavigationAction label="Search" icon={<SearchIcon />} />
+  <BottomNavigationAction label="Profile" icon={<PersonIcon />} />
+</BottomNavigation>
+```
+
+### Lists
+- Use dividers between items
+- Implement right chevron for navigation items
+- Add subtle hover effects
+
+```jsx
+<List>
+  <ListItem 
+    button 
+    sx={{ 
+      py: 1.5,
+      '&:hover': {
+        bgcolor: 'rgba(0, 0, 0, 0.03)'
+      }
+    }}
+  >
+    <ListItemText primary="Settings" />
+    <ChevronRightIcon color="action" />
+  </ListItem>
+  <Divider />
+  {/* More items */}
+</List>
+```
+
+## Animation Guidelines
+- Use natural, spring-based animations
+- Keep transitions under 300ms
+- Implement gesture-based interactions
+- Use MUI's Transition components with custom easings
+
+```jsx
+<Slide 
+  direction="up" 
+  in={open} 
+  timeout={{
+    enter: 300,
+    exit: 200
+  }}
+  easing={{
+    enter: 'cubic-bezier(0.3, 0.0, 0.3, 1.0)',
+    exit: 'cubic-bezier(0.6, 0.0, 0.7, 1.0)'
+  }}
+>
+  <div>{/* Content */}</div>
+</Slide>
+```
+
+## Layout
+- Use consistent spacing (8px increments)
+- Implement safe area insets for mobile
+- Keep padding consistent (16px standard)
+- Use flexible layouts that adapt to different screen sizes
+
+## Accessibility
+- Maintain color contrast ratios (WCAG AA standards)
+- Use descriptive labels and aria attributes
+- Ensure touch targets are at least 44x44px
+- Support dark mode with appropriate color adjustments

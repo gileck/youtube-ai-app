@@ -13,7 +13,11 @@ import {
   Dialog,
   DialogContent,
   CircularProgress,
-  DialogActions
+  DialogActions,
+  IconButton,
+  Fade,
+  styled,
+  keyframes
 } from '@mui/material';
 import { ExpandMore, ExpandLess, QuestionAnswer, ZoomIn as ZoomInIcon } from '@mui/icons-material';
 import { PodcastQAResult } from '.';
@@ -24,6 +28,35 @@ import { SingleAnswerResult } from '@/services/AiActions/questionDeepDiveAction'
 import { ActionRendererProps } from '@/services/AiActions/types';
 import { ChaptersAiActionResult, SegmentResult } from '@/services/AiActions/types';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
+
+// Circular loading animation
+const circularRotate = keyframes`
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+`;
+
+// Custom LoadingButton with circular background color animation
+const LoadingButton = styled(Button, {
+  shouldForwardProp: (prop) => prop !== 'loading',
+})<{ loading?: boolean }>(({ theme, loading }) => ({
+  position: 'relative',
+  overflow: 'hidden',
+  transition: 'all 0.2s ease',
+  ...(loading && {
+    // background: `conic-gradient(
+    //   ${theme.palette.primary.main}20 0deg,
+    //   ${theme.palette.primary.main}60 90deg,
+    //   ${theme.palette.primary.main}20 180deg,
+    //   ${theme.palette.primary.light}10 270deg,
+    //   ${theme.palette.primary.main}20 360deg
+    // )`,
+    // border: `1px solid ${theme.palette.primary.main}40`,
+  })
+}));
 
 /**
  * Renders podcast Q&A pairs grouped by chapter (with title/time), then by subject (with emoji), then Q&A pairs.
@@ -216,10 +249,11 @@ export const PodcastQARenderer: React.FC<ActionRendererProps<ChaptersAiActionRes
                                   {qa.answer}
                                 </ReactMarkdown>
                                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                                  <Button
+                                  <LoadingButton
                                     variant="outlined"
                                     size="small"
-                                    startIcon={<PlayCircleOutlineIcon />}
+                                    startIcon={loadingSegments[itemId] ? <CircularProgress size={16} /> : <PlayCircleOutlineIcon />}
+                                    loading={loadingSegments[itemId]}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       if (!loadingSegments[itemId] && !segmentResults[itemId]) {
@@ -245,10 +279,12 @@ export const PodcastQARenderer: React.FC<ActionRendererProps<ChaptersAiActionRes
                                   >
                                     {segmentResults[itemId] ? (
                                       formatTime(segmentResults[itemId]!.conversation_start_seconds - 5)
+                                    ) : loadingSegments[itemId] ? (
+                                      'Loading...'
                                     ) : (
                                       'Play'
                                     )}
-                                  </Button>
+                                  </LoadingButton>
                                   <Button
                                     variant="outlined"
                                     size="small"

@@ -46,6 +46,8 @@ interface MiniPlayerProps {
     visible: boolean;
     onClose: () => void;
     currentTime?: number;
+    initialMinimized?: boolean;
+    hidden?: boolean;
 }
 
 interface MiniPlayerApiRef {
@@ -60,14 +62,16 @@ export const MiniPlayer = forwardRef<MiniPlayerApiRef, MiniPlayerProps>(({
     videoId,
     visible,
     onClose,
-    currentTime = 0
+    currentTime = 0,
+    initialMinimized = false,
+    hidden = false
 }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const playerInstanceRef = useRef<YTPlayer | null>(null);
     const playerContainerRef = useRef<HTMLDivElement>(null);
     const [ytApiLoaded, setYtApiLoaded] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [minimized, setMinimized] = useState(false);
+    const [minimized, setMinimized] = useState(initialMinimized);
     const [playerTime, setPlayerTime] = useState(currentTime);
     const playerReadyRef = useRef(false);
     const timeUpdateIntervalRef = useRef<number | null>(null);
@@ -257,8 +261,10 @@ export const MiniPlayer = forwardRef<MiniPlayerApiRef, MiniPlayerProps>(({
                         console.log('Mini player ready');
                         playerInstanceRef.current = event.target;
                         playerReadyRef.current = true;
-                        event.target.seekTo(currentTime, true);
+                        // Don't seek or play on initialization - just set the time state
                         setPlayerTime(currentTime);
+                        // Ensure player starts paused
+                        event.target.pauseVideo();
                     },
                     onStateChange: (event: { data: number }) => {
                         const isPlayerPlaying = event.data === window.YT.PlayerState.PLAYING;
@@ -300,7 +306,7 @@ export const MiniPlayer = forwardRef<MiniPlayerApiRef, MiniPlayerProps>(({
                 playerReadyRef.current = false;
             }
         };
-    }, [videoId, visible, ytApiLoaded, initializePlayer]);
+    }, [videoId, visible, ytApiLoaded]);
 
     // Update current time when prop changes
     useEffect(() => {
@@ -316,27 +322,16 @@ export const MiniPlayer = forwardRef<MiniPlayerApiRef, MiniPlayerProps>(({
 
     useImperativeHandle(ref, () => ({
         play: () => {
-            // If minimized, we need to un-minimize first to show the player
-            if (minimized) {
-                setMinimized(false);
-                // We'll need to wait for the player to initialize
-                setTimeout(() => {
-                    if (playerInstanceRef.current && playerReadyRef.current) {
-                        try {
-                            playerInstanceRef.current.playVideo();
-                            setIsPlaying(true);
-                        } catch (error) {
-                            console.error("Error playing video:", error);
-                        }
-                    }
-                }, 500); // Give some time for the player to initialize
-            } else if (playerInstanceRef.current && playerReadyRef.current) {
+            // With lazy initialization, player should already be ready
+            if (playerInstanceRef.current && playerReadyRef.current) {
                 try {
                     playerInstanceRef.current.playVideo();
                     setIsPlaying(true);
                 } catch (error) {
                     console.error("Error playing video:", error);
                 }
+            } else {
+                console.warn("Player not ready for playing, but should be with lazy initialization");
             }
         },
         pause: () => {
@@ -360,81 +355,20 @@ export const MiniPlayer = forwardRef<MiniPlayerApiRef, MiniPlayerProps>(({
             return playerTime;
         },
         seekTo: (time: number) => {
-            // Force mini player to be visible when seeking
-            if (!visible || !playerContainerRef.current) {
-                console.log("Making mini player visible for seeking to:", time);
-                // Tell parent component to show mini player again
-                if (onClose) {
-                    // This is a hack - we call onClose with a special parameter that parent can check
-                    // The parent component should check for this and NOT close the player
-                    // @ts-expect-error - we're adding a parameter that's not in the function signature
-                    onClose({ reopenForSeek: true, time });
+            // With lazy initialization, player should already be ready
+            // Just seek directly without re-initializing
+            if (playerInstanceRef.current && playerReadyRef.current) {
+                try {
+                    playerInstanceRef.current.seekTo(time, true);
+                    setPlayerTime(time);
+                    // Let the calling code handle play/pause explicitly
+                } catch (error) {
+                    console.error("Error seeking to time:", error, "Player instance:", playerInstanceRef.current);
                 }
-                return;
-            }
-
-            // If minimized, we need to un-minimize first to show the player
-            if (minimized) {
-                setMinimized(false);
-                // Wait for the player to initialize before seeking
-                setTimeout(() => {
-                    if (playerInstanceRef.current && playerReadyRef.current) {
-                        try {
-                            playerInstanceRef.current.seekTo(time, true);
-                            setPlayerTime(time);
-                        } catch (error) {
-                            console.error("Error seeking to time:", error);
-                        }
-                    } else {
-                        console.warn("Player still not ready after un-minimizing, retrying...");
-                        // Try to reinitialize and seek again
-                        initializePlayer();
-                        setTimeout(() => {
-                            if (playerInstanceRef.current && playerReadyRef.current) {
-                                try {
-                                    playerInstanceRef.current.seekTo(time, true);
-                                    setPlayerTime(time);
-                                } catch (error) {
-                                    console.error("Error seeking on retry:", error);
-                                }
-                            }
-                        }, 1000);
-                    }
-                }, 500); // Give some time for the player to initialize
-                return;
-            }
-
-            if (!playerInstanceRef.current || !playerReadyRef.current) {
-                console.warn("Cannot seek: player not ready, attempting to initialize");
-                // Try to initialize the player first
-                initializePlayer();
-
-                // Then try seeking after a delay
-                setTimeout(() => {
-                    if (playerInstanceRef.current && playerReadyRef.current) {
-                        try {
-                            playerInstanceRef.current.seekTo(time, true);
-                            setPlayerTime(time);
-                        } catch (error) {
-                            console.error("Error seeking after initialization:", error);
-                        }
-                    } else {
-                        console.error("Failed to initialize player for seeking");
-                    }
-                }, 1000);
-                return;
-            }
-
-            if (typeof playerInstanceRef.current.seekTo !== 'function') {
-                console.error("seekTo is not a function on player instance:", playerInstanceRef.current);
-                return;
-            }
-
-            try {
-                playerInstanceRef.current.seekTo(time, true);
+            } else {
+                console.warn("Player not ready for seeking, but should be with lazy initialization");
+                // Store the time to seek to when player becomes ready
                 setPlayerTime(time);
-            } catch (error) {
-                console.error("Error seeking to time:", error, "Player instance:", playerInstanceRef.current);
             }
         },
         isPlaying: () => {
@@ -479,7 +413,7 @@ export const MiniPlayer = forwardRef<MiniPlayerApiRef, MiniPlayerProps>(({
                 zIndex: 1000,
                 overflow: 'hidden',
                 borderRadius: 2,
-                display: 'flex',
+                display: hidden ? 'none' : 'flex',
                 flexDirection: 'column',
                 transition: 'all 0.3s ease'
             }}

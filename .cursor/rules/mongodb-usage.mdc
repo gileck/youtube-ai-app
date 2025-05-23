@@ -1,0 +1,126 @@
+---
+description: when accessing the databse or a collection in the db
+globs: 
+alwaysApply: false
+---
+# MongoDB Usage Guidelines
+
+## Core Principles
+
+1. **Encapsulation**: All MongoDB operations MUST be encapsulated within the `src/server/database` folder.
+2. **No Direct MongoDB Imports**: Direct imports of `mongodb` libraries outside the database layer are STRICTLY PROHIBITED.
+3. **Clean API Layer**: The API layer (`src/apis`) must ONLY interact with the database through functions exported from the database layer.
+4. **Type Safety**: All database operations should use TypeScript interfaces for type safety.
+5. **Mandatory Internal Collection Pattern**: All collection-specific modules (e.g., `src/server/database/collections/<collection-name>/<collection-name>.ts`) MUST use an internal, private `async` getter function (e.g., `get<CollectionName>Collection`) that retrieves the `Db` instance via the shared `getDb()` utility and then returns the `Collection` object. This internal getter MUST be called by every exported database operation function within that module. No other patterns for initializing, storing, or accessing the `Collection` object within these modules are permitted.
+
+## Required Structure
+
+Database operations must follow this folder structure:
+```
+/src
+  /server
+    /database
+      /index.ts             - Exports shared utilities (like getDb) and collection modules
+      /collections
+        /<collection-name>  - One folder per MongoDB collection
+          /types.ts         - TypeScript interfaces for the collection
+          /<collection-name>.ts - Database operations for the collection (MUST follow the Mandatory Internal Collection Pattern)
+```
+
+## Mandatory Internal Collection Pattern & Usage Examples
+
+The following pattern for defining collection types and implementing collection operations is **MANDATORY**.
+
+### 1. Defining collection types:
+```typescript
+// src/server/database/collections/exercises/types.ts
+import { ObjectId } from 'mongodb';
+
+export interface Exercise {
+  _id: ObjectId;
+  userId: ObjectId;
+  // Other properties...
+}
+
+export type ExerciseCreate = Omit<Exercise, '_id'>;
+export type ExerciseUpdate = Partial<Omit<Exercise, '_id' | 'userId'>>;
+```
+
+### 2. Implementing collection operations (Mandatory Pattern):
+This pattern **MUST** be followed within each collection module (e.g., `src/server/database/collections/exercises/exercises.ts`).
+
+```typescript
+// src/server/database/collections/exercises/exercises.ts
+import { Collection, ObjectId } from 'mongodb';
+import { getDb } from '@/server/database'; // Or appropriate relative path like '../../index'
+import { Exercise } from './types';
+import { EXERCISE_COLLECTION_NAME } from './types'; // Assuming collection name is also in types or defined here
+
+// Private async function to get collection reference - THIS IS MANDATORY
+const getExercisesCollection = async (): Promise<Collection<Exercise>> => {
+  const db = await getDb(); // MUST use the shared getDb() utility
+  return db.collection<Exercise>(EXERCISE_COLLECTION_NAME);
+};
+
+// Public functions for database operations
+export const findExercisesForPlan = async (
+  planId: ObjectId | string,
+  userId: ObjectId | string
+): Promise<Exercise[]> => {
+  const collection = await getExercisesCollection(); // Each public DB op MUST call the internal getter
+  // Implementation...
+  // Example: return collection.find({ planId, userId }).toArray();
+  return []; // Placeholder
+};
+
+export const addExercise = async (
+  exerciseData: ExerciseCreate
+): Promise<ObjectId> => {
+  const collection = await getExercisesCollection(); // Each public DB op MUST call the internal getter
+  const result = await collection.insertOne(exerciseData as Exercise); // Ensure proper type casting if needed
+  return result.insertedId;
+};
+
+// ... other CRUD operations following the same pattern ...
+```
+
+### 3. Using in API layer:
+```typescript
+// src/apis/exercises/server.ts
+import { ObjectId } from 'mongodb'; // Only import types, not functionality
+import { exercises } from '@/server/database'; // Imports the module from collections/index.ts
+import { GetExercisesRequest, GetExercisesResponse } from './types';
+// ... ApiHandlerContext import ...
+
+export const getExercisesForPlanHandler = async (
+  payload: GetExercisesRequest,
+  context: ApiHandlerContext // Assuming context provides userId
+): Promise<GetExercisesResponse> => {
+  try {
+    // Use the database layer to get exercises
+    const exercisesList = await exercises.findExercisesForPlan(payload.planId, context.userId);
+    return { exercises: exercisesList };
+  } catch (error) {
+    // ... error handling ...
+    return { error: "Failed to fetch exercises" };
+  }
+};
+```
+
+## What NOT To Do
+
+### ❌ NEVER import MongoDB client/db functionality directly in API layer:
+```typescript
+// WRONG - This is forbidden in the API layer
+import { MongoClient, Collection } from 'mongodb';
+// ...
+```
+
+### ❌ NEVER access collections directly from API layer using `getDb()`:
+```typescript
+// WRONG - This is forbidden in the API layer
+import { getDb } from '@/server/database';
+// ...
+```
+### NEVER implement a different pattern other than the one stated in this document.
+
