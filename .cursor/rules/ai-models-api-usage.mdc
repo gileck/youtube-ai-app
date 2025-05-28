@@ -1,0 +1,112 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# AI Models API Usage Guidelines
+
+## Core Principles
+
+**NEVER use AI models directly** - Always use the adapter pattern defined in [src/server/ai/baseModelAdapter.ts](mdc:src/server/ai/baseModelAdapter.ts).
+
+### ✅ Required Practices
+
+1. **Server-Side Only**: All AI calls must be server-side only - never call AI APIs from client-side code
+2. **Use Adapter Pattern**: Always use `AIModelAdapter` from [src/server/ai/baseModelAdapter.ts](mdc:src/server/ai/baseModelAdapter.ts)
+3. **Include Caching**: All AI calls must include caching to reduce costs and improve performance
+4. **Proper Error Handling**: Always return 200 status codes with error fields, never throw uncaught errors
+5. **Cost Tracking**: Always track and return the cost of each AI call
+
+### Directory Structure
+
+AI-related code should follow this structure:
+```
+src/server/ai/
+  adapters/
+    openai.ts       - OpenAI-specific implementation
+    anthropic.ts    - Anthropic-specific implementation
+    index.ts        - Exports all adapters
+  baseModelAdapter.ts - Base adapter class/interface
+  types.ts          - Shared types for AI models
+```
+
+### Correct Usage Pattern
+
+```typescript
+import { AIModelAdapter } from "../ai/baseModelAdapter";
+
+async function generateAIResponse(userInput: string) {
+  try {
+    // ✅ Initialize with model ID
+    const adapter = new AIModelAdapter("model-id-here");
+    
+    // ✅ Use adapter methods
+    const response = await adapter.processPromptToText(prompt);
+    
+    // ✅ Return result with cost tracking
+    return {
+      result: response.result,
+      cost: response.cost
+    };
+  } catch (error) {
+    // ✅ Proper error handling
+    console.error("Error with AI adapter:", error);
+    return {
+      result: "",
+      cost: { totalCost: 0 },
+      error: `AI service error: ${error instanceof Error ? error.message : String(error)}`
+    };
+  }
+}
+```
+
+### ❌ What NOT to Do
+
+1. **Never call AI APIs directly**:
+   ```typescript
+   // ❌ DON'T DO THIS
+   import OpenAI from 'openai';
+   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+   const response = await openai.chat.completions.create({...});
+   ```
+
+2. **Never call AI APIs from client-side**:
+   ```typescript
+   // ❌ DON'T DO THIS in React components
+   const callAI = async () => {
+     const response = await fetch('https://api.openai.com/v1/chat/completions', {
+       headers: { 'Authorization': `Bearer ${apiKey}` }, // NEVER expose API keys
+     });
+   };
+   ```
+
+3. **Never hardcode model IDs**:
+   ```typescript
+   // ❌ DON'T DO THIS
+   const adapter = new AIModelAdapter("gpt-4"); // Use env vars instead
+   ```
+
+4. **Never ignore costs**:
+   ```typescript
+   // ❌ DON'T DO THIS
+   const response = await adapter.processPromptToText(prompt);
+   return { result: response.result }; // Missing cost tracking
+   ```
+
+### Security Requirements
+
+- Never expose API keys in client-side code
+- Sanitize all user input before sending to AI models
+- Implement content filtering for both input and output
+- Consider implementing rate limiting and budget controls
+- Always use environment variables for API keys and model configurations
+
+### Implementation Checklist
+
+- [ ] Using `AIModelAdapter` from [src/server/ai/baseModelAdapter.ts](mdc:src/server/ai/baseModelAdapter.ts)
+- [ ] Proper try/catch error handling
+- [ ] Cost tracking included in response
+- [ ] Server-side implementation only
+- [ ] Environment variables for configuration
+- [ ] Input sanitization implemented
+- [ ] Caching enabled for identical prompts
