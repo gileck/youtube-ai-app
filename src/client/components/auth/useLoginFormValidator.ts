@@ -18,24 +18,20 @@ export const useLoginFormValidator = (isRegistering: boolean, formData: LoginFor
             confirmPassword: ''
         };
 
-        if (isRegistering && !formData.username.trim()) {
+        if (!formData.username.trim()) {
             errors.username = 'Username is required';
             isValid = false;
         }
 
-        if (!formData.email.trim()) {
-            errors.email = 'Email is required';
-            isValid = false;
-        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            errors.email = 'Email is invalid';
-            isValid = false;
+        if (isRegistering && formData.email.trim()) {
+            if (!/\S+@\S+\.\S+/.test(formData.email)) {
+                errors.email = 'Email is invalid';
+                isValid = false;
+            }
         }
 
         if (!formData.password) {
             errors.password = 'Password is required';
-            isValid = false;
-        } else if (formData.password.length < 6) {
-            errors.password = 'Password must be at least 6 characters';
             isValid = false;
         }
 

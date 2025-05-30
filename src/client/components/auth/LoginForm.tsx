@@ -26,7 +26,7 @@ export const LoginForm = () => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        clearFieldError(name as keyof LoginFormState); // Ensure name is a key of LoginFormErrors, which matches LoginFormState keys
+        clearFieldError(name as keyof LoginFormState);
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -35,14 +35,15 @@ export const LoginForm = () => {
             return;
         }
         if (isRegistering) {
-            await register({
+            const registerData = {
                 username: formData.username,
-                email: formData.email,
-                password: formData.password
-            });
+                password: formData.password,
+                ...(formData.email.trim() && { email: formData.email })
+            };
+            await register(registerData);
         } else {
             await login({
-                email: formData.email,
+                username: formData.username,
                 password: formData.password
             });
         }
@@ -61,37 +62,36 @@ export const LoginForm = () => {
                 </Alert>
             )}
 
-            {isRegistering && (
-                <TextField
-                    margin="normal"
-                    required
-                    fullWidth
-                    id="username"
-                    label="Username"
-                    name="username"
-                    autoComplete="username"
-                    value={formData.username}
-                    onChange={handleChange}
-                    error={!!formErrors.username}
-                    helperText={formErrors.username}
-                    disabled={isLoading}
-                />
-            )}
-
             <TextField
                 margin="normal"
                 required
                 fullWidth
-                id="email"
-                label="Email Address"
-                name="email"
-                autoComplete="email"
-                value={formData.email}
+                id="username"
+                label="Username"
+                name="username"
+                autoComplete="username"
+                value={formData.username}
                 onChange={handleChange}
-                error={!!formErrors.email}
-                helperText={formErrors.email}
+                error={!!formErrors.username}
+                helperText={formErrors.username}
                 disabled={isLoading}
             />
+
+            {isRegistering && (
+                <TextField
+                    margin="normal"
+                    fullWidth
+                    id="email"
+                    label="Email Address (Optional)"
+                    name="email"
+                    autoComplete="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    error={!!formErrors.email}
+                    helperText={formErrors.email}
+                    disabled={isLoading}
+                />
+            )}
 
             <TextField
                 margin="normal"

@@ -1,24 +1,19 @@
 import React from 'react';
 import { useAuth } from '@/client/context/AuthContext';
 import { LoginForm } from './LoginForm';
-import { Box, CircularProgress, Modal, Paper, Typography } from '@mui/material';
+import { Box, LinearProgress, Modal, Paper, Typography } from '@mui/material';
 
 interface AuthWrapperProps {
     children: React.ReactNode;
 }
 
 const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
-    const { isAuthenticated, isLoading } = useAuth();
+    const { isAuthenticated, isInitialLoading } = useAuth();
 
-    if (isLoading) {
+    if (isInitialLoading) {
         return (
-            <Box sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '100vh'
-            }}>
-                <CircularProgress />
+            <Box sx={{ width: '100%' }}>
+                <LinearProgress />
             </Box>
         );
     }

@@ -1,9 +1,17 @@
-import { clearAllCache } from '@/server/cache';
+import { createCache } from '@/common/cache';
 import { ClearCacheResponse } from './types';
 import { name } from './index';
+import { fsCacheProvider, s3CacheProvider } from '@/server/cache/providers';
+import { appConfig } from '@/app.config';
 
 // Re-export API names
 export { name };
+
+// Helper to get cache instance
+const getServerCache = () => {
+  const provider = appConfig.cacheType === 's3' ? s3CacheProvider : fsCacheProvider;
+  return createCache(provider);
+};
 
 /**
  * Clear all cache entries
@@ -11,7 +19,8 @@ export { name };
  */
 export const process = async (): Promise<ClearCacheResponse> => {
   try {
-    const success = await clearAllCache();
+    const serverCache = getServerCache();
+    const success = await serverCache.clearAllCache();
 
     return {
       success,

@@ -1,11 +1,11 @@
 export interface LoginRequest {
-    email: string;
+    username: string;
     password: string;
 }
 
 export interface RegisterRequest {
     username: string;
-    email: string;
+    email?: string;
     password: string;
 }
 
@@ -37,7 +37,7 @@ export interface UpdateProfileResponse {
 export interface UserResponse {
     id: string;
     username: string;
-    email: string;
+    email?: string;
     createdAt: string;
     profilePicture?: string;
 }

@@ -11,6 +11,7 @@ interface AuthContextType {
     user: UserResponse | null;
     isAuthenticated: boolean;
     isLoading: boolean;
+    isInitialLoading: boolean;
     error: string | null;
     login: (credentials: LoginRequest) => Promise<boolean>;
     register: (data: RegisterRequest) => Promise<boolean>;
@@ -25,14 +26,20 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<UserResponse | null>(null);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
     // Check auth status when the app loads
     const checkAuthStatus = useCallback(async () => {
-        setIsLoading(true);
+        setIsInitialLoading(true);
         try {
-            const response = await apiFetchCurrentUser();
+            const response = await apiFetchCurrentUser({
+                //10 seconds
+                ttl: 10 * 1000,
+                // 1 day
+                maxStaleAge: 24 * 60 * 60 * 1000,
+            });
             if (response.data?.user) {
                 setUser(response.data.user);
             } else {
@@ -42,7 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.error("Auth check failed:", err);
             setUser(null);
         } finally {
-            setIsLoading(false);
+            setIsInitialLoading(false);
         }
     }, []);
 
@@ -117,6 +124,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         user,
         isAuthenticated: !!user,
         isLoading,
+        isInitialLoading,
         error,
         login,
         register,

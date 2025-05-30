@@ -1,7 +1,7 @@
 import { ChatRequest, ChatResponse } from "./types";
 import apiClient from "@/client/utils/apiClient";
 import { name } from "./index";
-import type { CacheResult } from "@/server/cache/types";
+import type { CacheResult } from "@/common/cache/types";
 
 export { type ChatRequest, type ChatResponse };
 

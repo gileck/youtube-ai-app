@@ -26,7 +26,7 @@ interface Message {
   cost?: number;
   timestamp: Date;
   isFromCache?: boolean;
-  cacheProvider?: 'fs' | 's3';
+  cacheProvider?: 'fs' | 's3' | 'localStorage';
 }
 
 export function AIChat() {
@@ -190,7 +190,7 @@ export function AIChat() {
                         <Chip
                           size="small"
                           label={`From cache (${message.cacheProvider || 'unknown'})`}
-                          color={message.cacheProvider === 's3' ? 'primary' : 'default'}
+                          color={message.cacheProvider === 's3' ? 'primary' : message.cacheProvider === 'localStorage' ? 'secondary' : 'default'}
                           variant="outlined"
                           sx={{ mr: 1 }}
                         />

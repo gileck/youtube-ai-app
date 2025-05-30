@@ -2,10 +2,16 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { parse, serialize } from 'cookie';
 import jwt from 'jsonwebtoken';
 import { apiHandlers } from "./apis";
-import { withCache } from "@/server/cache";
-import { CacheResult } from "@/server/cache/types";
+import { createCache } from "@/common/cache";
+import { CacheResult } from "@/common/cache/types";
 import type { ApiOptions } from "@/client/utils/apiClient";
 import { AuthTokenPayload } from "./auth/types";
+import { fsCacheProvider, s3CacheProvider } from "@/server/cache/providers";
+
+// Create server-side cache instance
+const cacheProvider = process.env.CACHE_PROVIDER as 'fs' | 's3' || 'fs';
+const provider = cacheProvider === 's3' ? s3CacheProvider : fsCacheProvider;
+const serverCache = createCache(provider);
 
 // Constants
 const JWT_SECRET = process.env.JWT_SECRET
@@ -76,7 +82,7 @@ export const processApiCall = async (
     }
   };
 
-  const result = await withCache(
+  const result = await serverCache.withCache(
     processWithContext,
     {
       key: name,

@@ -271,7 +271,9 @@ export const Profile = () => {
                             ) : (
                                 <>
                                     <Typography variant="h5">{username}</Typography>
-                                    <Typography variant="body2" color="text.secondary">{displayUser.email}</Typography>
+                                    {displayUser.email && (
+                                        <Typography variant="body2" color="text.secondary">{displayUser.email}</Typography>
+                                    )}
                                 </>
                             )}
 
@@ -317,7 +319,7 @@ export const Profile = () => {
                                 <ListItem>
                                     <ListItemText
                                         primary="Email"
-                                        secondary={displayUser.email}
+                                        secondary={displayUser.email || 'Not provided'}
                                     />
                                 </ListItem>
                                 <Divider component="li" />

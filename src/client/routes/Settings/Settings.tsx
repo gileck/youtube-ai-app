@@ -17,6 +17,7 @@ import {
 import { getAllModels } from '@/server/ai';
 import { AIModelDefinition } from '@/server/ai/models';
 import { useSettings } from '@/client/settings/SettingsContext';
+import { localStorageCacheProvider } from '@/client/utils/localStorageCache';
 
 interface SnackbarState {
   open: boolean;
@@ -41,12 +42,30 @@ export function Settings() {
   const handleClearCache = async () => {
     setIsClearing(true);
     try {
+      // Clear server-side cache
       const result = await clearCache();
+
+      // Clear localStorage cache
+      const localStorageCleared = await localStorageCacheProvider.clearAllCache();
+
+      // Determine overall success and message
+      const overallSuccess = result.success && localStorageCleared;
+      let message = result.message;
+
+      if (result.success && localStorageCleared) {
+        message = 'All caches cleared successfully';
+      } else if (result.success && !localStorageCleared) {
+        message = 'Server cache cleared, but failed to clear local cache';
+      } else if (!result.success && localStorageCleared) {
+        message = 'Local cache cleared, but failed to clear server cache';
+      } else {
+        message = 'Failed to clear both server and local caches';
+      }
 
       setSnackbar({
         open: true,
-        message: result.message,
-        severity: result.success ? 'success' : 'error'
+        message,
+        severity: overallSuccess ? 'success' : 'warning'
       });
     } catch (error) {
       setSnackbar({
@@ -74,7 +93,7 @@ export function Settings() {
           Cache Management
         </Typography>
         <Typography variant="body2" color="text.secondary" paragraph>
-          Clear the application cache to fetch fresh data from AI models and external services.
+          Clear the application cache to fetch fresh data from AI models and external services. This will clear both server-side and local storage caches.
         </Typography>
         <Button
           variant="contained"

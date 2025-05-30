@@ -63,10 +63,12 @@ export const insertUser = async (user: UserCreate): Promise<User> => {
     throw new Error(`User with username "${user.username}" already exists`);
   }
 
-  // Check if email already exists
-  const existingEmail = await collection.findOne({ email: user.email });
-  if (existingEmail) {
-    throw new Error(`User with email "${user.email}" already exists`);
+  // Check if email already exists (only if email is provided)
+  if (user.email) {
+    const existingEmail = await collection.findOne({ email: user.email });
+    if (existingEmail) {
+      throw new Error(`User with email "${user.email}" already exists`);
+    }
   }
 
   const result = await collection.insertOne(user as User);

@@ -16,20 +16,20 @@ export const loginUser = async (
 ): Promise<LoginResponse> => {
     try {
         // Validate input
-        if (!request.email || !request.password) {
-            return { error: "Email and password are required" };
+        if (!request.username || !request.password) {
+            return { error: "Username and password are required" };
         }
 
-        // Find user by email
-        const user = await users.findUserByEmail(request.email);
+        // Find user by username
+        const user = await users.findUserByUsername(request.username);
         if (!user) {
-            return { error: "Invalid email or password" };
+            return { error: "Invalid username or password" };
         }
 
         // Verify password
         const isPasswordValid = await bcrypt.compare(request.password, user.password_hash);
         if (!isPasswordValid) {
-            return { error: "Invalid email or password" };
+            return { error: "Invalid username or password" };
         }
 
         // Generate JWT token
