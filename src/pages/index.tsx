@@ -1,7 +1,7 @@
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
-import Layout from '../client/components/Layout';
+import { Layout } from '../client/components/Layout';
 import dynamic from 'next/dynamic';
-import { SettingsProvider } from '../client/context/SettingsContext';
+import { SettingsProvider } from '../client/settings/SettingsContext';
 import { routes } from '../client/routes';
 
 const RouterProvider = dynamic(() => import('../client/router/index').then(module => module.RouterProvider), { ssr: false });

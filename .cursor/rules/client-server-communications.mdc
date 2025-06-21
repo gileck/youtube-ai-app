@@ -20,8 +20,7 @@ This project uses a simplified client-server communication pattern with a single
       /server.ts       - Server-side logic coordinator (imports handlers, re-exports from index.ts)
       /client.ts       - Client-side function(s) to call the API
       /index.ts        - Exports API name constants and the domain 'name' constant
-      /handlers/       - Subdirectory for individual API operation handlers (if implementing more than 1 api handler)
-        operation1Handler.ts
+      /handlers/       - Subdirectory for individual API operation handlers (if implementing more than 1 api hanler.ts
         operation2Handler.ts
   /pages
     /api
@@ -30,7 +29,7 @@ This project uses a simplified client-server communication pattern with a single
 
 ## Creating a New API Endpoint
 
-**Important Note on Multiple Handlers per Domain:** If your API domain (e.g., 'activity', 'userProfile') requires multiple distinct operations (e.g., create, get, update, delete), it is **strongly recommended** to organize these into separate handler files within a `handlers/` subdirectory. See details below in point 3.
+**Important Note on Multiple Handlers per Domain:** If your API domain (e.g., 'activity', 'userProfile') requires multiple distinct operations (e.g., create, get, update, delete), it is **strongly recommended** to organize thesewithin a `handlers/` subdirectory. See details below in point 3.
 
 1.  **Define ALL Domain Types in `types.ts`** (`/src/apis/<domain>/types.ts`)
     *   Define request payload interfaces (e.g., `CreateActivityPayload`).
@@ -55,16 +54,15 @@ This project uses a simplified client-server communication pattern with a single
                 *   Handle business logic, validation, database interactions, and error cases for that specific operation.
                 *   Use `context.userId` (after converting to `ObjectId` if needed) for user-specific operations and authorization. Throw an error if `context.userId` is required but missing.
                 *   Convert database entities to client-facing DTOs before returning (e.g., `ObjectId` to string, `Date` to ISO string).
-    *   **B. Implement Server Coordinator in `server.ts`** (`/src/apis/<domain>/server.ts`)
+    *   **B. Implement Server Coordinator in `server.ts`** (`)
         *   **MUST re-export all exports from `index.ts`**: Add `export * from './index';` at the top.
         *   Import all API name constants from `./index.ts`.
         *   Import the `process` function from each handler file in the `handlers/` subdirectory (e.g., `import { process as createActivityTypeProcess } from './handlers/createActivityTypeHandler';`).
-        *   Construct and export a consolidated handlers object (e.g., `activityApiHandlers`). This object maps the API name constants to an object containing the imported `process` function:
+        *   Construct and export a consolidated handlers object (e.g., `activityApiHandlers`). This object maps the API name constants to an object containing thn:
             ```typescript
             // Example for 'activity' domain in src/apis/activity/server.ts
             export const activityApiHandlers = {
-              [API_CREATE_ACTIVITY_TYPE]: { process: createActivityTypeProcess },
-              [API_GET_ACTIVITY_TYPES]: { process: getActivityTypesProcess },
+              [API_CREATE_ACTIVITY_TYPE]: { process: createActivityTyp        [API_GET_ACTIVITY_TYPES]: { process: getActivityTypesProcess },
               // ... other mappings for other activity operations
             };
             ```
