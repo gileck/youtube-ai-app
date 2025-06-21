@@ -1,8 +1,7 @@
 import { YouTubeVideoSearchResult } from '@/shared/types/youtube';
 import { YouTubeSearchFilters } from '../../../apis/youtube/types';
+import { loadUserSettings } from '../../utils/userSettingsApi';
 
-// Local storage key for filters
-export const FILTERS_STORAGE_KEY = 'youtube_feed_filters';
 // Number of videos per page
 export const VIDEOS_PER_PAGE = 20;
 
@@ -90,25 +89,21 @@ export const sortVideos = (videos: YouTubeVideoSearchResult[], sortBy: string = 
   });
 };
 
-// Get default filters
-export const getDefaultFilters = (): YouTubeSearchFilters => {
-  // Try to get filters from local storage
-  const savedFilters = localStorage.getItem(FILTERS_STORAGE_KEY);
-  if (savedFilters) {
-    try {
-      const parsedFilters = JSON.parse(savedFilters);
-      return parsedFilters;
-    } catch (e) {
-      console.error('Failed to parse saved filters', e);
-    }
+// Get default filters - now async to load from database
+export const getDefaultFilters = async (): Promise<YouTubeSearchFilters> => {
+  try {
+    const userSettings = await loadUserSettings();
+    return userSettings.videoFeedFilters;
+  } catch (error) {
+    console.error('Failed to load video feed filters from database:', error);
+    // Fallback to default filters
+    return {
+      upload_date: 'all',
+      type: 'video',
+      duration: 'long',
+      sort_by: 'upload_date',
+      features: [],
+      minViews: 0
+    };
   }
-  // Default filters
-  return {
-    upload_date: 'all',
-    type: 'video',
-    duration: 'all',
-    sort_by: 'upload_date', // Default to most recent videos
-    features: [],
-    minViews: 0
-  };
 }; 

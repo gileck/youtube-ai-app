@@ -2,6 +2,8 @@
  * Server-side implementation for YouTube API
  */
 
+export * from './index';
+
 import { YouTubeChannelResponse } from '@/shared/types/youtube';
 import { createYouTubeAdapter } from '../../server/youtube/youtubeAdapter';
 import {

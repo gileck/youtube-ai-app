@@ -14,7 +14,7 @@ import {
   getBookmarkedChannels,
   BookmarkedVideo,
   BookmarkedChannel
-} from '../../utils/bookmarksStorage';
+} from '../../utils/bookmarksApi';
 import { VideoCard } from '../../components/youtube/search/VideoCard';
 import { ChannelCard } from '../../components/youtube/search/ChannelCard';
 import { formatDuration, formatViewCount } from '../../components/youtube/search/utils';
@@ -27,31 +27,29 @@ export const Bookmarks = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isExtraSmall = useMediaQuery('(max-width:400px)');
 
-  // Load bookmarks from local storage
+  // Load bookmarks from API
   useEffect(() => {
-    const loadBookmarks = () => {
-      setBookmarkedVideos(getBookmarkedVideos());
-      setBookmarkedChannels(getBookmarkedChannels());
+    const loadBookmarks = async () => {
+      try {
+        const [videos, channels] = await Promise.all([
+          getBookmarkedVideos(),
+          getBookmarkedChannels()
+        ]);
+        setBookmarkedVideos(videos);
+        setBookmarkedChannels(channels);
+      } catch (error) {
+        console.error('Error loading bookmarks:', error);
+      }
     };
 
     // Load initial bookmarks
     loadBookmarks();
-
-    // Set up event listener for storage changes
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key?.includes('youtube-ai-app-bookmarked')) {
-        loadBookmarks();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
     
     // Custom event for bookmark changes within the same window
     const handleCustomBookmarkChange = () => loadBookmarks();
     window.addEventListener('bookmarkChange', handleCustomBookmarkChange);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('bookmarkChange', handleCustomBookmarkChange);
     };
   }, []);

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getYouTubeChannelVideos, searchYouTubeVideos } from '../../../../apis/youtube/client';
 import { YouTubeSearchFilters, YouTubeSearchRequest } from '../../../../apis/youtube/types';
-import { BookmarkedChannel, getBookmarkedChannels } from '../../../utils/bookmarksStorage';
+import { BookmarkedChannel, getBookmarkedChannels } from '../../../utils/bookmarksApi';
 import { YouTubeVideoSearchResult } from '@/shared/types/youtube';
 import { sortVideos, VIDEOS_PER_PAGE } from '../utils';
 
@@ -18,7 +18,7 @@ export interface VideoLoaderResult {
   setCurrentPage: (page: number) => void;
 }
 
-export const useVideoLoader = (filters: YouTubeSearchFilters): VideoLoaderResult => {
+export const useVideoLoader = (filters: YouTubeSearchFilters, isFiltersLoading: boolean): VideoLoaderResult => {
   const [isLoading, setIsLoading] = useState(false);
   const [feedVideos, setFeedVideos] = useState<YouTubeVideoSearchResult[]>([]);
   const [displayedVideos, setDisplayedVideos] = useState<YouTubeVideoSearchResult[]>([]);
@@ -30,8 +30,16 @@ export const useVideoLoader = (filters: YouTubeSearchFilters): VideoLoaderResult
 
   // Load bookmarked channels
   useEffect(() => {
-    const channels = getBookmarkedChannels();
-    setBookmarkedChannels(channels);
+    const loadChannels = async () => {
+      try {
+        const channels = await getBookmarkedChannels();
+        setBookmarkedChannels(channels);
+      } catch (error) {
+        console.error('Error loading bookmarked channels:', error);
+      }
+    };
+    
+    loadChannels();
   }, []);
 
   // Update displayed videos when page changes
@@ -191,19 +199,23 @@ export const useVideoLoader = (filters: YouTubeSearchFilters): VideoLoaderResult
     }
   }, [bookmarkedChannels, filters]);
 
-  // Load videos when bookmarked channels change
+  // Load videos when bookmarked channels change and filters are loaded
   useEffect(() => {
-    if (bookmarkedChannels.length > 0) {
+    if (bookmarkedChannels.length > 0 && !isFiltersLoading) {
       loadChannelVideos();
     }
-  }, [bookmarkedChannels, loadChannelVideos]);
+  }, [bookmarkedChannels, loadChannelVideos, isFiltersLoading]);
 
   // Set up event listener for bookmark changes
   useEffect(() => {
     // Custom event for bookmark changes within the same window
-    const handleBookmarkChange = () => {
-      const channels = getBookmarkedChannels();
-      setBookmarkedChannels(channels);
+    const handleBookmarkChange = async () => {
+      try {
+        const channels = await getBookmarkedChannels();
+        setBookmarkedChannels(channels);
+      } catch (error) {
+        console.error('Error loading bookmarked channels:', error);
+      }
     };
     
     window.addEventListener('bookmarkChange', handleBookmarkChange);

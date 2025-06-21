@@ -10,6 +10,7 @@ export const VideoFeed = () => {
   const {
     filters,
     isFilterDialogOpen,
+    isFiltersLoading,
     openFilterDialog,
     closeFilterDialog,
     applyFilters
@@ -27,7 +28,7 @@ export const VideoFeed = () => {
     totalPages,
     loadChannelVideos,
     setCurrentPage
-  } = useVideoLoader(filters);
+  } = useVideoLoader(filters, isFiltersLoading);
 
   // Handle page change
   const handlePageChange = useCallback((_event: React.ChangeEvent<unknown>, page: number) => {
@@ -36,8 +37,8 @@ export const VideoFeed = () => {
   }, [setCurrentPage]);
   
   // Handle applying filters
-  const handleApplyFilters = useCallback((newFilters: typeof filters) => {
-    applyFilters(newFilters);
+  const handleApplyFilters = useCallback(async (newFilters: typeof filters) => {
+    await applyFilters(newFilters);
     loadChannelVideos();
     closeFilterDialog();
   }, [applyFilters, loadChannelVideos, closeFilterDialog]);
@@ -58,7 +59,7 @@ export const VideoFeed = () => {
       
       {/* Main Content */}
       <Container maxWidth="lg" sx={{ flex: 1, p: 0 }}>
-        {isLoading ? (
+        {isFiltersLoading || isLoading ? (
           <VideoFeedLoading 
             progress={loadingProgress}
             channelCount={bookmarkedChannels.length}

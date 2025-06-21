@@ -22,7 +22,7 @@ import { VideoTranscript } from './VideoTranscript';
 import { aiActions, VideoActionType } from '@/services/AiActions';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
-import { bookmarkVideo, removeBookmarkedVideo, isVideoBookmarked } from '../../utils/bookmarksStorage';
+import { bookmarkVideo, removeBookmarkedVideo, isVideoBookmarked } from '../../utils/bookmarksApi';
 import { mediaEvents } from '../../utils/mediaEvents';
 import { MiniPlayer } from './MiniPlayer';
 import { processAIVideoAction } from '../../../apis/aiVideoActions/client';
@@ -116,9 +116,18 @@ export const Video = () => {
   }, [videoId]);
 
   useEffect(() => {
-    if (videoId) {
-      setIsBookmarked(isVideoBookmarked(videoId));
-    }
+    const checkBookmarkStatus = async () => {
+      if (videoId) {
+        try {
+          const bookmarked = await isVideoBookmarked(videoId);
+          setIsBookmarked(bookmarked);
+        } catch (error) {
+          console.error('Error checking bookmark status:', error);
+        }
+      }
+    };
+    
+    checkBookmarkStatus();
   }, [videoId]);
 
   // PlayerAPI now only controls the mini player
@@ -164,26 +173,30 @@ export const Video = () => {
     return description.slice(0, 300) + '...';
   };
 
-  const handleBookmarkToggle = () => {
+  const handleBookmarkToggle = async () => {
     if (!video || !videoId) return;
 
-    if (isBookmarked) {
-      removeBookmarkedVideo(videoId);
-    } else {
-      bookmarkVideo({
-        id: videoId,
-        title: video.title,
-        thumbnailUrl: video.thumbnailUrl || '',
-        channelId: video.channelId,
-        channelTitle: video.channelTitle,
-        publishedAt: video.publishedAt,
-        viewCount: video.viewCount,
-        duration: video.duration,
-        description: video.description || ''
-      });
-    }
+    try {
+      if (isBookmarked) {
+        await removeBookmarkedVideo(videoId);
+      } else {
+        await bookmarkVideo({
+          id: videoId,
+          title: video.title,
+          thumbnailUrl: video.thumbnailUrl || '',
+          channelId: video.channelId,
+          channelTitle: video.channelTitle,
+          publishedAt: video.publishedAt,
+          viewCount: video.viewCount,
+          duration: video.duration,
+          description: video.description || ''
+        });
+      }
 
-    setIsBookmarked(!isBookmarked);
+      setIsBookmarked(!isBookmarked);
+    } catch (error) {
+      console.error('Error updating bookmark:', error);
+    }
   };
 
   const handleTabChange = (newTab: TabType) => {

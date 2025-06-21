@@ -4,10 +4,7 @@ import {
   CardMedia,
   IconButton,
   Tooltip,
-  useMediaQuery,
-  useTheme,
-  Avatar,
-  Grid
+  Avatar
 } from '@mui/material';
 import { YouTubeVideoSearchResult } from '@/shared/types/youtube';
 import { useRouter } from '../../../router';
@@ -18,7 +15,7 @@ import {
   bookmarkVideo, 
   removeBookmarkedVideo, 
   isVideoBookmarked 
-} from '../../../utils/bookmarksStorage';
+} from '../../../utils/bookmarksApi';
 
 interface VideoCardProps {
   video: YouTubeVideoSearchResult;
@@ -29,12 +26,18 @@ interface VideoCardProps {
 export const VideoCard = ({ video, formatDuration, formatViewCount }: VideoCardProps) => {
   const { navigate } = useRouter();
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const theme = useTheme();
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
-  const isExtraSmall = useMediaQuery('(max-width:400px)');
   
   useEffect(() => {
-    setIsBookmarked(isVideoBookmarked(video.id));
+    const checkBookmarkStatus = async () => {
+      try {
+        const bookmarked = await isVideoBookmarked(video.id);
+        setIsBookmarked(bookmarked);
+      } catch (error) {
+        console.error('Error checking bookmark status:', error);
+      }
+    };
+    
+    checkBookmarkStatus();
   }, [video.id]);
   
   const handleChannelClick = (e: React.MouseEvent) => {
@@ -46,15 +49,19 @@ export const VideoCard = ({ video, formatDuration, formatViewCount }: VideoCardP
     navigate(`/video/${video.id}`);
   };
 
-  const handleBookmarkClick = (e: React.MouseEvent) => {
+  const handleBookmarkClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     
-    if (isBookmarked) {
-      removeBookmarkedVideo(video.id);
-      setIsBookmarked(false);
-    } else {
-      bookmarkVideo(video);
-      setIsBookmarked(true);
+    try {
+      if (isBookmarked) {
+        await removeBookmarkedVideo(video.id);
+        setIsBookmarked(false);
+      } else {
+        await bookmarkVideo(video);
+        setIsBookmarked(true);
+      }
+    } catch (error) {
+      console.error('Error updating bookmark:', error);
     }
   };
 

@@ -29,7 +29,7 @@ export const apiClient = {
           params,
           options: {
             ...options,
-            disableCache: options?.disableCache
+            disableCache: true
           }
         }),
       });

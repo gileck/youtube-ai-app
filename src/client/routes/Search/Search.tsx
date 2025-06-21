@@ -13,10 +13,8 @@ import {
   FilterDialog
 } from '../../components/youtube/search';
 import { YouTubeSearchFilters } from '../../../apis/youtube/types';
+import { loadUserSettings, saveSearchFilters, saveRecentSearches } from '../../utils/userSettingsApi';
 
-// Local storage keys
-const FILTERS_STORAGE_KEY = 'youtube_search_filters';
-const RECENT_SEARCHES_KEY = 'youtube_recent_searches';
 const MAX_RECENT_SEARCHES = 10;
 
 // RecentSearches component
@@ -80,44 +78,23 @@ export const Search = () => {
   const [currentPage, setCurrentPage] = useState(1);
   
   // Recent searches state
-  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem(RECENT_SEARCHES_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      console.error('Failed to parse saved recent searches', e);
-      return [];
-    }
-  });
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   
   // Filter dialog state
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
   
   // Advanced filters state
-  const [filters, setFilters] = useState<YouTubeSearchFilters>(() => {
-    // Try to get filters from local storage
-    const savedFilters = localStorage.getItem(FILTERS_STORAGE_KEY);
-    if (savedFilters) {
-      try {
-        const parsedFilters = JSON.parse(savedFilters);
-        return parsedFilters;
-      } catch (e) {
-        console.error('Failed to parse saved filters', e);
-      }
-    }
-    // Default filters
-    return {
-      upload_date: 'all',
-      type: 'video',
-      duration: 'long',
-      sort_by: 'upload_date',
-      features: [],
-      minimum_views: 1000
-    };
+  const [filters, setFilters] = useState<YouTubeSearchFilters>({
+    upload_date: 'all',
+    type: 'video',
+    duration: 'long',
+    sort_by: 'upload_date',
+    features: [],
+    minViews: 1000
   });
 
   // Save search query to recent searches
-  const saveRecentSearch = useCallback((query: string) => {
+  const saveRecentSearch = useCallback(async (query: string) => {
     if (!query || query.trim() === '') return;
     
     setRecentSearches(prev => {
@@ -126,18 +103,18 @@ export const Search = () => {
       // Add the new query at the beginning and limit to MAX_RECENT_SEARCHES
       const updated = [query, ...filtered].slice(0, MAX_RECENT_SEARCHES);
       
-      // Save to localStorage
-      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+      // Save to database
+      saveRecentSearches(updated);
       
       return updated;
     });
   }, []);
 
   // Delete a search from recent searches
-  const handleDeleteSearch = useCallback((query: string) => {
+  const handleDeleteSearch = useCallback(async (query: string) => {
     setRecentSearches(prev => {
       const updated = prev.filter(q => q !== query);
-      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+      saveRecentSearches(updated);
       return updated;
     });
   }, []);
@@ -211,6 +188,20 @@ export const Search = () => {
     }
   }, [filters, saveRecentSearch]);
 
+  // Load user settings on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const userSettings = await loadUserSettings();
+        setFilters(userSettings.searchFilters);
+        setRecentSearches(userSettings.recentSearches);
+      } catch (error) {
+        console.error('Failed to load user settings:', error);
+      }
+    };
+    loadSettings();
+  }, []);
+
   // Perform search when query param changes
   useEffect(() => {
     if (queryParams.q) {
@@ -267,11 +258,11 @@ export const Search = () => {
   };
   
   // Handle applying filters
-  const handleApplyFilters = (newFilters: YouTubeSearchFilters) => {
+  const handleApplyFilters = async (newFilters: YouTubeSearchFilters) => {
     setFilters(newFilters);
     
-    // Save to local storage
-    localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(newFilters));
+    // Save to database
+    await saveSearchFilters(newFilters);
     
     // Reset pagination state for new search with updated filters
     setCurrentPage(1);

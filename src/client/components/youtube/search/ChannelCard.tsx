@@ -18,7 +18,7 @@ import {
   bookmarkChannel, 
   removeBookmarkedChannel, 
   isChannelBookmarked 
-} from '../../../utils/bookmarksStorage';
+} from '../../../utils/bookmarksApi';
 
 interface ChannelCardProps {
   channel: YouTubeChannelSearchResult;
@@ -33,22 +33,35 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({ channel }) => {
   const isExtraSmall = useMediaQuery('(max-width:400px)');
   
   useEffect(() => {
-    setIsBookmarked(isChannelBookmarked(channel.id));
+    const checkBookmarkStatus = async () => {
+      try {
+        const bookmarked = await isChannelBookmarked(channel.id);
+        setIsBookmarked(bookmarked);
+      } catch (error) {
+        console.error('Error checking bookmark status:', error);
+      }
+    };
+    
+    checkBookmarkStatus();
   }, [channel.id]);
   
   const handleChannelClick = () => {
     navigate(`/channel/${channel.id}`);
   };
   
-  const handleBookmarkClick = (e: React.MouseEvent) => {
+  const handleBookmarkClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     
-    if (isBookmarked) {
-      removeBookmarkedChannel(channel.id);
-      setIsBookmarked(false);
-    } else {
-      bookmarkChannel(channel);
-      setIsBookmarked(true);
+    try {
+      if (isBookmarked) {
+        await removeBookmarkedChannel(channel.id);
+        setIsBookmarked(false);
+      } else {
+        await bookmarkChannel(channel);
+        setIsBookmarked(true);
+      }
+    } catch (error) {
+      console.error('Error updating bookmark:', error);
     }
   };
   
